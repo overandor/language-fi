@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language.fi — Language is Liquidity</title>
+    <meta name="description" content="A linguistic asset protocol where letters become priced primitives, words become composable value objects, and sentences become transferable registered assets.">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo">LANGUAGE.FI</a>
+            <ul class="nav-links">
+                <li><a href="#protocol">Protocol</a></li>
+                <li><a href="#explorer">Explorer</a></li>
+                <li><a href="#letters">Letters</a></li>
+                <li><a href="#words">Words</a></li>
+                <li><a href="#sentences">Sentences</a></li>
+                <li><a href="#oracle">Oracle</a></li>
+                <li><a href="#docs">Docs</a></li>
+                <li><button class="nav-cta">Launch App</button></li>
+            </ul>
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Language is liquidity.</h1>
+            <p class="hero-subtitle">Language.fi transforms letters, words, names, and sentences into programmable financial assets through dynamic character pricing, prepaid minting slots, and a public linguistic registry.</p>
+            <div class="hero-ctas">
+                <a href="#" class="btn-primary">Launch Explorer</a>
+                <a href="#" class="btn-secondary">Read Protocol</a>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="floating-letter" data-letter="A" data-price="$0.18">A $0.18</div>
+            <div class="floating-letter" data-letter="E" data-price="$0.20">E $0.20</div>
+            <div class="floating-letter" data-letter="T" data-price="$0.30">T $0.30</div>
+            <div class="floating-letter" data-letter="Slot" data-price="#1042">Slot #1042</div>
+            <div class="floating-letter" data-letter="Hash" data-price="0x91a...f20">Hash 0x91a...f20</div>
+            <div class="floating-letter" data-letter="Value" data-price="$0.63">Formula Value $0.63</div>
+        </div>
+    </section>
+
+    <section class="what-is" id="protocol">
+        <h2 class="section-title">A market layer for language itself.</h2>
+        <p>Language.fi prices letters as volatile protocol primitives. Words inherit value from their characters. Sentences are minted into registered transferable assets with hash, owner, slot, mint cost, and transfer history.</p>
+        <div class="core-cards">
+            <div class="core-card">
+                <div class="core-icon">A</div>
+                <h3>Letters</h3>
+                <p>Dynamic priced primitives with demand, volatility, usage, and tax state.</p>
+                <div class="data-chip">Volatile</div>
+                <div class="data-chip">Priced</div>
+            </div>
+            <div class="core-card">
+                <div class="core-icon">W</div>
+                <h3>Words</h3>
+                <p>Composable value objects formed from priced character inputs.</p>
+                <div class="data-chip">Inherited</div>
+                <div class="data-chip">Formula</div>
+            </div>
+            <div class="core-card">
+                <div class="core-icon">S</div>
+                <h3>Sentences</h3>
+                <p>Unique registered assets with formula value, mint cost, and market value.</p>
+                <div class="data-chip">Transferable</div>
+                <div class="data-chip">Registry</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works">
+        <h2 class="section-title">From character to capital.</h2>
+        <div class="steps-container">
+            <div class="step-card">
+                <div class="step-number">01</div>
+                <h3>Observe Usage</h3>
+                <p>The oracle samples registry activity, token names, blockchain hashes, and permitted real-world language data.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">02</div>
+                <h3>Price Letters</h3>
+                <p>Each letter receives a live protocol price based on usage, demand, volatility, and congestion.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">03</div>
+                <h3>Buy Slot</h3>
+                <p>Users purchase prepaid sentence capacity before finalizing the linguistic asset.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">04</div>
+                <h3>Mint Sentence</h3>
+                <p>A sentence consumes, locks, or burns the value of its component letters.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">05</div>
+                <h3>Register Ownership</h3>
+                <p>The registry records sentence hash, owner wallet, issuer signature, slot ID, letter cost, and transfer status.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">06</div>
+                <h3>Trade Asset</h3>
+                <p>The sentence becomes a transferable registered asset with protocol value and market value.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="primitives" id="primitives">
+        <h2 class="section-title">Core asset types.</h2>
+        <div class="primitives-grid">
+            <div class="primitive-card">
+                <div class="primitive-icon">A</div>
+                <h3>Letters</h3>
+                <p>Dynamic priced primitives with demand, volatility, usage, and tax state.</p>
+            </div>
+            <div class="primitive-card">
+                <div class="primitive-icon">W</div>
+                <h3>Words</h3>
+                <p>Composable value objects formed from priced character inputs.</p>
+            </div>
+            <div class="primitive-card">
+                <div class="primitive-icon">S</div>
+                <h3>Sentences</h3>
+                <p>Unique registered assets with formula value, mint cost, and market value.</p>
+            </div>
+            <div class="primitive-card">
+                <div class="primitive-icon">◼</div>
+                <h3>Slots</h3>
+                <p>Prepaid capacity that can later be filled with a sentence, creating a market for future linguistic minting rights.</p>
+            </div>
+            <div class="primitive-card">
+                <div class="primitive-icon">◈</div>
+                <h3>Registry</h3>
+                <p>Public ownership and transfer layer for all registered linguistic assets.</p>
+            </div>
+            <div class="primitive-card">
+                <div class="primitive-icon">◉</div>
+                <h3>Oracle</h3>
+                <p>Dynamic alphabet pricing engine that determines letter values from multiple source categories.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="why-it-matters">
+        <h2 class="section-title">Why it matters.</h2>
+        <ul class="why-list">
+            <li>→ Language becomes financial infrastructure.</li>
+            <li>→ Names gain protocol-calculated base value.</li>
+            <li>→ Sentences get measurable creation cost.</li>
+            <li>→ Cultural trends and memes affect linguistic markets.</li>
+            <li>→ Uniqueness and capped supply can coexist in one monetary system.</li>
+        </ul>
+    </section>
+
+    <section class="alphabet-market" id="letters">
+        <h2 class="section-title">Alphabet primitives.</h2>
+        <p class="section-subtitle">Live letter prices from the oracle, updated in real-time based on usage, demand, and volatility.</p>
+        <table class="registry-table">
+            <thead>
+                <tr>
+                    <th>Letter</th>
+                    <th>Price</th>
+                    <th>24h Change</th>
+                    <th>Usage Rank</th>
+                    <th>Tax State</th>
+                    <th>Volatility</th>
+                    <th>Source Signal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="letter-cell">E</td>
+                    <td class="price-cell">$0.20</td>
+                    <td class="change-positive">+8.4%</td>
+                    <td>#1</td>
+                    <td><span class="status-badge active">Active</span></td>
+                    <td>Medium</td>
+                    <td>Registry + News</td>
+                </tr>
+                <tr>
+                    <td class="letter-cell">T</td>
+                    <td class="price-cell">$0.30</td>
+                    <td class="change-positive">+5.1%</td>
+                    <td>#2</td>
+                    <td><span class="status-badge active">Active</span></td>
+                    <td>High</td>
+                    <td>Token Names</td>
+                </tr>
+                <tr>
+                    <td class="letter-cell">A</td>
+                    <td class="price-cell">$0.18</td>
+                    <td class="change-negative">-1.2%</td>
+                    <td>#3</td>
+                    <td><span class="status-badge inactive">Inactive</span></td>
+                    <td>Low</td>
+                    <td>Hash Baseline</td>
+                </tr>
+                <tr>
+                    <td class="letter-cell">O</td>
+                    <td class="price-cell">$0.05</td>
+                    <td class="change-positive">+0.8%</td>
+                    <td>#4</td>
+                    <td><span class="status-badge inactive">Inactive</span></td>
+                    <td>Low</td>
+                    <td>Text Sample</td>
+                </tr>
+                <tr>
+                    <td class="letter-cell">N</td>
+                    <td class="price-cell">$0.05</td>
+                    <td class="change-positive">+2.2%</td>
+                    <td>#5</td>
+                    <td><span class="status-badge active">Active</span></td>
+                    <td>Medium</td>
+                    <td>Registry</td>
+                </tr>
+                <tr>
+                    <td class="letter-cell">I</td>
+                    <td class="price-cell">$0.12</td>
+                    <td class="change-positive">+3.5%</td>
+                    <td>#6</td>
+                    <td><span class="status-badge active">Active</span></td>
+                    <td>Medium</td>
+                    <td>Registry</td>
+                </tr>
+                <tr>
+                    <td class="letter-cell">R</td>
+                    <td class="price-cell">$0.08</td>
+                    <td class="change-negative">-0.5%</td>
+                    <td>#7</td>
+                    <td><span class="status-badge inactive">Inactive</span></td>
+                    <td>Low</td>
+                    <td>Hash Baseline</td>
+                </tr>
+                <tr>
+                    <td class="letter-cell">S</td>
+                    <td class="price-cell">$0.15</td>
+                    <td class="change-positive">+4.2%</td>
+                    <td>#8</td>
+                    <td><span class="status-badge active">Active</span></td>
+                    <td>High</td>
+                    <td>Token Names</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="tokenization" id="words">
+        <h2 class="section-title">Tokenization primitives.</h2>
+        <p class="section-subtitle">The asset stack: letters form words, words form names, sentences become registered assets.</p>
+        <div class="tokenization-stack">
+            <div class="stack-layer">
+                <div class="layer-label">Letters</div>
+                <div class="layer-description">Priced protocol inputs with oracle-driven value</div>
+            </div>
+            <div class="stack-arrow">↓</div>
+            <div class="stack-layer">
+                <div class="layer-label">Words</div>
+                <div class="layer-description">Formula value from character composition</div>
+            </div>
+            <div class="stack-arrow">↓</div>
+            <div class="stack-layer">
+                <div class="layer-label">Names</div>
+                <div class="layer-description">Project and identity assets with cultural demand</div>
+            </div>
+            <div class="stack-arrow">↓</div>
+            <div class="stack-layer">
+                <div class="layer-label">Sentences</div>
+                <div class="layer-description">Unique registered assets with hash and ownership</div>
+            </div>
+            <div class="stack-arrow">↓</div>
+            <div class="stack-layer">
+                <div class="layer-label">Registry</div>
+                <div class="layer-description">Public ownership and transfer layer</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="calculator">
+        <h2 class="section-title">Formula value engine.</h2>
+        <div class="calculator-container">
+            <input type="text" class="calculator-input" value="TOKEN" readonly>
+            <div class="letter-breakdown">
+                <div class="letter-price"><div class="letter">T</div><div class="price">$0.30</div></div>
+                <div class="letter-price"><div class="letter">O</div><div class="price">$0.05</div></div>
+                <div class="letter-price"><div class="letter">K</div><div class="price">$0.03</div></div>
+                <div class="letter-price"><div class="letter">E</div><div class="price">$0.20</div></div>
+                <div class="letter-price"><div class="letter">N</div><div class="price">$0.05</div></div>
+            </div>
+            <div class="base-value"><div class="base-value-label">Formula Value</div><div class="base-value-amount">$0.63</div></div>
+            <div class="base-value" style="margin-top: 1rem;"><div class="base-value-label">Popularity Tax</div><div class="base-value-amount">$0.08</div></div>
+            <div class="base-value" style="margin-top: 1rem; border-color: var(--neon-green);"><div class="base-value-label">Estimated Mint Cost</div><div class="base-value-amount" style="color: var(--neon-green);">$0.71</div></div>
+            <p class="calculator-note">Formula value is not market value. Market price may differ based on demand, rarity, meaning, and ownership history.</p>
+        </div>
+    </section>
+
+    <section class="registry" id="sentences">
+        <h2 class="section-title">Every sentence has a source trail.</h2>
+        <p class="section-subtitle">Explore the registry of minted sentences with ownership, slot, formula value, and transfer history.</p>
+        <table class="registry-table">
+            <thead>
+                <tr><th>Sentence Hash</th><th>Owner</th><th>Slot</th><th>Formula Value</th><th>Mint Cost</th><th>Status</th><th>Transfer Count</th></tr>
+            </thead>
+            <tbody>
+                <tr><td class="hash">0x91a...f20</td><td class="hash">0xA7...91</td><td>#1042</td><td>$11.06</td><td>$14.82</td><td><span class="status-badge listed">Listed</span></td><td>2</td></tr>
+                <tr><td class="hash">0x77c...aa9</td><td class="hash">0xB2...18</td><td>#1043</td><td>$8.01</td><td>$9.44</td><td><span class="status-badge active">Held</span></td><td>0</td></tr>
+                <tr><td class="hash">0x44e...7dd</td><td class="hash">0xC9...30</td><td>#1044</td><td>$19.92</td><td>$22.10</td><td><span class="status-badge inactive">Transferred</span></td><td>5</td></tr>
+                <tr><td class="hash">0x3b2...f8a</td><td class="hash">0xD1...45</td><td>#1045</td><td>$5.67</td><td>$6.23</td><td><span class="status-badge listed">Listed</span></td><td>1</td></tr>
+                <tr><td class="hash">0x8c9...e2b</td><td class="hash">0xE4...72</td><td>#1046</td><td>$15.43</td><td>$17.89</td><td><span class="status-badge active">Held</span></td><td>0</td></tr>
+            </tbody>
+        </table>
+        <div class="registry-filters" style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">All</button>
+            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Minted</button>
+            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Listed</button>
+            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Transferred</button>
+            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">High Value</button>
+            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Recent</button>
+        </div>
+    </section>
+
+    <section class="oracle" id="oracle">
+        <h2 class="section-title">Explainable letter pricing.</h2>
+        <p class="section-subtitle">The oracle uses multiple source categories to determine letter prices with full transparency.</p>
+        <div class="oracle-sources">
+            <div class="oracle-source-card">
+                <h3>Registry Activity</h3>
+                <p>Counts letters used in minted Language.fi assets.</p>
+            </div>
+            <div class="oracle-source-card">
+                <h3>Token Name Data</h3>
+                <p>Counts letters from sampled token names and market-native naming behavior.</p>
+            </div>
+            <div class="oracle-source-card">
+                <h3>Blockchain Hash Data</h3>
+                <p>Uses sampled hashes and addresses as a cryptographic frequency baseline.</p>
+            </div>
+            <div class="oracle-source-card">
+                <h3>Text Sample Data</h3>
+                <p>Uses permitted or licensed text samples, public metadata, RSS feeds, or derived frequency counts.</p>
+            </div>
+            <div class="oracle-source-card">
+                <h3>Seasonal and Meme Trends</h3>
+                <p>Captures temporary demand spikes from cultural naming patterns.</p>
+            </div>
+        </div>
+        <div class="formula-display">
+            <div class="formula-title">Pricing Formula</div>
+            <div class="formula-content">
+                Letter Price = Base Price + Registry Demand + Token Name Demand + Hash Baseline + Text Sample Demand + Seasonal Modifier + Popularity Tax - Decay Adjustment
+            </div>
+        </div>
+        <div class="compliance-note">
+            <strong>Important:</strong> Language.fi stores derived counts and statistics from third-party text sources, not full copyrighted articles.
+        </div>
+    </section>
+
+    <section class="manifesto">
+        <h2 class="manifesto-quote">Bitcoin made numbers scarce. NFTs made images scarce. Language.fi makes language programmable.</h2>
+        <p class="manifesto-sub">Every letter has a price. Every sentence has a cost. Every phrase can become a registered asset.</p>
+    </section>
+
+    <section class="final-cta">
+        <h2>Start minting meaning.</h2>
+        <div class="final-cta-buttons">
+            <a href="#explorer" class="btn-primary">Launch App</a>
+            <a href="#docs" class="btn-secondary">View Docs</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-links">
+            <a href="#explorer">Explorer</a>
+            <a href="#letters">Letters</a>
+            <a href="#words">Words</a>
+            <a href="#sentences">Sentences</a>
+            <a href="#oracle">Oracle</a>
+            <a href="#docs">Docs</a>
+        </div>
+        <p>&copy; 2026 Language.fi — Language is liquidity.</p>
+        <p class="disclaimer"><strong>Important:</strong> Experimental protocol concept. Formula value is not market value. Registry ownership does not imply legal ownership of ordinary language. Not financial advice. Not investment advice. Use at your own risk.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
