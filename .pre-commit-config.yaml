@@ -1,0 +1,49 @@
+# Pre-commit hooks for Language.fi
+# Install: pip install pre-commit && pre-commit install
+
+repos:
+  # Secret scanning
+  - repo: https://github.com/TruffleSecurity/trufflehog3
+    hooks:
+      - id: trufflehog3
+        args: [--regex --entropy=False]
+        name: TruffleHog Secret Scanner
+
+  # General checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: detect-private-key
+
+  # Python-specific
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        language_version: python3.11
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        args: [--max-line-length=120]
+
+  # TypeScript/JavaScript
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.57.0
+    hooks:
+      - id: eslint
+        files: \.(ts|tsx|js|jsx)$
+        args: [--fix]
+
+  # Gitleaks for git history scanning
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.2
+    hooks:
+      - id: gitleaks
