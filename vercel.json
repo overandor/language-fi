@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "server.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "15mb"
+      }
     }
   ],
   "routes": [
@@ -12,5 +15,8 @@
       "dest": "/server.py"
     }
   ],
-  "regions": ["iad1"]
+  "regions": ["iad1"],
+  "env": {
+    "COINGECKO_API_KEY": "CG-DD8rr7U4hQsjAxokXt7ERtaG"
+  }
 }
