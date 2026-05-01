@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Scroll-triggered animations
+    // Add intersection observer for scroll animations
     const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
@@ -65,38 +65,106 @@ document.addEventListener('DOMContentLoaded', function() {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
+                entry.target.classList.add('animate-in');
             }
         });
     }, observerOptions);
 
-    // Observe sections for scroll animations
-    const sections = document.querySelectorAll('section');
-    sections.forEach(section => {
-        section.style.opacity = '0';
-        section.style.transform = 'translateY(30px)';
-        section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    // Observe sections for animation
+    document.querySelectorAll('section').forEach(section => {
         observer.observe(section);
     });
-
-    // Make hero visible immediately
-    const hero = document.querySelector('.hero');
-    if (hero) {
-        hero.style.opacity = '1';
-        hero.style.transform = 'translateY(0)';
-    }
 
     // Add hover effect to table rows
     const tableRows = document.querySelectorAll('.registry-table tbody tr');
     tableRows.forEach(row => {
-        row.addEventListener('mouseenter', () => {
-            row.style.transform = 'scale(1.01)';
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(4px)';
         });
-        row.addEventListener('mouseleave', () => {
-            row.style.transform = 'scale(1)';
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateX(0)';
         });
     });
+
+    // Add click handlers for registry filters
+    const filterButtons = document.querySelectorAll('.registry-filters button, .letter-explorer-filters button');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons in the same container
+            const container = this.parentElement;
+            container.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+        });
+    });
+
+    // Letter page specific interactivity
+    const protocolCards = document.querySelectorAll('.protocol-card');
+    protocolCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            const barFill = this.querySelector('.protocol-bar-fill');
+            if (barFill) {
+                barFill.style.background = 'linear-gradient(90deg, var(--neon-green), var(--electric-blue))';
+            }
+        });
+        card.addEventListener('mouseleave', function() {
+            const barFill = this.querySelector('.protocol-bar-fill');
+            if (barFill) {
+                barFill.style.background = 'linear-gradient(90deg, var(--electric-blue), var(--neon-green))';
+            }
+        });
+    });
+
+    // Market form interactivity
+    const marketForm = document.querySelector('.market-form');
+    if (marketForm) {
+        const openPositionBtn = marketForm.querySelector('.btn-primary');
+        if (openPositionBtn) {
+            openPositionBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Simulate opening position
+                this.textContent = 'Position Opening...';
+                this.disabled = true;
+                
+                setTimeout(() => {
+                    this.textContent = 'Position Opened ✓';
+                    this.style.background = 'var(--neon-green)';
+                    this.style.color = 'var(--bg)';
+                    
+                    setTimeout(() => {
+                        this.textContent = 'Open Position';
+                        this.disabled = false;
+                        this.style.background = '';
+                        this.style.color = '';
+                    }, 2000);
+                }, 1500);
+            });
+        }
+    }
+
+    // Animate protocol bars on scroll
+    const protocolBars = document.querySelectorAll('.protocol-bar-fill');
+    const barObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const width = entry.target.style.width;
+                entry.target.style.width = '0%';
+                setTimeout(() => {
+                    entry.target.style.width = width;
+                }, 100);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    protocolBars.forEach(bar => barObserver.observe(bar));
+
+    // Add URL parameter handling for letter page
+    const urlParams = new URLSearchParams(window.location.search);
+    const letterParam = urlParams.get('l');
+    if (letterParam && document.querySelector('.giant-letter')) {
+        document.querySelector('.giant-letter').textContent = letterParam.toUpperCase();
+        document.title = `Letter ${letterParam.toUpperCase()} — Language.fi`;
+    }
 
     // Add click effect to buttons
     const buttons = document.querySelectorAll('button, .btn-primary, .btn-secondary');
