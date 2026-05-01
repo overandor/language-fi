@@ -10,6 +10,7 @@ import random
 import time
 from datetime import datetime
 import os
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -17,6 +18,138 @@ CORS(app)
 # API Keys from environment
 GATE_API_KEY = os.getenv('GATE_API_KEY', '5f35c83ea82aafa977f46a7b1f75c873')
 GATE_API_SECRET = os.getenv('GATE_API_SECRET', '9467d896f5bf2980d0c66bb948608aca3a619a00eb7dbbdfe9f2ef94b594fb3')
+COINMARKETCAP_API_KEY = os.getenv('COINMARKETCAP_API_KEY', '')
+
+# Cache for data
+cache = {}
+CACHE_DURATION = 300  # 5 minutes
+
+# Live data cache
+live_data_cache = {
+    'coinmarketcap_tokens': None,
+    'gateio_tokens': None,
+    'last_updated': None
+}
+
+def fetch_coinmarketcap_tokens():
+    """Fetch token data from CoinMarketCap API"""
+    try:
+        if not COINMARKETCAP_API_KEY:
+            print("CoinMarketCap API key not configured, using fallback data")
+            return None
+        
+        url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest'
+        headers = {
+            'Accepts': 'application/json',
+            'X-CMC_PRO_API_KEY': COINMARKETCAP_API_KEY
+        }
+        params = {
+            'start': '1',
+            'limit': '5000',
+            'convert': 'USD'
+        }
+        
+        response = requests.get(url, headers=headers, params=params, timeout=30)
+        response.raise_for_status()
+        
+        data = response.json()
+        tokens = data.get('data', [])
+        
+        print(f"Fetched {len(tokens)} tokens from CoinMarketCap")
+        return tokens
+    except Exception as e:
+        print(f"Error fetching CoinMarketCap data: {e}")
+        return None
+
+def fetch_gateio_tokens():
+    """Fetch token data from Gate.io API"""
+    try:
+        url = 'https://api.gate.io/api/v4/spot/currency_pairs'
+        headers = {
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        data = response.json()
+        tokens = data if isinstance(data, list) else []
+        
+        print(f"Fetched {len(tokens)} token pairs from Gate.io")
+        return tokens
+    except Exception as e:
+        print(f"Error fetching Gate.io data: {e}")
+        return None
+
+def count_characters_in_tokens(tokens, source_name):
+    """Count character occurrences in token names"""
+    char_counts = {}
+    
+    if not tokens:
+        return char_counts
+    
+    for token in tokens:
+        if source_name == 'coinmarketcap':
+            name = token.get('name', '').upper()
+            symbol = token.get('symbol', '').upper()
+        else:  # gateio
+            name = token.get('id', '').upper() if isinstance(token, dict) else ''
+            symbol = token.get('base', '').upper() if isinstance(token, dict) else ''
+        
+        # Count characters in name
+        for char in name:
+            if char.isalnum() or char == ' ':
+                char_counts[char] = char_counts.get(char, 0) + 1
+        
+        # Count characters in symbol
+        for char in symbol:
+            if char.isalnum():
+                char_counts[char] = char_counts.get(char, 0) + 1
+    
+    return char_counts
+
+def update_live_oracle_data():
+    """Update oracle data from live APIs"""
+    global live_data_cache
+    
+    # Fetch CoinMarketCap tokens
+    cmc_tokens = fetch_coinmarketcap_tokens()
+    if cmc_tokens:
+        live_data_cache['coinmarketcap_tokens'] = cmc_tokens
+    
+    # Fetch Gate.io tokens
+    gate_tokens = fetch_gateio_tokens()
+    if gate_tokens:
+        live_data_cache['gateio_tokens'] = gate_tokens
+    
+    live_data_cache['last_updated'] = datetime.utcnow().isoformat()
+    
+    print(f"Live oracle data updated at {live_data_cache['last_updated']}")
+
+def get_live_character_counts():
+    """Get character counts from live token data"""
+    char_counts = {
+        'coinmarketcap': {},
+        'gateio': {},
+        'total': {}
+    }
+    
+    # Count from CoinMarketCap
+    if live_data_cache.get('coinmarketcap_tokens'):
+        cmc_counts = count_characters_in_tokens(live_data_cache['coinmarketcap_tokens'], 'coinmarketcap')
+        char_counts['coinmarketcap'] = cmc_counts
+    
+    # Count from Gate.io
+    if live_data_cache.get('gateio_tokens'):
+        gate_counts = count_characters_in_tokens(live_data_cache['gateio_tokens'], 'gateio')
+        char_counts['gateio'] = gate_counts
+    
+    # Combine counts
+    for source in ['coinmarketcap', 'gateio']:
+        for char, count in char_counts[source].items():
+            char_counts['total'][char] = char_counts['total'].get(char, 0) + count
+    
+    return char_counts
 
 # Cache for data
 cache = {}
@@ -225,6 +358,127 @@ def get_oracle_snapshot():
     cache['oracle_snapshot'] = {'data': snapshot, 'timestamp': time.time()}
     return jsonify(snapshot)
 
+@app.route('/api/oracle/update', methods=['POST'])
+def update_oracle():
+    """Trigger live oracle data update"""
+    try:
+        update_live_oracle_data()
+        return jsonify({
+            'success': True,
+            'message': 'Oracle data updated successfully',
+            'last_updated': live_data_cache['last_updated']
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/oracle/live-stats')
+def get_live_oracle_stats():
+    """Get live oracle statistics from real token data"""
+    try:
+        # Update live data if needed
+        if not live_data_cache['last_updated'] or (datetime.utcnow() - datetime.fromisoformat(live_data_cache['last_updated'].replace('Z', '+00:00'))).total_seconds() > CACHE_DURATION:
+            update_live_oracle_data()
+        
+        # Get character counts
+        char_counts = get_live_character_counts()
+        
+        return jsonify({
+            'last_updated': live_data_cache['last_updated'],
+            'coinmarketcap_tokens_count': len(live_data_cache.get('coinmarketcap_tokens', [])),
+            'gateio_tokens_count': len(live_data_cache.get('gateio_tokens', [])),
+            'character_counts': char_counts,
+            'total_characters': sum(char_counts['total'].values())
+        })
+    except Exception as e:
+        return jsonify({
+            'error': str(e)
+        }), 500
+
+@app.route('/api/primitives/live')
+def get_live_primitives():
+    """Get primitives with live oracle data"""
+    try:
+        # Get live character counts
+        char_counts = get_live_character_counts()
+        total_counts = char_counts['total']
+        
+        # Generate primitives with live data
+        primitives = []
+        
+        # Letters A-Z
+        alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        for letter in alphabet:
+            count = total_counts.get(letter, 0)
+            base_price = 0.03 + (count / 10000) * 0.1
+            primitives.append(generate_primitive_base_live(letter, 'letter', count, base_price))
+        
+        # Numbers 0-9
+        for num in '0123456789':
+            count = total_counts.get(num, 0)
+            base_price = 0.03 + (count / 10000) * 0.1
+            primitives.append(generate_primitive_base_live(num, 'number', count, base_price))
+        
+        # SPACE
+        space_count = total_counts.get(' ', 0)
+        primitives.append(generate_primitive_base_live('SPACE', 'separator', space_count, 0.061))
+        
+        return jsonify({
+            'updated_at': live_data_cache['last_updated'] or datetime.utcnow().isoformat() + 'Z',
+            'primitives': primitives,
+            'data_source': 'live'
+        })
+    except Exception as e:
+        return jsonify({
+            'error': str(e)
+        }), 500
+
+@app.route('/api/tokenize/oracle-stats', methods=['POST'])
+def tokenize_oracle_stats():
+    """Tokenize oracle statistics as on-chain assets"""
+    data = request.get_json()
+    wallet_address = data.get('wallet_address')
+    stats_type = data.get('stats_type', 'character_counts')
+    
+    if not wallet_address:
+        return jsonify({'error': 'Wallet address required'}), 400
+    
+    try:
+        # Get live oracle stats
+        char_counts = get_live_character_counts()
+        
+        # Generate token representation
+        token_id = f'oracle_{random.randint(100000, 999999)}'
+        token_data = {
+            'token_id': token_id,
+            'owner': wallet_address,
+            'stats_type': stats_type,
+            'snapshot_timestamp': live_data_cache['last_updated'] or datetime.utcnow().isoformat() + 'Z',
+            'character_counts': char_counts['total'],
+            'total_characters': sum(char_counts['total'].values()),
+            'data_sources': {
+                'coinmarketcap': len(live_data_cache.get('coinmarketcap_tokens', [])),
+                'gateio': len(live_data_cache.get('gateio_tokens', []))
+            },
+            'token_metadata': {
+                'name': f'Oracle Snapshot {token_id}',
+                'symbol': f'ORCL{token_id[-4:]}',
+                'description': 'Tokenized oracle statistics snapshot'
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'token': token_data,
+            'message': 'Oracle stats tokenized successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'error': str(e)
+        }), 500
+
 def generate_all_primitives():
     """Generate all primitives (letters, numbers, spaces, symbols)"""
     primitives = []
@@ -249,6 +503,21 @@ def generate_all_primitives():
     return {
         'updated_at': datetime.utcnow().isoformat() + 'Z',
         'primitives': primitives
+    }
+
+def generate_primitive_base_live(symbol, primitive_type, live_count, base_price):
+    """Generate primitive data using live character counts"""
+    weekly_change = random.uniform(-0.05, 0.20)
+    
+    return {
+        'symbol': symbol,
+        'type': primitive_type,
+        'price_lgu': round(base_price * (1 + weekly_change), 3),
+        'weekly_change': round(weekly_change, 3),
+        'usage_count': live_count,
+        'rank': 1,
+        'data_source': 'live',
+        'live_occurrences': live_count
     }
 
 def generate_primitive_base(symbol, primitive_type):
