@@ -46,9 +46,44 @@ export default function Home() {
     }
   }
 
+  const fetchSnapshots = async () => {
+    setLoadingSnapshots(true)
+    try {
+      const response = await fetch("/api/snapshots")
+      const data = await response.json()
+      setSnapshots(data.data || [])
+    } catch (error) {
+      console.error("Snapshots fetch error:", error)
+    } finally {
+      setLoadingSnapshots(false)
+    }
+  }
+
+  const createSnapshot = async () => {
+    if (!snapshotUrl.trim()) return
+    setCreatingSnapshot(true)
+    try {
+      const response = await fetch("/api/snapshots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: snapshotUrl })
+      })
+      const data = await response.json()
+      await fetchSnapshots()
+      setSnapshotUrl("")
+    } catch (error) {
+      console.error("Snapshot creation error:", error)
+    } finally {
+      setCreatingSnapshot(false)
+    }
+  }
+
   useEffect(() => {
     if (activeTab === "registry") {
       fetchPrimitives()
+    }
+    if (activeTab === "snapshots") {
+      fetchSnapshots()
     }
   }, [activeTab])
 
@@ -76,6 +111,12 @@ export default function Home() {
                 className={`px-4 py-2 rounded ${activeTab === "registry" ? "bg-blue-600" : "text-gray-300 hover:text-white"}`}
               >
                 Registry
+              </button>
+              <button
+                onClick={() => setActiveTab("snapshots")}
+                className={`px-4 py-2 rounded ${activeTab === "snapshots" ? "bg-blue-600" : "text-gray-300 hover:text-white"}`}
+              >
+                Snapshots
               </button>
             </div>
           </div>
@@ -212,6 +253,77 @@ export default function Home() {
             ) : (
               <div className="text-center py-12">
                 <p className="text-gray-400">No primitives found. Run the oracle to generate pricing.</p>
+              </div>
+            )}
+          </div>
+        {activeTab === "snapshots" && (
+          <div>
+            <h2 className="text-3xl font-bold mb-6">Internet Snapshots</h2>
+            <p className="text-gray-400 mb-8">
+              Web content captured for primitive pricing analysis
+            </p>
+            
+            <div className="bg-gray-800 rounded-lg p-6 mb-8">
+              <h3 className="text-lg font-semibold mb-4">Create New Snapshot</h3>
+              <div className="flex gap-4">
+                <input
+                  type="text"
+                  value={snapshotUrl}
+                  onChange={(e) => setSnapshotUrl(e.target.value)}
+                  placeholder="Enter URL to snapshot (e.g., https://example.com)"
+                  className="flex-1 bg-gray-900 border border-gray-700 rounded-lg p-4 text-white"
+                />
+                <button
+                  onClick={createSnapshot}
+                  disabled={creatingSnapshot || !snapshotUrl.trim()}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold"
+                >
+                  {creatingSnapshot ? "Creating..." : "Snapshot"}
+                </button>
+              </div>
+            </div>
+            
+            {loadingSnapshots ? (
+              <div className="text-center py-12">
+                <p className="text-gray-400">Loading snapshots...</p>
+              </div>
+            ) : snapshots.length > 0 ? (
+              <div className="bg-gray-800 rounded-lg p-6">
+                <h3 className="text-lg font-semibold mb-4">Recent Snapshots</h3>
+                <div className="space-y-4">
+                  {snapshots.map((snapshot) => (
+                    <div key={snapshot.id} className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <a href={snapshot.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">
+                            {snapshot.url}
+                          </a>
+                          <p className="text-sm text-gray-400 mt-1">{snapshot.domain}</p>
+                          {snapshot.title && (
+                            <p className="text-sm text-gray-300 mt-1">{snapshot.title}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            snapshot.status === "processed" ? "bg-green-900 text-green-300" :
+                            snapshot.status === "archived" ? "bg-gray-700 text-gray-300" :
+                            "bg-yellow-900 text-yellow-300"
+                          }`}>
+                            {snapshot.status}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-400 flex justify-between">
+                        <span>Primitives: {snapshot.primitiveCount}</span>
+                        <span>{new Date(snapshot.extractedAt).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-400">No snapshots yet. Create one above to get started.</p>
               </div>
             )}
           </div>
