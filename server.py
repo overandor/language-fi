@@ -749,7 +749,7 @@ def generate_primitive_base(symbol, primitive_type):
         'price_lgu': round(base_price * (1 + weekly_change), 3),
         'weekly_change': round(weekly_change, 3),
         'usage_count': usage_count,
-        'rank': 1
+        'rank': None  # Will be set by ranking logic
     }
 
 def generate_primitive_detail(symbol):
