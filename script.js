@@ -28,16 +28,24 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('scroll', function() {
         const nav = document.querySelector('nav');
         if (window.scrollY > 50) {
-            nav.style.background = 'rgba(5, 5, 10, 0.95)';
-            nav.style.boxShadow = '0 4px 40px rgba(56, 189, 248, 0.15)';
+            nav.style.background = 'rgba(5, 5, 10, 0.98)';
         } else {
             nav.style.background = 'rgba(5, 5, 10, 0.85)';
-            nav.style.boxShadow = '0 4px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(56, 189, 248, 0.1)';
         }
     });
 
-    // Mouse tracking for geomorphic card effects
-    const primitiveCards = document.querySelectorAll('.primitive-card');
+    // Animate floating letters on scroll
+    const floatingLetters = document.querySelectorAll('.floating-letter');
+    window.addEventListener('scroll', function() {
+        const scrollY = window.scrollY;
+        floatingLetters.forEach((letter, index) => {
+            const speed = 0.5 + (index * 0.1);
+            letter.style.transform = `translateY(${scrollY * speed * 0.1}px)`;
+        });
+    });
+
+    // Add mouse tracking for primitive cards
+    const primitiveCards = document.querySelectorAll('.primitive-card, .core-card');
     primitiveCards.forEach(card => {
         card.addEventListener('mousemove', (e) => {
             const rect = card.getBoundingClientRect();

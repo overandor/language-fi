@@ -156,95 +156,178 @@
     </section>
 
     <section class="alphabet-market" id="letters">
-        <h2 class="section-title">Alphabet primitives.</h2>
-        <p class="section-subtitle">Live letter prices from the oracle, updated in real-time based on usage, demand, and volatility.</p>
-        <table class="registry-table">
+        <h2 class="section-title">Letter Explorer.</h2>
+        <p class="section-subtitle">A Bloomberg terminal for the alphabet. Live prices, usage, protocol breakdown, and market positions across all tracked ecosystems.</p>
+        <table class="registry-table letter-explorer-table">
             <thead>
                 <tr>
                     <th>Letter</th>
-                    <th>Price</th>
-                    <th>24h Change</th>
-                    <th>Usage Rank</th>
-                    <th>Tax State</th>
-                    <th>Volatility</th>
-                    <th>Source Signal</th>
+                    <th>Price (LGU)</th>
+                    <th>24h %</th>
+                    <th>Weekly Usage</th>
+                    <th>Rank</th>
+                    <th>Long %</th>
+                    <th>Short %</th>
+                    <th>Top Protocol</th>
+                    <th>Trend</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td class="letter-cell">E</td>
-                    <td class="price-cell">$0.20</td>
-                    <td class="change-positive">+8.4%</td>
-                    <td>#1</td>
-                    <td><span class="status-badge active">Active</span></td>
-                    <td>Medium</td>
-                    <td>Registry + News</td>
-                </tr>
-                <tr>
-                    <td class="letter-cell">T</td>
-                    <td class="price-cell">$0.30</td>
-                    <td class="change-positive">+5.1%</td>
+                    <td class="price-cell">0.142</td>
+                    <td class="change-positive">+4.8%</td>
+                    <td>2.84M</td>
                     <td>#2</td>
-                    <td><span class="status-badge active">Active</span></td>
-                    <td>High</td>
-                    <td>Token Names</td>
+                    <td>61%</td>
+                    <td>39%</td>
+                    <td>Solana</td>
+                    <td class="trend-up">↑</td>
+                    <td><a href="letter.html?l=E" class="btn-link">View</a></td>
                 </tr>
                 <tr>
                     <td class="letter-cell">A</td>
-                    <td class="price-cell">$0.18</td>
-                    <td class="change-negative">-1.2%</td>
-                    <td>#3</td>
-                    <td><span class="status-badge inactive">Inactive</span></td>
-                    <td>Low</td>
-                    <td>Hash Baseline</td>
+                    <td class="price-cell">0.142</td>
+                    <td class="change-positive">+4.8%</td>
+                    <td>2.84M</td>
+                    <td>#2</td>
+                    <td>61%</td>
+                    <td>39%</td>
+                    <td>Solana</td>
+                    <td class="trend-up">↑</td>
+                    <td><a href="letter.html?l=A" class="btn-link">View</a></td>
+                </tr>
+                <tr>
+                    <td class="letter-cell">T</td>
+                    <td class="price-cell">0.185</td>
+                    <td class="change-positive">+6.2%</td>
+                    <td>3.21M</td>
+                    <td>#1</td>
+                    <td>58%</td>
+                    <td>42%</td>
+                    <td>Ethereum</td>
+                    <td class="trend-up">↑</td>
+                    <td><a href="letter.html?l=T" class="btn-link">View</a></td>
+                </tr>
+                <tr>
+                    <td class="letter-cell">B</td>
+                    <td class="price-cell">0.091</td>
+                    <td class="change-positive">+12.2%</td>
+                    <td>948K</td>
+                    <td>#11</td>
+                    <td>74%</td>
+                    <td>26%</td>
+                    <td>Base</td>
+                    <td class="trend-up">↑</td>
+                    <td><a href="letter.html?l=B" class="btn-link">View</a></td>
+                </tr>
+                <tr>
+                    <td class="letter-cell">C</td>
+                    <td class="price-cell">0.118</td>
+                    <td class="change-negative">-2.1%</td>
+                    <td>1.31M</td>
+                    <td>#7</td>
+                    <td>43%</td>
+                    <td>57%</td>
+                    <td>Ethereum</td>
+                    <td class="trend-down">↓</td>
+                    <td><a href="letter.html?l=C" class="btn-link">View</a></td>
                 </tr>
                 <tr>
                     <td class="letter-cell">O</td>
-                    <td class="price-cell">$0.05</td>
-                    <td class="change-positive">+0.8%</td>
-                    <td>#4</td>
-                    <td><span class="status-badge inactive">Inactive</span></td>
-                    <td>Low</td>
-                    <td>Text Sample</td>
+                    <td class="price-cell">0.085</td>
+                    <td class="change-positive">+1.8%</td>
+                    <td>1.12M</td>
+                    <td>#9</td>
+                    <td>52%</td>
+                    <td>48%</td>
+                    <td>Solana</td>
+                    <td class="trend-up">↑</td>
+                    <td><a href="letter.html?l=O" class="btn-link">View</a></td>
                 </tr>
                 <tr>
                     <td class="letter-cell">N</td>
-                    <td class="price-cell">$0.05</td>
-                    <td class="change-positive">+2.2%</td>
-                    <td>#5</td>
-                    <td><span class="status-badge active">Active</span></td>
-                    <td>Medium</td>
-                    <td>Registry</td>
+                    <td class="price-cell">0.072</td>
+                    <td class="change-positive">+3.4%</td>
+                    <td>1.45M</td>
+                    <td>#6</td>
+                    <td>55%</td>
+                    <td>45%</td>
+                    <td>Base</td>
+                    <td class="trend-up">↑</td>
+                    <td><a href="letter.html?l=N" class="btn-link">View</a></td>
                 </tr>
                 <tr>
                     <td class="letter-cell">I</td>
-                    <td class="price-cell">$0.12</td>
-                    <td class="change-positive">+3.5%</td>
-                    <td>#6</td>
-                    <td><span class="status-badge active">Active</span></td>
-                    <td>Medium</td>
-                    <td>Registry</td>
+                    <td class="price-cell">0.095</td>
+                    <td class="change-negative">-0.9%</td>
+                    <td>1.08M</td>
+                    <td>#10</td>
+                    <td>47%</td>
+                    <td>53%</td>
+                    <td>Solana</td>
+                    <td class="trend-down">↓</td>
+                    <td><a href="letter.html?l=I" class="btn-link">View</a></td>
                 </tr>
                 <tr>
                     <td class="letter-cell">R</td>
-                    <td class="price-cell">$0.08</td>
-                    <td class="change-negative">-0.5%</td>
-                    <td>#7</td>
-                    <td><span class="status-badge inactive">Inactive</span></td>
-                    <td>Low</td>
-                    <td>Hash Baseline</td>
+                    <td class="price-cell">0.068</td>
+                    <td class="change-positive">+2.1%</td>
+                    <td>1.28M</td>
+                    <td>#8</td>
+                    <td>51%</td>
+                    <td>49%</td>
+                    <td>Ethereum</td>
+                    <td class="trend-up">↑</td>
+                    <td><a href="letter.html?l=R" class="btn-link">View</a></td>
                 </tr>
                 <tr>
                     <td class="letter-cell">S</td>
-                    <td class="price-cell">$0.15</td>
-                    <td class="change-positive">+4.2%</td>
-                    <td>#8</td>
-                    <td><span class="status-badge active">Active</span></td>
-                    <td>High</td>
-                    <td>Token Names</td>
+                    <td class="price-cell">0.105</td>
+                    <td class="change-positive">+5.6%</td>
+                    <td>1.52M</td>
+                    <td>#5</td>
+                    <td>63%</td>
+                    <td>37%</td>
+                    <td>Solana</td>
+                    <td class="trend-up">↑</td>
+                    <td><a href="letter.html?l=S" class="btn-link">View</a></td>
+                </tr>
+                <tr>
+                    <td class="letter-cell">L</td>
+                    <td class="price-cell">0.058</td>
+                    <td class="change-negative">-1.4%</td>
+                    <td>892K</td>
+                    <td>#13</td>
+                    <td>38%</td>
+                    <td>62%</td>
+                    <td>Base</td>
+                    <td class="trend-down">↓</td>
+                    <td><a href="letter.html?l=L" class="btn-link">View</a></td>
+                </tr>
+                <tr>
+                    <td class="letter-cell">D</td>
+                    <td class="price-cell">0.062</td>
+                    <td class="change-positive">+0.7%</td>
+                    <td>945K</td>
+                    <td>#12</td>
+                    <td>49%</td>
+                    <td>51%</td>
+                    <td>Ethereum</td>
+                    <td class="trend-up">↑</td>
+                    <td><a href="letter.html?l=D" class="btn-link">View</a></td>
                 </tr>
             </tbody>
         </table>
+        <div class="letter-explorer-filters" style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">All Letters</button>
+            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Top Volume</button>
+            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Highest Price</button>
+            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Most Volatile</button>
+            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Long Bias</button>
+            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Short Bias</button>
+        </div>
     </section>
 
     <section class="tokenization" id="words">
