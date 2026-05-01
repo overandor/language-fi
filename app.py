@@ -6,6 +6,7 @@ Docker SDK - Flask only, no Gradio
 """
 
 import os
+import json
 import requests
 import random
 import time
@@ -354,7 +355,7 @@ def get_analysis_history():
 
 @app.route('/dashboard')
 def dashboard():
-    """Live metrics dashboard"""
+    """Live metrics dashboard with real-time signals and evolution charts"""
     return '''
 <!DOCTYPE html>
 <html>
@@ -363,8 +364,8 @@ def dashboard():
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background: #0f0f0f; color: #fff; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
         .card { background: #1a1a1a; padding: 20px; border-radius: 8px; }
         h1 { color: #00ff88; }
         h2 { color: #00aaff; margin-top: 0; }
@@ -372,19 +373,46 @@ def dashboard():
         .label { color: #888; }
         button { background: #00ff88; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
         button:hover { background: #00cc6a; }
+        .signal-card { border-left: 4px solid #00ff88; }
+        .signal-card.long { border-left-color: #00ff88; }
+        .signal-card.short { border-left-color: #ff4444; }
+        .signal-card.neutral { border-left-color: #888; }
+        .confidence { font-weight: bold; }
+        .confidence.high { color: #00ff88; }
+        .confidence.low { color: #ff4444; }
+        .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .status.long { background: #00ff88; color: #000; }
+        .status.short { background: #ff4444; color: #fff; }
+        .status.neutral { background: #888; color: #fff; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Language.fi KPI Dashboard</h1>
         <button onclick="fetchData()">Refresh Data</button>
+        <button onclick="toggleStream()" id="streamBtn">Enable Live Stream</button>
         <div class="grid" id="metrics"></div>
+        
+        <div class="grid" style="margin-top: 20px;">
+            <div class="card">
+                <h2>Letter Prices</h2>
+                <canvas id="priceChart"></canvas>
+            </div>
+            <div class="card">
+                <h2>KPI Evolution</h2>
+                <canvas id="evolutionChart"></canvas>
+            </div>
+        </div>
+        
         <div class="card" style="margin-top: 20px;">
-            <canvas id="priceChart"></canvas>
+            <h2>Live Trading Signals</h2>
+            <div class="grid" id="signals"></div>
         </div>
     </div>
     <script>
-        let priceChart;
+        let priceChart, evolutionChart;
+        let eventSource = null;
+        let streaming = false;
         
         async function fetchData() {
             const kpiRes = await fetch('/api/kpis');
@@ -393,8 +421,16 @@ def dashboard():
             const analysisRes = await fetch('/api/analysis');
             const analysisData = await analysisRes.json();
             
+            const signalsRes = await fetch('/api/signals');
+            const signalsData = await signalsRes.json();
+            
+            const evolutionRes = await fetch('/api/kpis/evolution');
+            const evolutionData = await evolutionRes.json();
+            
             updateMetrics(kpiData, analysisData);
             updatePriceChart(kpiData);
+            updateSignals(signalsData);
+            updateEvolutionChart(evolutionData);
         }
         
         function updateMetrics(kpiData, analysisData) {
@@ -448,6 +484,95 @@ def dashboard():
             });
         }
         
+        function updateEvolutionChart(evolutionData) {
+            const evolution = evolutionData.kpi_evolution || {};
+            const letters = Object.keys(evolution).slice(0, 10);
+            const velocities = letters.map(l => evolution[l].velocity || 0);
+            const accelerations = letters.map(l => evolution[l].acceleration || 0);
+            
+            if (evolutionChart) {
+                evolutionChart.destroy();
+            }
+            
+            evolutionChart = new Chart(document.getElementById('evolutionChart'), {
+                type: 'line',
+                data: {
+                    labels: letters,
+                    datasets: [{
+                        label: 'Velocity',
+                        data: velocities,
+                        borderColor: 'rgba(0, 255, 136, 1)',
+                        backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                        fill: false
+                    }, {
+                        label: 'Acceleration',
+                        data: accelerations,
+                        borderColor: 'rgba(0, 170, 255, 1)',
+                        backgroundColor: 'rgba(0, 170, 255, 0.2)',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        function updateSignals(signalsData) {
+            const signalsDiv = document.getElementById('signals');
+            signalsDiv.innerHTML = '';
+            
+            signalsData.signals.forEach(signal => {
+                const card = document.createElement('div');
+                card.className = `card signal-card ${signal.signal}`;
+                const confidenceClass = signal.confidence > 0.6 ? 'high' : signal.confidence < 0.4 ? 'low' : '';
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span class="status ${signal.signal}">${signal.signal.toUpperCase()}</span>
+                            <span style="font-size: 18px; font-weight: bold; margin-left: 10px;">${signal.letter}</span>
+                        </div>
+                        <div class="confidence ${confidenceClass}">${(signal.confidence * 100).toFixed(0)}%</div>
+                    </div>
+                    <div style="margin-top: 10px; color: #888;">${signal.reason}</div>
+                    <div style="margin-top: 5px; font-size: 12px; color: #666;">
+                        Price: ${signal.price.toFixed(4)} | Velocity: ${signal.metrics.velocity} | Acceleration: ${signal.metrics.acceleration}
+                    </div>
+                `;
+                signalsDiv.appendChild(card);
+            });
+        }
+        
+        function toggleStream() {
+            const btn = document.getElementById('streamBtn');
+            if (streaming) {
+                eventSource.close();
+                streaming = false;
+                btn.textContent = 'Enable Live Stream';
+            } else {
+                eventSource = new EventSource('/stream');
+                streaming = true;
+                btn.textContent = 'Disable Live Stream';
+                
+                eventSource.onmessage = function(e) {
+                    const data = JSON.parse(e.data);
+                    if (data.type === 'update') {
+                        updateSignals({ signals: data.top_signals });
+                        // Update other metrics as needed
+                    }
+                };
+                
+                eventSource.onerror = function() {
+                    eventSource.close();
+                    streaming = false;
+                    btn.textContent = 'Enable Live Stream';
+                };
+            }
+        }
+        
         fetchData();
         setInterval(fetchData, 30000); // Refresh every 30 seconds
     </script>
@@ -492,6 +617,193 @@ def get_kpi_evolution():
             'top_changing_kpis': [],
             'status': 'KPI engine not available'
         })
+
+@app.route('/api/signals')
+def get_signals():
+    """Get trading signals with confidence scores, direction, and reasoning based on live data"""
+    try:
+        from kpi_engine import kpi_store
+        
+        letter_prices = kpi_store.get('letter_prices', {})
+        kpi_evolution = kpi_store.get('kpi_evolution', {})
+        momentum_letters = kpi_store.get('momentum_letters', [])
+        
+        signals = []
+        
+        for letter, price in letter_prices.items():
+            evolution_data = kpi_evolution.get(letter, {})
+            velocity = evolution_data.get('velocity', 0)
+            acceleration = evolution_data.get('acceleration', 0)
+            trend = evolution_data.get('trend', 'neutral')
+            
+            # Calculate confidence score based on live metrics
+            confidence = 0.5
+            reasons = []
+            
+            # Velocity factor (real price change rate)
+            if velocity > 0.1:
+                confidence += 0.15
+                reasons.append('positive velocity')
+            elif velocity < -0.1:
+                confidence -= 0.15
+                reasons.append('negative velocity')
+            
+            # Acceleration factor (rate of velocity change)
+            if acceleration > 0.05:
+                confidence += 0.1
+                reasons.append('accelerating upward')
+            elif acceleration < -0.05:
+                confidence -= 0.1
+                reasons.append('accelerating downward')
+            
+            # Momentum factor (from live LLM analysis)
+            if letter in momentum_letters:
+                confidence += 0.2
+                reasons.append('momentum letter')
+            
+            # Trend factor (from evolution tracking)
+            if trend == 'up':
+                confidence += 0.1
+                reasons.append('upward trend')
+            elif trend == 'down':
+                confidence -= 0.1
+                reasons.append('downward trend')
+            
+            # Clamp confidence to 0-1
+            confidence = max(0, min(1, confidence))
+            
+            # Determine direction based on confidence
+            if confidence > 0.6:
+                direction = 'long'
+            elif confidence < 0.4:
+                direction = 'short'
+            else:
+                direction = 'neutral'
+            
+            if not reasons:
+                reasons.append('insufficient data')
+            
+            signals.append({
+                'letter': letter,
+                'price': price,
+                'signal': direction,
+                'confidence': round(confidence, 2),
+                'reason': '; '.join(reasons),
+                'metrics': {
+                    'velocity': round(velocity, 4),
+                    'acceleration': round(acceleration, 4),
+                    'trend': trend
+                }
+            })
+        
+        # Sort by confidence
+        signals.sort(key=lambda x: abs(x['confidence'] - 0.5), reverse=True)
+        
+        return jsonify({
+            'signals': signals[:10],  # Top 10 signals
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/stream')
+def stream():
+    """Server-Sent Events endpoint for live updates every 5-10 seconds"""
+    from flask import Response
+    
+    def event_stream():
+        while True:
+            try:
+                from kpi_engine import kpi_store
+                
+                # Get live data
+                letter_prices = kpi_store.get('letter_prices', {})
+                kpi_evolution = kpi_store.get('kpi_evolution', {})
+                momentum_letters = kpi_store.get('momentum_letters', [])
+                
+                # Calculate signals
+                signals = []
+                for letter, price in letter_prices.items():
+                    evolution_data = kpi_evolution.get(letter, {})
+                    velocity = evolution_data.get('velocity', 0)
+                    acceleration = evolution_data.get('acceleration', 0)
+                    trend = evolution_data.get('trend', 'neutral')
+                    
+                    confidence = 0.5
+                    reasons = []
+                    
+                    if velocity > 0.1:
+                        confidence += 0.15
+                        reasons.append('positive velocity')
+                    elif velocity < -0.1:
+                        confidence -= 0.15
+                        reasons.append('negative velocity')
+                    
+                    if acceleration > 0.05:
+                        confidence += 0.1
+                        reasons.append('accelerating upward')
+                    elif acceleration < -0.05:
+                        confidence -= 0.1
+                        reasons.append('accelerating downward')
+                    
+                    if letter in momentum_letters:
+                        confidence += 0.2
+                        reasons.append('momentum letter')
+                    
+                    if trend == 'up':
+                        confidence += 0.1
+                        reasons.append('upward trend')
+                    elif trend == 'down':
+                        confidence -= 0.1
+                        reasons.append('downward trend')
+                    
+                    confidence = max(0, min(1, confidence))
+                    
+                    if confidence > 0.6:
+                        direction = 'long'
+                    elif confidence < 0.4:
+                        direction = 'short'
+                    else:
+                        direction = 'neutral'
+                    
+                    if not reasons:
+                        reasons.append('insufficient data')
+                    
+                    signals.append({
+                        'letter': letter,
+                        'price': price,
+                        'signal': direction,
+                        'confidence': round(confidence, 2),
+                        'reason': '; '.join(reasons)
+                    })
+                
+                signals.sort(key=lambda x: abs(x['confidence'] - 0.5), reverse=True)
+                
+                # Send SSE event
+                data = {
+                    'type': 'update',
+                    'timestamp': datetime.now(timezone.utc).isoformat(),
+                    'letter_prices': letter_prices,
+                    'top_signals': signals[:5],
+                    'momentum_letters': momentum_letters,
+                    'kpi_evolution': kpi_evolution
+                }
+                
+                yield f"data: {json.dumps(data)}\n\n"
+                
+                # Wait 5-10 seconds before next update
+                time.sleep(7)
+                
+            except Exception as e:
+                error_data = {
+                    'type': 'error',
+                    'timestamp': datetime.now(timezone.utc).isoformat(),
+                    'error': str(e)
+                }
+                yield f"data: {json.dumps(error_data)}\n\n"
+                time.sleep(7)
+    
+    return Response(event_stream(), mimetype='text/event-stream')
 
 @app.route('/health')
 def health():
