@@ -2,15 +2,29 @@
 
 Language.fi is a public oracle that prices 43 linguistic primitives (letters, numbers, spaces, symbols) from observable usage data, with reproducible oracle runs and a registry for composing word/sentence assets.
 
-## Core Product
+## Canonical Product
 
-**What it is:**
-- A pricing oracle for linguistic primitives (A-Z, 0-9, space, common symbols)
-- Prices derived from real usage data across multiple data sources
-- Reproducible oracle runs with cryptographic verification
-- Registry for composing word/sentence assets from priced primitives
+**Language.fi is a public oracle that prices 43 linguistic primitives from observable usage data, with reproducible oracle runs and a registry for composing word/sentence assets.**
 
-**What it is not:**
+### Primitives (43 total)
+- **Letters**: A-Z (26 primitives, ranked 1-26)
+- **Numbers**: 0-9 (10 primitives, ranked 27-36)
+- **Symbols**: SPACE, ., !, ?, -, _, @, # (7 primitives, ranked 37-43)
+
+### Core Functions
+1. **Pricing Oracle**: Compute prices for all 43 primitives based on observable usage data
+2. **Reproducible Runs**: Each oracle run is cryptographically verifiable with input snapshots, hashes, and signatures
+3. **Public Ledger**: Historical oracle runs stored for transparency and verification
+4. **Word Composition**: Registry for composing word assets from priced primitives
+5. **Sentence Assets**: Registry for sentence assets composed from word assets
+
+### What it is
+- A pricing oracle for linguistic primitives
+- Data-driven pricing from multiple sources
+- Cryptographically verifiable oracle runs
+- Registry for composing word/sentence assets
+
+### What it is not
 - Not a word ownership protocol (you don't own the word "apple")
 - Not a trademark or copyright system
 - Not an investment vehicle
