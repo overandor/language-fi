@@ -15,8 +15,17 @@ import threading
 
 # Configuration
 COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '')
+COINMARKETCAP_API_KEY = os.getenv('COINMARKETCAP_API_KEY', '')
 GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')
+ETHERSCAN_API_KEY = os.getenv('ETHERSCAN_API_KEY', '')
+BASESCAN_API_KEY = os.getenv('BASESCAN_API_KEY', '')
+ALCHEMY_API_KEY = os.getenv('ALCHEMY_API_KEY', '')
+MORALIS_API_KEY = os.getenv('MORALIS_API_KEY', '')
+COVALENT_API_KEY = os.getenv('COVALENT_API_KEY', '')
+HELIUS_API_KEY = os.getenv('HELIUS_API_KEY', '')
+NEWSAPI_API_KEY = os.getenv('NEWSAPI_API_KEY', '')
+NYT_API_KEY = os.getenv('NYT_API_KEY', '')
 
 # Data sources
 API_BASE = os.getenv('API_BASE', 'https://language-fi.vercel.app')
@@ -65,13 +74,32 @@ class KPIEngine:
             response = requests.get(f"{API_BASE}/api/primitives?ts={int(time.time())}", timeout=10)
             primitives = response.json()
             
-            # Fetch CoinGecko data
+            # Fetch from multiple data sources in parallel
+            print("Fetching data from multiple sources...")
+            
+            # CoinGecko
             coingecko_data = self.fetch_coingecko()
+            print(f"CoinGecko: {len(coingecko_data) if coingecko_data else 0} tokens")
+            
+            # Gate.io
+            gateio_data = self.fetch_gateio()
+            print(f"Gate.io: {len(gateio_data) if gateio_data else 0} tokens")
+            
+            # CoinMarketCap
+            cmc_data = self.fetch_coinmarketcap()
+            print(f"CoinMarketCap: {len(cmc_data) if cmc_data else 0} tokens")
+            
+            # Dexscreener
+            dexscreener_data = self.fetch_dexscreener()
+            print(f"Dexscreener: {len(dexscreener_data) if dexscreener_data else 0} pairs")
             
             return {
                 'timestamp': datetime.now(timezone.utc).isoformat(),
                 'primitives': primitives.get('primitives', primitives),
                 'coingecko_tokens': coingecko_data,
+                'gateio_tokens': gateio_data,
+                'coinmarketcap_tokens': cmc_data,
+                'dexscreener_pairs': dexscreener_data,
                 'snapshot_id': f"snap_{int(time.time())}"
             }
         except Exception as e:
@@ -103,8 +131,131 @@ class KPIEngine:
             print(f"Error fetching CoinGecko data: {e}")
             return []
     
+    def fetch_gateio(self) -> List[Dict]:
+        """Fetch Gate.io token data"""
+        try:
+            url = 'https://api.gateio.ws/api/v4/spot/tickers'
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            return data if isinstance(data, list) else []
+        except Exception as e:
+            print(f"Error fetching Gate.io data: {e}")
+            return []
+    
+    def fetch_coinmarketcap(self) -> List[Dict]:
+        """Fetch CoinMarketCap token data"""
+        try:
+            if not COINMARKETCAP_API_KEY:
+                return []
+            
+            url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest'
+            headers = {
+                'X-CMC_PRO_API_KEY': COINMARKETCAP_API_KEY
+            }
+            params = {
+                'start': '1',
+                'limit': '250',
+                'convert': 'USD'
+            }
+            
+            response = requests.get(url, headers=headers, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            return data.get('data', []) if isinstance(data, dict) else []
+        except Exception as e:
+            print(f"Error fetching CoinMarketCap data: {e}")
+            return []
+    
+    def fetch_dexscreener(self, query: str = '') -> List[Dict]:
+        """Fetch Dexscreener DEX data"""
+        try:
+            if query:
+                url = f'https://api.dexscreener.com/latest/dex/search?q={query}'
+            else:
+                url = 'https://api.dexscreener.com/latest/dex/tokens/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'  # WETH as default
+            
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            return data.get('pairs', []) if isinstance(data, dict) else []
+        except Exception as e:
+            print(f"Error fetching Dexscreener data: {e}")
+            return []
+    
+    def count_characters_from_all_sources(self, snapshot: Dict) -> Dict[str, int]:
+        """Count character occurrences from all data sources"""
+        char_counts = {}
+        
+        # Count from primitives (existing data)
+        primitives = snapshot.get('primitives', [])
+        for primitive in primitives:
+            name = primitive.get('name', '').upper()
+            symbol = primitive.get('symbol', '').upper()
+            
+            for char in name:
+                if char.isalnum() or char == ' ':
+                    char_counts[char] = char_counts.get(char, 0) + 1
+            
+            for char in symbol:
+                if char.isalnum():
+                    char_counts[char] = char_counts.get(char, 0) + 1
+        
+        # Count from CoinGecko tokens
+        coingecko_tokens = snapshot.get('coingecko_tokens', [])
+        for token in coingecko_tokens:
+            name = token.get('name', '').upper()
+            symbol = token.get('symbol', '').upper()
+            
+            for char in name:
+                if char.isalnum() or char == ' ':
+                    char_counts[char] = char_counts.get(char, 0) + 1
+            
+            for char in symbol:
+                if char.isalnum():
+                    char_counts[char] = char_counts.get(char, 0) + 1
+        
+        # Count from Gate.io tokens
+        gateio_tokens = snapshot.get('gateio_tokens', [])
+        for token in gateio_tokens:
+            symbol = token.get('currency_pair', '').upper()
+            for char in symbol:
+                if char.isalnum():
+                    char_counts[char] = char_counts.get(char, 0) + 1
+        
+        # Count from CoinMarketCap tokens
+        cmc_tokens = snapshot.get('coinmarketcap_tokens', [])
+        for token in cmc_tokens:
+            name = token.get('name', '').upper()
+            symbol = token.get('symbol', '').upper()
+            
+            for char in name:
+                if char.isalnum() or char == ' ':
+                    char_counts[char] = char_counts.get(char, 0) + 1
+            
+            for char in symbol:
+                if char.isalnum():
+                    char_counts[char] = char_counts.get(char, 0) + 1
+        
+        # Count from Dexscreener pairs
+        dex_pairs = snapshot.get('dexscreener_pairs', [])
+        for pair in dex_pairs:
+            base_token = pair.get('baseToken', {})
+            quote_token = pair.get('quoteToken', {})
+            
+            for token in [base_token, quote_token]:
+                symbol = token.get('symbol', '').upper()
+                for char in symbol:
+                    if char.isalnum():
+                        char_counts[char] = char_counts.get(char, 0) + 1
+        
+        return char_counts
+    
     def compute_base_kpis(self, snapshot: Dict) -> Dict[str, Any]:
-        """Compute base deterministic KPIs"""
+        """Compute base deterministic KPIs from all data sources"""
+        # Count characters from all sources
+        char_counts = self.count_characters_from_all_sources(snapshot)
+        
         primitives = snapshot.get('primitives', [])
         letters = [p for p in primitives if p.get('type') == 'letter']
         
@@ -113,12 +264,12 @@ class KPIEngine:
         for letter in letters:
             symbol = letter.get('symbol')
             
-            # Letter Volume (total usage)
-            kpis[f'{symbol}_volume'] = letter.get('usage_count', 0)
+            # Letter Volume (total usage from all sources)
+            kpis[f'{symbol}_volume'] = char_counts.get(symbol.upper(), 0)
             
-            # Letter Frequency (relative to total)
-            total_usage = sum(l.get('usage_count', 0) for l in letters)
-            kpis[f'{symbol}_frequency'] = letter.get('usage_count', 0) / total_usage if total_usage > 0 else 0
+            # Letter Frequency (relative to total from all sources)
+            total_chars = sum(char_counts.values()) if char_counts else 1
+            kpis[f'{symbol}_frequency'] = char_counts.get(symbol.upper(), 0) / total_chars if total_chars > 0 else 0
             
             # Price Momentum (weekly change)
             kpis[f'{symbol}_momentum'] = letter.get('weekly_change', 0)
@@ -130,7 +281,10 @@ class KPIEngine:
         kpis['cross_letter_correlation'] = self._compute_correlation(letters)
         
         # Usage entropy (measure of distribution uniformity)
-        kpis['usage_entropy'] = self._compute_entropy(letters)
+        kpis['usage_entropy'] = self._compute_entropy_from_counts(char_counts)
+        
+        # Data source diversity
+        kpis['data_sources_count'] = len([s for s in snapshot.keys() if 'tokens' in s or 'pairs' in s])
         
         return kpis
     
@@ -166,6 +320,21 @@ class KPIEngine:
         for usage in usages:
             if usage > 0:
                 p = usage / total
+                entropy -= p * (p ** 0.5)  # Simplified entropy
+        
+        return entropy
+    
+    def _compute_entropy_from_counts(self, char_counts: Dict[str, int]) -> float:
+        """Compute usage entropy from character counts"""
+        total = sum(char_counts.values())
+        
+        if total == 0:
+            return 0.0
+        
+        entropy = 0.0
+        for count in char_counts.values():
+            if count > 0:
+                p = count / total
                 entropy -= p * (p ** 0.5)  # Simplified entropy
         
         return entropy
