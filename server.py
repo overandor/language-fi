@@ -690,7 +690,6 @@ def generate_all_primitives():
     
     # SPACE
     space_primitive = generate_primitive_base('SPACE', 'separator')
-    # space_primitive['rank'] = 1  # Will be ranked with other primitives
     primitives.append(space_primitive)
     
     # Symbols
@@ -699,10 +698,16 @@ def generate_all_primitives():
     for symbol in symbols:
         symbol_primitives.append(generate_primitive_base(symbol, 'symbol'))
     
+    # Add SPACE to symbols for ranking
+    symbol_primitives.append(space_primitive)
+    
     # Sort symbols by usage count and assign ranks
     symbol_primitives.sort(key=lambda x: x['usage_count'], reverse=True)
     for i, primitive in enumerate(symbol_primitives):
         primitive['rank'] = i + 37  # Letters 1-26, Numbers 27-36
+    
+    # Remove SPACE from symbol_primitives since we already added it to primitives
+    symbol_primitives = [p for p in symbol_primitives if p['symbol'] != 'SPACE']
     
     primitives.extend(symbol_primitives)
     
