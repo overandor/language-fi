@@ -720,7 +720,7 @@ def generate_primitive_base_live(symbol, primitive_type, live_count, base_price)
         'price_lgu': round(base_price * (1 + weekly_change), 3),
         'weekly_change': round(weekly_change, 3),
         'usage_count': live_count,
-        'rank': 1,
+        'rank': None,
         'data_source': 'live',
         'live_occurrences': live_count
     }
