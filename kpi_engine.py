@@ -409,8 +409,27 @@ class KPIEngine:
         
         return char_counts
     
+    def calculate_price_from_stats(self, char_counts: Dict[str, int], letter: str) -> float:
+        """Calculate letter price based on character occurrence statistics"""
+        letter_count = char_counts.get(letter.upper(), 0)
+        total_chars = sum(char_counts.values()) if char_counts else 1
+        
+        if total_chars == 0:
+            return 0.01  # Base minimum price
+        
+        # Price formula: (letter_count / total_chars) * base_multiplier
+        # Higher frequency = higher price
+        frequency = letter_count / total_chars
+        base_price = frequency * 10.0  # Base multiplier
+        
+        # Apply logarithmic scaling to prevent extreme prices
+        import math
+        scaled_price = math.log(base_price + 1) * 0.5
+        
+        return round(scaled_price, 4)
+    
     def compute_base_kpis(self, snapshot: Dict) -> Dict[str, Any]:
-        """Compute base deterministic KPIs from all data sources"""
+        """Compute base deterministic KPIs from all data sources with pricing"""
         # Count characters from all sources
         char_counts = self.count_characters_from_all_sources(snapshot)
         
@@ -418,6 +437,7 @@ class KPIEngine:
         letters = [p for p in primitives if p.get('type') == 'letter']
         
         kpis = {}
+        prices = {}
         
         for letter in letters:
             symbol = letter.get('symbol')
@@ -429,11 +449,19 @@ class KPIEngine:
             total_chars = sum(char_counts.values()) if char_counts else 1
             kpis[f'{symbol}_frequency'] = char_counts.get(symbol.upper(), 0) / total_chars if total_chars > 0 else 0
             
+            # Calculate price based on statistics
+            price = self.calculate_price_from_stats(char_counts, symbol)
+            prices[symbol] = price
+            kpis[f'{symbol}_price'] = price
+            
             # Price Momentum (weekly change)
             kpis[f'{symbol}_momentum'] = letter.get('weekly_change', 0)
             
             # Rank (current position)
             kpis[f'{symbol}_rank'] = letter.get('rank', 0)
+        
+        # Store prices in global store for tracking
+        kpi_store['letter_prices'] = prices
         
         # Cross-letter correlation (simplified)
         kpis['cross_letter_correlation'] = self._compute_correlation(letters)
@@ -443,6 +471,13 @@ class KPIEngine:
         
         # Data source diversity
         kpis['data_sources_count'] = len([s for s in snapshot.keys() if 'tokens' in s or 'pairs' in s])
+        
+        # Price statistics
+        if prices:
+            kpis['price_mean'] = sum(prices.values()) / len(prices)
+            kpis['price_std'] = (sum((p - kpis['price_mean']) ** 2 for p in prices.values()) / len(prices)) ** 0.5
+            kpis['price_min'] = min(prices.values())
+            kpis['price_max'] = max(prices.values())
         
         return kpis
     
@@ -661,9 +696,19 @@ Output JSON only:
                 'value': kpi_value,
                 'timestamp': timestamp
             })
+        
+        # Track price history specifically
+        if 'letter_prices' in kpi_store:
+            if 'price_history' not in kpi_store:
+                kpi_store['price_history'] = deque(maxlen=100)
+            
+            kpi_store['price_history'].append({
+                'prices': kpi_store['letter_prices'].copy(),
+                'timestamp': timestamp
+            })
     
     def compute_kpi_evolution(self):
-        """Compute KPI evolution metrics (trends, velocity, acceleration)"""
+        """Compute KPI evolution metrics (trends, velocity, acceleration) including price evolution"""
         evolution = {}
         
         for kpi_name, history in kpi_store['historical_kpis'].items():
@@ -703,6 +748,33 @@ Output JSON only:
                     'change_percent': ((values[-1] - values[0]) / values[0] * 100) if values[0] != 0 else 0,
                     'volatility': (max(values) - min(values)) / n if n > 0 else 0
                 }
+        
+        # Compute price evolution specifically
+        if 'price_history' in kpi_store and len(kpi_store['price_history']) >= 2:
+            price_evolution = {}
+            recent_prices = list(kpi_store['price_history'])[-10:]
+            
+            # Track each letter's price evolution
+            all_letters = set()
+            for price_record in recent_prices:
+                all_letters.update(price_record['prices'].keys())
+            
+            for letter in all_letters:
+                letter_prices = [record['prices'].get(letter, 0) for record in recent_prices if letter in record['prices']]
+                
+                if len(letter_prices) >= 2:
+                    n = len(letter_prices)
+                    velocity = (letter_prices[-1] - letter_prices[0]) / n if n > 0 else 0
+                    change_percent = ((letter_prices[-1] - letter_prices[0]) / letter_prices[0] * 100) if letter_prices[0] != 0 else 0
+                    
+                    price_evolution[f'{letter}_price'] = {
+                        'current_price': letter_prices[-1],
+                        'velocity': velocity,
+                        'change_percent': change_percent,
+                        'trend': 'up' if velocity > 0 else 'down'
+                    }
+            
+            evolution['price_evolution'] = price_evolution
         
         kpi_store['kpi_evolution'] = evolution
         return evolution
