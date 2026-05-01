@@ -3,12 +3,12 @@
   "builds": [
     {
       "src": "server.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "15mb"
+      }
     }
   ],
-  "buildCommand": {
-    "production": "python --version"
-  },
   "routes": [
     {
       "src": "/api/(.*)",
