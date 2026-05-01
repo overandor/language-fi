@@ -14,6 +14,7 @@
             <div class="nav-links">
                 <a href="index.html">Explorer</a>
                 <a href="stake.html" class="active">Stake Sentence</a>
+                <a href="leaderboard.html">Leaderboard</a>
                 <a href="letter.html">Letters</a>
             </div>
         </nav>
@@ -24,42 +25,150 @@
                 <p class="subtitle">Stake sentences as character baskets with stillness mining</p>
             </div>
 
-            <div class="stake-form-section">
-                <div class="stake-input-card">
-                    <h2>Stake a Sentence</h2>
-                    <form id="stakeForm">
-                        <div class="input-group">
-                            <label for="sentence">Enter Sentence</label>
-                            <input 
-                                type="text" 
-                                id="sentence" 
-                                placeholder="BUILD ON BASE"
-                                maxlength="100"
-                                required
-                            >
-                            <small class="hint">Spaces count as linguistic separator assets</small>
-                        </div>
-                        <button type="submit" class="btn-primary">Stake Sentence</button>
-                    </form>
-                </div>
+            <div class="tabs">
+                <button class="tab active" data-tab="stake">Stake Sentence</button>
+                <button class="tab" data-tab="buy">Buy Sentence</button>
+                <button class="tab" data-tab="transfer">Transfer</button>
+            </div>
 
-                <div class="space-info-card">
-                    <h3>SPACE Character</h3>
-                    <div class="space-stats">
-                        <div class="stat">
-                            <span class="label">Current Price</span>
-                            <span class="value" id="spacePrice">0.012 LGU</span>
-                        </div>
-                        <div class="stat">
-                            <span class="label">24h Change</span>
-                            <span class="value positive" id="spaceChange">+18.4%</span>
-                        </div>
-                        <div class="stat">
-                            <span class="label">Rank</span>
-                            <span class="value">#4</span>
-                        </div>
+            <!-- Stake Tab -->
+            <div id="stake-tab" class="tab-content active">
+                <div class="stake-form-section">
+                    <div class="stake-input-card">
+                        <h2>Stake a Sentence</h2>
+                        <form id="stakeForm">
+                            <div class="input-group">
+                                <label for="sentence">Enter Sentence</label>
+                                <input 
+                                    type="text" 
+                                    id="sentence" 
+                                    placeholder="BUILD ON BASE"
+                                    maxlength="100"
+                                    required
+                                >
+                                <small class="hint">Spaces count as linguistic separator assets</small>
+                            </div>
+                            <button type="submit" class="btn-primary">Stake Sentence</button>
+                        </form>
                     </div>
-                    <p class="description">Linguistic separator token - spaces add structural value to sentences</p>
+
+                    <div class="space-info-card">
+                        <h3>SPACE Character</h3>
+                        <div class="space-stats">
+                            <div class="stat">
+                                <span class="label">Current Price</span>
+                                <span class="value" id="spacePrice">0.012 LGU</span>
+                            </div>
+                            <div class="stat">
+                                <span class="label">24h Change</span>
+                                <span class="value positive" id="spaceChange">+18.4%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="label">Rank</span>
+                                <span class="value">#4</span>
+                            </div>
+                        </div>
+                        <p class="description">Linguistic separator token - spaces add structural value to sentences</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buy Tab -->
+            <div id="buy-tab" class="tab-content hidden">
+                <div class="buy-section">
+                    <div class="buy-input-card">
+                        <h2>Buy Sentence</h2>
+                        <form id="buyForm">
+                            <div class="input-group">
+                                <label for="buySentence">Enter Sentence</label>
+                                <input 
+                                    type="text" 
+                                    id="buySentence" 
+                                    placeholder="BUILD ON BASE"
+                                    maxlength="100"
+                                    required
+                                >
+                            </div>
+                            <button type="submit" class="btn-primary">Calculate Price</button>
+                        </form>
+                    </div>
+
+                    <div id="priceResult" class="price-result hidden">
+                        <h3>Sentence Price</h3>
+                        <div class="price-breakdown">
+                            <div class="price-item">
+                                <span class="label">Base Price</span>
+                                <span class="value" id="basePrice">0.00 LGU</span>
+                            </div>
+                            <div class="price-item">
+                                <span class="label">Minting Fee (5%)</span>
+                                <span class="value" id="mintingFee">0.00 LGU</span>
+                            </div>
+                            <div class="price-item total">
+                                <span class="label">Total Price</span>
+                                <span class="value" id="finalPrice">0.00 LGU</span>
+                            </div>
+                        </div>
+                        <div class="character-breakdown" id="charBreakdown">
+                            <!-- Populated by JS -->
+                        </div>
+                        <button class="btn-primary" id="buyBtn">Buy Sentence</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transfer Tab -->
+            <div id="transfer-tab" class="tab-content hidden">
+                <div class="transfer-section">
+                    <div class="transfer-input-card">
+                        <h2>Transfer Sentence</h2>
+                        <form id="transferForm">
+                            <div class="input-group">
+                                <label for="sentenceHash">Sentence Hash</label>
+                                <input 
+                                    type="text" 
+                                    id="sentenceHash" 
+                                    placeholder="st_847291"
+                                    required
+                                >
+                            </div>
+                            <div class="input-group">
+                                <label for="transferType">Transfer Type</label>
+                                <select id="transferType">
+                                    <option value="hard">Hard Transfer (Stillness Resets)</option>
+                                    <option value="vaulted">Vaulted Transfer (50% Stillness Preserved)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-primary">Transfer Sentence</button>
+                        </form>
+                    </div>
+
+                    <div id="transferResult" class="transfer-result hidden">
+                        <h3>Transfer Result</h3>
+                        <div class="transfer-breakdown">
+                            <div class="transfer-item">
+                                <span class="label">Previous Stillness</span>
+                                <span class="value" id="prevStillness">0 days</span>
+                            </div>
+                            <div class="transfer-item">
+                                <span class="label">Previous Multiplier</span>
+                                <span class="value" id="prevMultiplier">1.00x</span>
+                            </div>
+                            <div class="transfer-item">
+                                <span class="label">New Stillness</span>
+                                <span class="value" id="newStillness">0 days</span>
+                            </div>
+                            <div class="transfer-item">
+                                <span class="label">New Multiplier</span>
+                                <span class="value" id="newMultiplier">1.00x</span>
+                            </div>
+                            <div class="transfer-item">
+                                <span class="label">Stillness Preserved</span>
+                                <span class="value" id="stillnessPreserved">0%</span>
+                            </div>
+                        </div>
+                        <p class="transfer-status">✓ Transfer Complete</p>
+                    </div>
                 </div>
             </div>
 
@@ -67,6 +176,7 @@
                 <div class="result-header">
                     <h2 id="resultSentence">BUILD ON BASE</h2>
                     <span class="hash" id="resultHash">st_847291</span>
+                    <span class="reward-badge" id="rewardBadge">Reward Eligible</span>
                 </div>
 
                 <div class="result-grid">
@@ -110,6 +220,11 @@
                     </div>
                 </div>
 
+                <div class="action-buttons">
+                    <button class="btn-secondary">List Sentence</button>
+                    <button class="btn-secondary">View Details</button>
+                </div>
+
                 <div class="stillness-info">
                     <h3>Stillness Mining Schedule</h3>
                     <div class="stillness-tiers">
@@ -146,6 +261,17 @@
 
     <script src="script.js"></script>
     <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.remove('hidden');
+            });
+        });
+
+        // Stake sentence
         document.getElementById('stakeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const sentence = document.getElementById('sentence').value.toUpperCase();
@@ -171,6 +297,59 @@
             }
         });
 
+        // Calculate sentence price
+        document.getElementById('buyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const sentence = document.getElementById('buySentence').value.toUpperCase();
+            
+            try {
+                const response = await fetch('/api/calculate-sentence-price', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sentence })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                displayPriceResult(data);
+            } catch (error) {
+                console.error('Error calculating price:', error);
+                alert('Error calculating price');
+            }
+        });
+
+        // Transfer sentence
+        document.getElementById('transferForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const sentenceHash = document.getElementById('sentenceHash').value;
+            const transferType = document.getElementById('transferType').value;
+            
+            try {
+                const response = await fetch('/api/transfer-sentence', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sentence_hash: sentenceHash, transfer_type: transferType })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                displayTransferResult(data);
+            } catch (error) {
+                console.error('Error transferring sentence:', error);
+                alert('Error transferring sentence');
+            }
+        });
+
         function displayStakeResult(data) {
             document.getElementById('resultSentence').textContent = data.sentence;
             document.getElementById('resultHash').textContent = data.sentence_hash;
@@ -178,6 +357,16 @@
             document.getElementById('daysStaked').textContent = `${data.days_staked} days`;
             document.getElementById('stillnessMultiplier').textContent = `${data.stillness_multiplier}x`;
             document.getElementById('spamScore').textContent = data.spam_score;
+            
+            // Reward eligibility
+            const rewardBadge = document.getElementById('rewardBadge');
+            if (data.spam_score > 70) {
+                rewardBadge.textContent = 'Reward Eligible';
+                rewardBadge.className = 'reward-badge eligible';
+            } else {
+                rewardBadge.textContent = 'Not Eligible';
+                rewardBadge.className = 'reward-badge ineligible';
+            }
             
             // Character exposure
             const exposureList = document.getElementById('characterExposure');
@@ -207,6 +396,37 @@
             });
             
             document.getElementById('stakeResult').classList.remove('hidden');
+        }
+
+        function displayPriceResult(data) {
+            document.getElementById('basePrice').textContent = `${data.base_price} LGU`;
+            document.getElementById('mintingFee').textContent = `${data.minting_fee} LGU`;
+            document.getElementById('finalPrice').textContent = `${data.final_price} LGU`;
+            
+            const charBreakdown = document.getElementById('charBreakdown');
+            charBreakdown.innerHTML = '<h4>Character Breakdown</h4>';
+            Object.entries(data.character_breakdown).forEach(([char, info]) => {
+                const div = document.createElement('div');
+                div.className = 'char-breakdown-item';
+                div.innerHTML = `
+                    <span class="char">${char}</span>
+                    <span class="count">${info.count}x</span>
+                    <span class="price">${info.price} LGU</span>
+                `;
+                charBreakdown.appendChild(div);
+            });
+            
+            document.getElementById('priceResult').classList.remove('hidden');
+        }
+
+        function displayTransferResult(data) {
+            document.getElementById('prevStillness').textContent = `${data.previous_stillness_days} days`;
+            document.getElementById('prevMultiplier').textContent = `${data.previous_multiplier}x`;
+            document.getElementById('newStillness').textContent = `${data.new_stillness_days} days`;
+            document.getElementById('newMultiplier').textContent = `${data.new_multiplier}x`;
+            document.getElementById('stillnessPreserved').textContent = data.stillness_preserved;
+            
+            document.getElementById('transferResult').classList.remove('hidden');
         }
 
         // Load SPACE price on page load
