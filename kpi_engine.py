@@ -68,38 +68,63 @@ class KPIEngine:
         self.snapshot_history = deque(maxlen=100)
     
     def fetch_data(self) -> Dict[str, Any]:
-        """Fetch data from all sources"""
+        """Fetch data from all sources (no API keys required)"""
         try:
             # Fetch primitives from API
             response = requests.get(f"{API_BASE}/api/primitives?ts={int(time.time())}", timeout=10)
             primitives = response.json()
             
             # Fetch from multiple data sources in parallel
-            print("Fetching data from multiple sources...")
+            print("Fetching data from multiple sources (no API keys)...")
             
-            # CoinGecko
+            # CoinGecko (demo key optional)
             coingecko_data = self.fetch_coingecko()
             print(f"CoinGecko: {len(coingecko_data) if coingecko_data else 0} tokens")
             
-            # Gate.io
+            # Gate.io (no API key)
             gateio_data = self.fetch_gateio()
             print(f"Gate.io: {len(gateio_data) if gateio_data else 0} tokens")
             
-            # CoinMarketCap
-            cmc_data = self.fetch_coinmarketcap()
-            print(f"CoinMarketCap: {len(cmc_data) if cmc_data else 0} tokens")
-            
-            # Dexscreener
+            # Dexscreener (no API key)
             dexscreener_data = self.fetch_dexscreener()
             print(f"Dexscreener: {len(dexscreener_data) if dexscreener_data else 0} pairs")
+            
+            # Solana RPC (public)
+            solana_data = self.fetch_solana_rpc()
+            print(f"Solana RPC: {'connected' if solana_data else 'failed'}")
+            
+            # Ethereum RPC (public)
+            ethereum_data = self.fetch_ethereum_rpc()
+            print(f"Ethereum RPC: {'connected' if ethereum_data else 'failed'}")
+            
+            # Base RPC (public)
+            base_data = self.fetch_base_rpc()
+            print(f"Base RPC: {'connected' if base_data else 'failed'}")
+            
+            # Jupiter Token List (public)
+            jupiter_data = self.fetch_jupiter_token_list()
+            print(f"Jupiter: {len(jupiter_data) if jupiter_data else 0} tokens")
+            
+            # Uniswap Token List (public)
+            uniswap_data = self.fetch_uniswap_token_list()
+            print(f"Uniswap: {len(uniswap_data) if uniswap_data else 0} tokens")
+            
+            # Wikipedia (public)
+            wikipedia_data = self.fetch_wikipedia_data('cryptocurrency')
+            print(f"Wikipedia: {len(wikipedia_data) if wikipedia_data else 0} results")
             
             return {
                 'timestamp': datetime.now(timezone.utc).isoformat(),
                 'primitives': primitives.get('primitives', primitives),
                 'coingecko_tokens': coingecko_data,
                 'gateio_tokens': gateio_data,
-                'coinmarketcap_tokens': cmc_data,
                 'dexscreener_pairs': dexscreener_data,
+                'solana_rpc': solana_data,
+                'ethereum_rpc': ethereum_data,
+                'base_rpc': base_data,
+                'jupiter_tokens': jupiter_data,
+                'uniswap_tokens': uniswap_data,
+                'wikipedia_results': wikipedia_data,
                 'snapshot_id': f"snap_{int(time.time())}"
             }
         except Exception as e:
@@ -183,8 +208,113 @@ class KPIEngine:
             print(f"Error fetching Dexscreener data: {e}")
             return []
     
+    def fetch_solana_rpc(self) -> Dict[str, Any]:
+        """Fetch data from Solana public RPC"""
+        try:
+            url = 'https://api.mainnet-beta.solana.com'
+            headers = {'Content-Type': 'application/json'}
+            
+            # Get recent block
+            payload = {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "getLatestBlockhash"
+            }
+            
+            response = requests.post(url, headers=headers, json=payload, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Error fetching Solana RPC data: {e}")
+            return {}
+    
+    def fetch_ethereum_rpc(self) -> Dict[str, Any]:
+        """Fetch data from Ethereum public RPC"""
+        try:
+            url = 'https://eth.llamarpc.com'  # Public Ethereum RPC
+            headers = {'Content-Type': 'application/json'}
+            
+            # Get latest block
+            payload = {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "eth_getBlockByNumber",
+                "params": ["latest", False]
+            }
+            
+            response = requests.post(url, headers=headers, json=payload, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Error fetching Ethereum RPC data: {e}")
+            return {}
+    
+    def fetch_base_rpc(self) -> Dict[str, Any]:
+        """Fetch data from Base public RPC"""
+        try:
+            url = 'https://mainnet.base.org'  # Public Base RPC
+            headers = {'Content-Type': 'application/json'}
+            
+            # Get latest block
+            payload = {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "eth_getBlockByNumber",
+                "params": ["latest", False]
+            }
+            
+            response = requests.post(url, headers=headers, json=payload, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Error fetching Base RPC data: {e}")
+            return {}
+    
+    def fetch_jupiter_token_list(self) -> List[Dict]:
+        """Fetch Jupiter token list (public)"""
+        try:
+            url = 'https://token.jup.ag/all'
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            return response.json() if isinstance(response.json(), list) else []
+        except Exception as e:
+            print(f"Error fetching Jupiter token list: {e}")
+            return []
+    
+    def fetch_uniswap_token_list(self) -> List[Dict]:
+        """Fetch Uniswap token list (public)"""
+        try:
+            url = 'https://tokens.uniswap.org'
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            return response.json().get('tokens', []) if isinstance(response.json(), dict) else []
+        except Exception as e:
+            print(f"Error fetching Uniswap token list: {e}")
+            return []
+    
+    def fetch_wikipedia_data(self, query: str = 'cryptocurrency') -> List[Dict]:
+        """Fetch Wikipedia data (public API)"""
+        try:
+            url = 'https://en.wikipedia.org/w/api.php'
+            params = {
+                'action': 'query',
+                'list': 'search',
+                'srsearch': query,
+                'format': 'json',
+                'utf8': '',
+                'srlimit': '50'
+            }
+            
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            return data.get('query', {}).get('search', []) if isinstance(data, dict) else []
+        except Exception as e:
+            print(f"Error fetching Wikipedia data: {e}")
+            return []
+    
     def count_characters_from_all_sources(self, snapshot: Dict) -> Dict[str, int]:
-        """Count character occurrences from all data sources"""
+        """Count character occurrences from all data sources (no API keys)"""
         char_counts = {}
         
         # Count from primitives (existing data)
@@ -223,20 +353,6 @@ class KPIEngine:
                 if char.isalnum():
                     char_counts[char] = char_counts.get(char, 0) + 1
         
-        # Count from CoinMarketCap tokens
-        cmc_tokens = snapshot.get('coinmarketcap_tokens', [])
-        for token in cmc_tokens:
-            name = token.get('name', '').upper()
-            symbol = token.get('symbol', '').upper()
-            
-            for char in name:
-                if char.isalnum() or char == ' ':
-                    char_counts[char] = char_counts.get(char, 0) + 1
-            
-            for char in symbol:
-                if char.isalnum():
-                    char_counts[char] = char_counts.get(char, 0) + 1
-        
         # Count from Dexscreener pairs
         dex_pairs = snapshot.get('dexscreener_pairs', [])
         for pair in dex_pairs:
@@ -248,6 +364,48 @@ class KPIEngine:
                 for char in symbol:
                     if char.isalnum():
                         char_counts[char] = char_counts.get(char, 0) + 1
+        
+        # Count from Jupiter tokens
+        jupiter_tokens = snapshot.get('jupiter_tokens', [])
+        for token in jupiter_tokens:
+            name = token.get('name', '').upper()
+            symbol = token.get('symbol', '').upper()
+            
+            for char in name:
+                if char.isalnum() or char == ' ':
+                    char_counts[char] = char_counts.get(char, 0) + 1
+            
+            for char in symbol:
+                if char.isalnum():
+                    char_counts[char] = char_counts.get(char, 0) + 1
+        
+        # Count from Uniswap tokens
+        uniswap_tokens = snapshot.get('uniswap_tokens', [])
+        for token in uniswap_tokens:
+            name = token.get('name', '').upper()
+            symbol = token.get('symbol', '').upper()
+            
+            for char in name:
+                if char.isalnum() or char == ' ':
+                    char_counts[char] = char_counts.get(char, 0) + 1
+            
+            for char in symbol:
+                if char.isalnum():
+                    char_counts[char] = char_counts.get(char, 0) + 1
+        
+        # Count from Wikipedia results
+        wikipedia_results = snapshot.get('wikipedia_results', [])
+        for result in wikipedia_results:
+            title = result.get('title', '').upper()
+            snippet = result.get('snippet', '').upper()
+            
+            for char in title:
+                if char.isalnum() or char == ' ':
+                    char_counts[char] = char_counts.get(char, 0) + 1
+            
+            for char in snippet:
+                if char.isalnum() or char == ' ':
+                    char_counts[char] = char_counts.get(char, 0) + 1
         
         return char_counts
     
