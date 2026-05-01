@@ -6,6 +6,9 @@
       "use": "@vercel/python"
     }
   ],
+  "buildCommand": {
+    "production": "python --version"
+  },
   "routes": [
     {
       "src": "/api/(.*)",
