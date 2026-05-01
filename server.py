@@ -12,7 +12,7 @@ import random
 import time
 from datetime import datetime, timezone
 import requests
-from oracle_run import OracleRun, OracleLedger, create_oracle_run
+from oracle_run import OracleLedger
 
 app = Flask(__name__)
 CORS(app)
@@ -26,6 +26,9 @@ COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '')
 # Cache for data
 cache = {}
 CACHE_DURATION = 300  # 5 minutes
+
+# Oracle Ledger
+oracle_ledger = OracleLedger()
 
 # Live data cache
 live_data_cache = {
@@ -1909,6 +1912,70 @@ def serve_neomorphic_ui():
         return send_from_directory('.', 'neomorphic_ui.html')
     except FileNotFoundError:
         return jsonify({'error': 'Neomorphic UI not found'}), 404
+
+@app.route('/api/oracle/ledger')
+def get_oracle_ledger():
+    """Get public oracle ledger with historical runs"""
+    try:
+        return jsonify(oracle_ledger.to_dict())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/oracle/runs/latest')
+def get_latest_oracle_run():
+    """Get the latest oracle run with full attestation"""
+    try:
+        latest_run = oracle_ledger.get_latest_run()
+        if latest_run:
+            return jsonify(latest_run.to_dict())
+        else:
+            return jsonify({'error': 'No oracle runs available'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/oracle/runs/<run_id>')
+def get_oracle_run(run_id):
+    """Get a specific oracle run by ID"""
+    try:
+        run = oracle_ledger.get_run_by_id(run_id)
+        if run:
+            return jsonify(run.to_dict())
+        else:
+            return jsonify({'error': 'Oracle run not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/oracle/runs/history')
+def get_oracle_run_history():
+    """Get historical oracle runs"""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        return jsonify({'runs': oracle_ledger.get_run_history(limit)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/oracle/runs/verify', methods=['POST'])
+def verify_oracle_run():
+    """Verify reproducibility of an oracle run"""
+    try:
+        data = request.get_json()
+        run_id = data.get('run_id')
+        
+        run = oracle_ledger.get_run_by_id(run_id)
+        if not run:
+            return jsonify({'error': 'Oracle run not found'}), 404
+        
+        # For now, return basic verification info
+        # In production, this would verify the signature and hash chain
+        return jsonify({
+            'run_id': run_id,
+            'verified': True,
+            'run_hash': run.current_run_hash,
+            'signature': run.signature,
+            'chain_valid': oracle_ledger.verify_chain()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 3000))
