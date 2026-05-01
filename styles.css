@@ -1831,6 +1831,30 @@ nav .active {
     padding: 2rem;
 }
 
+/* Registry stat cards */
+.registry-stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.registry-stat-label {
+    font-size: 0.75rem;
+    color: var(--muted-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+}
+
+.registry-stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--electric-blue);
+}
+
 /* Tokenization stack styles */
 .tokenization-stack {
     display: flex;

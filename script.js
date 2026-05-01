@@ -90,8 +90,83 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch letter data on load
     fetchLetterData();
     
+    // Fetch registry data on load
+    fetchRegistryData();
+    
     // Refresh data every 30 seconds
     setInterval(fetchLetterData, 30000);
+    setInterval(fetchRegistryData, 30000);
+
+    // Fetch registry data from API
+    async function fetchRegistryData() {
+        try {
+            const response = await fetch('/api/letters');
+            const data = await response.json();
+            renderRegistryTable(data);
+            updateRegistryStats(data);
+        } catch (error) {
+            console.error('Error fetching registry data:', error);
+            // Fallback to mock data if API fails
+            renderRegistryTable(getMockLetterData());
+        }
+    }
+
+    function renderRegistryTable(letters) {
+        const tbody = document.getElementById('registry-table-body');
+        if (!tbody) return;
+        
+        tbody.innerHTML = letters.map(letter => {
+            const changeClass = letter.change_24h >= 0 ? 'change-positive' : 'change-negative';
+            const trendClass = letter.change_24h >= 0 ? 'trend-up' : 'trend-down';
+            const changeSign = letter.change_24h >= 0 ? '+' : '';
+            const weeklyUsageNum = parseFloat(letter.weekly_usage.replace('M', '').replace('K', ''));
+            const totalVolume = (weeklyUsageNum * letter.price * 7).toFixed(2);
+            const marketCap = (weeklyUsageNum * letter.price * 52).toFixed(2);
+            
+            return `
+                <tr>
+                    <td class="letter-cell">${letter.letter}</td>
+                    <td class="price-cell">${letter.price}</td>
+                    <td class="${changeClass}">${changeSign}${letter.change_24h}%</td>
+                    <td>${letter.weekly_usage}</td>
+                    <td>$${totalVolume}</td>
+                    <td>$${marketCap}</td>
+                    <td>${letter.rank}</td>
+                    <td>${letter.long_pct}</td>
+                    <td>${letter.short_pct}</td>
+                    <td>${letter.top_protocol}</td>
+                    <td class="${trendClass}">${letter.trend}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function updateRegistryStats(letters) {
+        const totalMarketCap = letters.reduce((sum, letter) => {
+            const weeklyUsageNum = parseFloat(letter.weekly_usage.replace('M', '').replace('K', ''));
+            return sum + (weeklyUsageNum * letter.price * 52);
+        }, 0);
+        
+        const dailyVolume = letters.reduce((sum, letter) => {
+            const weeklyUsageNum = parseFloat(letter.weekly_usage.replace('M', '').replace('K', ''));
+            return sum + (weeklyUsageNum * letter.price);
+        }, 0);
+        
+        const weeklyUsage = letters.reduce((sum, letter) => {
+            const weeklyUsageNum = parseFloat(letter.weekly_usage.replace('M', '').replace('K', ''));
+            return sum + weeklyUsageNum;
+        }, 0);
+        
+        const activePositions = letters.reduce((sum, letter) => {
+            const longPct = parseInt(letter.long_pct);
+            return sum + Math.floor(longPct * 10);
+        }, 0);
+        
+        document.getElementById('total-market-cap').textContent = `$${(totalMarketCap).toFixed(1)}M`;
+        document.getElementById('daily-volume').textContent = `$${(dailyVolume).toFixed(0)}K`;
+        document.getElementById('weekly-usage').textContent = `${(weeklyUsage).toFixed(1)}M`;
+        document.getElementById('active-positions').textContent = activePositions.toLocaleString();
+    }
 
     // Animate floating letters on scroll
     const floatingLetters = document.querySelectorAll('.floating-letter');

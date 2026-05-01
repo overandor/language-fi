@@ -238,27 +238,34 @@
     </section>
 
     <section class="registry" id="sentences">
-        <h2 class="section-title">Every sentence has a source trail.</h2>
-        <p class="section-subtitle">Explore the registry of minted sentences with ownership, slot, formula value, and transfer history.</p>
-        <table class="registry-table">
+        <h2 class="section-title">Letter Registry.</h2>
+        <p class="section-subtitle">Complete registry of all 26 letters with live prices, usage metrics, protocol breakdown, and market data.</p>
+        <div class="live-indicator"><span class="live-dot"></span> Live Registry Data</div>
+        <table class="registry-table letter-registry-table">
             <thead>
-                <tr><th>Sentence Hash</th><th>Owner</th><th>Slot</th><th>Formula Value</th><th>Mint Cost</th><th>Status</th><th>Transfer Count</th></tr>
+                <tr><th>Letter</th><th>Price</th><th>24h %</th><th>Weekly Usage</th><th>Total Volume</th><th>Market Cap</th><th>Rank</th><th>Long %</th><th>Short %</th><th>Top Protocol</th><th>Trend</th></tr>
             </thead>
-            <tbody>
-                <tr><td class="hash">0x91a...f20</td><td class="hash">0xA7...91</td><td>#1042</td><td>$11.06</td><td>$14.82</td><td><span class="status-badge listed">Listed</span></td><td>2</td></tr>
-                <tr><td class="hash">0x77c...aa9</td><td class="hash">0xB2...18</td><td>#1043</td><td>$8.01</td><td>$9.44</td><td><span class="status-badge active">Held</span></td><td>0</td></tr>
-                <tr><td class="hash">0x44e...7dd</td><td class="hash">0xC9...30</td><td>#1044</td><td>$19.92</td><td>$22.10</td><td><span class="status-badge inactive">Transferred</span></td><td>5</td></tr>
-                <tr><td class="hash">0x3b2...f8a</td><td class="hash">0xD1...45</td><td>#1045</td><td>$5.67</td><td>$6.23</td><td><span class="status-badge listed">Listed</span></td><td>1</td></tr>
-                <tr><td class="hash">0x8c9...e2b</td><td class="hash">0xE4...72</td><td>#1046</td><td>$15.43</td><td>$17.89</td><td><span class="status-badge active">Held</span></td><td>0</td></tr>
+            <tbody id="registry-table-body">
+                <tr><td colspan="11" class="loading">Loading registry data...</td></tr>
             </tbody>
         </table>
-        <div class="registry-filters" style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">All</button>
-            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Minted</button>
-            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Listed</button>
-            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Transferred</button>
-            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">High Value</button>
-            <button class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Recent</button>
+        <div class="registry-stats" style="margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+            <div class="registry-stat-card">
+                <div class="registry-stat-label">Total Market Cap</div>
+                <div class="registry-stat-value" id="total-market-cap">$2.4M</div>
+            </div>
+            <div class="registry-stat-card">
+                <div class="registry-stat-label">24h Volume</div>
+                <div class="registry-stat-value" id="daily-volume">$847K</div>
+            </div>
+            <div class="registry-stat-card">
+                <div class="registry-stat-label">Weekly Usage</div>
+                <div class="registry-stat-value" id="weekly-usage">45.2M</div>
+            </div>
+            <div class="registry-stat-card">
+                <div class="registry-stat-label">Active Positions</div>
+                <div class="registry-stat-value" id="active-positions">4,280</div>
+            </div>
         </div>
     </section>
 
