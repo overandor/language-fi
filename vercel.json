@@ -9,7 +9,10 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/server.py"
+      "dest": "/server.py",
+      "headers": {
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0, private"
+      }
     },
     {
       "src": "/(.*)",
@@ -18,21 +21,12 @@
   ],
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0"
+          "value": "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0, private"
         },
-        {
-          "key": "Vercel-CDN-Cache-Control",
-          "value": "no-store"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
         {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
@@ -47,5 +41,6 @@
         }
       ]
     }
-  ]
+  ],
+  "crons": []
 }
