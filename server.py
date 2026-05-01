@@ -457,6 +457,7 @@ def get_sentence_leaderboard():
     return jsonify(leaderboard)
 
 @app.route('/api/primitives')
+@app.route('/api/primitives/v2')
 def get_primitives():
     """Get all primitives (letters, numbers, spaces, symbols)"""
     # Skip cache for now to ensure ranking logic works
@@ -467,10 +468,13 @@ def get_primitives():
     primitives = generate_all_primitives()
     cache['primitives'] = {'data': primitives, 'timestamp': time.time()}
     response = jsonify(primitives)
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0, private'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     response.headers['Vercel-CDN-Cache-Control'] = 'no-cache'
+    response.headers['CDN-Cache-Control'] = 'no-cache'
+    # Add timestamp to force cache invalidation
+    response.headers['X-Deploy-Timestamp'] = str(int(time.time()))
     return response
 
 @app.route('/api/primitives/<symbol>')
