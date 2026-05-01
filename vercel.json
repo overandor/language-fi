@@ -18,5 +18,16 @@
   "regions": ["iad1"],
   "env": {
     "COINGECKO_API_KEY": "CG-DD8rr7U4hQsjAxokXt7ERtaG"
-  }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ]
 }
