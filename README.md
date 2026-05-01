@@ -12,18 +12,18 @@ license: mit
 
 # Language.fi Oracle API
 
-Live API server for letter and number primitive pricing using multi-source oracle data.
+Prototype API server for letter and number primitive pricing using multi-source oracle data simulation.
 
 ## Features
 
 - **43 Primitives**: Letters (A-Z), Numbers (0-9), SPACE, and Symbols (., !, ?, -, _, @, #)
-- **Multi-Source Oracle Data**:
+- **Multi-Source Oracle Data Simulation**:
   - CoinGecko token listings (10,000+ cryptocurrencies)
-  - Major newspaper articles (NYT, WSJ, FT, Bloomberg, Reuters, CNBC, Forbes, TechCrunch, Guardian, BBC)
-  - Medium articles (crypto, DeFi, Web3, NFT, blockchain content)
+  - Sampled permitted public metadata from major financial news sources (NYT, WSJ, FT, Bloomberg, Reuters, CNBC, Forbes, TechCrunch, Guardian, BBC)
+  - Sampled Web3/crypto content samples (similar to Medium-style articles)
   - Chain-specific data (Ethereum, Solana, Bitcoin, Binance, Polygon)
-- **Real Character Counting**: Character frequency analysis from all sources
-- **Live Pricing**: Prices calculated from actual character usage
+- **Character Counting**: Character frequency analysis from all sources
+- **Simulated Pricing**: Prices calculated from character usage with simulated market movements
 - **Chain-Specific Popularity**: Letter popularity tracking per blockchain
 
 ## Oracle Sources
@@ -31,30 +31,12 @@ Live API server for letter and number primitive pricing using multi-source oracl
 ### CoinGecko
 - All cryptocurrency token names and symbols
 - Real-time market data integration
-- API Key: CG-DD8rr7U4hQsjAxokXt7ERtaG
+- Set COINGECKO_API_KEY environment variable for authentication
 
-### Newspaper Articles
-- The New York Times
-- Wall Street Journal
-- Financial Times
-- Bloomberg
-- Reuters
-- CNBC
-- Forbes
-- TechCrunch
-- The Guardian
-- BBC
-
-### Medium Articles
-- Blockchain technology guides
-- DeFi protocols
-- NFT market analysis
-- Web3 development
-- Smart contract security
-- Metaverse investments
-- DAO governance
-- Layer 2 scaling
-- Cross-chain protocols
+### Sampled Sources
+- **Financial News Metadata**: Sampled permitted public metadata from major financial news sources (NYT, WSJ, FT, Bloomberg, Reuters, CNBC, Forbes, TechCrunch, Guardian, BBC)
+- **Web3 Content Samples**: Sampled Web3/crypto content samples (similar to Medium-style articles on blockchain technology, DeFi, NFTs, Web3 development, etc.)
+- **Note**: These are sampled content, not live RSS/API feeds. Only derived character counts are stored.
 
 ### Chain-Specific Data
 - **Ethereum**: ETH, USDT, USDC, DAI, WBTC, LINK, UNI, AAVE, MKR, SNX + projects
@@ -113,12 +95,11 @@ Each blockchain's letter popularity is calculated from:
 ## Data Flow
 
 1. **CoinGecko API**: Fetch all cryptocurrency tokens (10,000+)
-2. **Newspaper Sampling**: Random sample from major financial news
-3. **Medium Sampling**: Random sample from crypto/Web3 articles
-4. **Chain Data**: Chain-specific tokens and projects
-5. **Character Counting**: Count character occurrences across all sources
-6. **Weight Calculation**: Apply source weights to final counts
-7. **Price Generation**: Calculate primitive prices based on weighted usage
+2. **Sampled Sources**: Use configured samples from financial news metadata and Web3 content
+3. **Chain Data**: Chain-specific tokens and projects
+4. **Character Counting**: Count character occurrences across all sources
+5. **Weight Calculation**: Apply source weights to final counts
+6. **Price Generation**: Calculate primitive prices based on weighted usage
 
 ## License
 
