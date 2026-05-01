@@ -459,8 +459,9 @@ def get_sentence_leaderboard():
 @app.route('/api/primitives')
 def get_primitives():
     """Get all primitives (letters, numbers, spaces, symbols)"""
-    if 'primitives' in cache and time.time() - cache['primitives']['timestamp'] < CACHE_DURATION:
-        return jsonify(cache['primitives']['data'])
+    # Skip cache for now to ensure ranking logic works
+    # if 'primitives' in cache and time.time() - cache['primitives']['timestamp'] < CACHE_DURATION:
+    #     return jsonify(cache['primitives']['data'])
     
     # Generate all primitives
     primitives = generate_all_primitives()
