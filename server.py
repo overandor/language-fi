@@ -1181,6 +1181,12 @@ def generate_sentence_leaderboard():
     return leaderboard
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 3000))
+    port = int(os.getenv('PORT', 4000))
     print(f"Language.fi Backend Server running on port {port}")
+    
+    # Initialize oracle with CoinGecko data on startup
+    print("Initializing CoinGecko oracle...")
+    update_live_oracle_data()
+    print(f"Oracle initialized. Found {len(live_data_cache.get('coingecko_tokens', []))} tokens from CoinGecko.")
+    
     app.run(host='0.0.0.0', port=port)

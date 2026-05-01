@@ -37,7 +37,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch live letter data from API
     async function fetchLetterData() {
         try {
-            const response = await fetch('/api/letters');
+            // Use production API URL if deployed, otherwise localhost
+            const API_URL = window.location.hostname === 'localhost' 
+                ? 'http://localhost:4000' 
+                : 'https://language-fi.vercel.app';
+            const response = await fetch(`${API_URL}/api/letters`);
             const data = await response.json();
             renderLetterTable(data);
         } catch (error) {
@@ -100,7 +104,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch registry data from API
     async function fetchRegistryData() {
         try {
-            const response = await fetch('/api/letters');
+            // Use production API URL if deployed, otherwise localhost
+            const API_URL = window.location.hostname === 'localhost' 
+                ? 'http://localhost:4000' 
+                : 'https://language-fi.vercel.app';
+            const response = await fetch(`${API_URL}/api/letters`);
             const data = await response.json();
             renderRegistryTable(data);
             updateRegistryStats(data);
