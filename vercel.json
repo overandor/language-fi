@@ -1,9 +1,22 @@
 {
-  "framework": "nextjs",
-  "regions": ["iad1"],
-  "functions": {
-    "app/api/**/*.ts": {
-      "maxDuration": 10
+  "version": 2,
+  "builds": [
+    {
+      "src": "server.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "15mb"
+      }
     }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/server.py"
+    }
+  ],
+  "regions": ["iad1"],
+  "env": {
+    "COINGECKO_API_KEY": "CG-DD8rr7U4hQsjAxokXt7ERtaG"
   }
 }
