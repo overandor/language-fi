@@ -231,6 +231,53 @@ With full implementation (10+ sources, oracle determinism, registry + staking):
 - **Current**: $120K - $280K
 - **Target**: $500K - $2M protocol-grade system
 
+## Legal Disclaimers
+
+### Registry Ownership
+
+**What you own when you register a word/sentence:**
+- A protocol-native registry entry
+- Right to compose assets from priced primitives
+- On-chain representation (when contracts deployed)
+- Transferability within the protocol
+
+**What you do NOT own:**
+- Trademark or copyright to the word/sentence
+- Exclusive right to use the language in the real world
+- Legal claim to the linguistic content
+- Real-world trademark rights
+
+### No Investment Promise
+
+Language.fi is a protocol for linguistic asset pricing, NOT an investment vehicle. No promises of:
+- Price appreciation
+- Financial returns
+- Guaranteed liquidity
+- Market stability
+- Profit or income
+
+### Content Moderation
+
+Prohibited content in registry:
+- Slurs and hate speech
+- Illegal content
+- Trademarked names (without permission)
+- Personal names (without consent)
+
+Protocol reserves right to:
+- Flag prohibited content
+- Remove registry entries
+- Quarantine suspicious registrations
+
+### Risk Disclosure
+
+Using Language.fi involves risks including but not limited to:
+- Price volatility
+- Technical failures
+- Data source unavailability
+- Smart contract vulnerabilities (when deployed)
+- Regulatory changes
+
 ## License
 
 MIT License
