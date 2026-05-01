@@ -68,18 +68,22 @@ class KPIEngine:
         self.snapshot_history = deque(maxlen=100)
     
     def fetch_data(self) -> Dict[str, Any]:
-        """Fetch data from all sources (no API keys required)"""
+        """Fetch data from all sources (CoinGecko + no API keys)"""
         try:
             # Fetch primitives from API
             response = requests.get(f"{API_BASE}/api/primitives?ts={int(time.time())}", timeout=10)
             primitives = response.json()
             
             # Fetch from multiple data sources in parallel
-            print("Fetching data from multiple sources (no API keys)...")
+            print("Fetching data from multiple sources...")
             
-            # CoinGecko (demo key optional)
+            # CoinGecko (demo key optional - works without key too)
             coingecko_data = self.fetch_coingecko()
             print(f"CoinGecko: {len(coingecko_data) if coingecko_data else 0} tokens")
+            
+            # CoinMarketCap (API key required)
+            cmc_data = self.fetch_coinmarketcap()
+            print(f"CoinMarketCap: {len(cmc_data) if cmc_data else 0} tokens")
             
             # Gate.io (no API key)
             gateio_data = self.fetch_gateio()
@@ -117,6 +121,7 @@ class KPIEngine:
                 'timestamp': datetime.now(timezone.utc).isoformat(),
                 'primitives': primitives.get('primitives', primitives),
                 'coingecko_tokens': coingecko_data,
+                'coinmarketcap_tokens': cmc_data,
                 'gateio_tokens': gateio_data,
                 'dexscreener_pairs': dexscreener_data,
                 'solana_rpc': solana_data,
@@ -313,57 +318,78 @@ class KPIEngine:
             print(f"Error fetching Wikipedia data: {e}")
             return []
     
-    def count_characters_from_all_sources(self, snapshot: Dict) -> Dict[str, int]:
-        """Count character occurrences from all data sources (no API keys)"""
-        char_counts = {}
+    def count_characters_with_attribution(self, snapshot: Dict) -> Dict[str, Dict]:
+        """Count character occurrences with source/topic attribution"""
+        char_data = {}
         
-        # Count from primitives (existing data)
-        primitives = snapshot.get('primitives', [])
-        for primitive in primitives:
-            name = primitive.get('name', '').upper()
-            symbol = primitive.get('symbol', '').upper()
-            
-            for char in name:
-                if char.isalnum() or char == ' ':
-                    char_counts[char] = char_counts.get(char, 0) + 1
-            
-            for char in symbol:
-                if char.isalnum():
-                    char_counts[char] = char_counts.get(char, 0) + 1
+        def add_char(char, source, topic, token_info=None):
+            if char.isalnum() or char == ' ':
+                char_upper = char.upper()
+                if char_upper not in char_data:
+                    char_data[char_upper] = {
+                        'total_count': 0,
+                        'sources': {},
+                        'topics': {},
+                        'tokens': []
+                    }
+                char_data[char_upper]['total_count'] += 1
+                
+                # Track source
+                if source not in char_data[char_upper]['sources']:
+                    char_data[char_upper]['sources'][source] = 0
+                char_data[char_upper]['sources'][source] += 1
+                
+                # Track topic
+                if topic not in char_data[char_upper]['topics']:
+                    char_data[char_upper]['topics'][topic] = 0
+                char_data[char_upper]['topics'][topic] += 1
+                
+                # Track token info
+                if token_info and len(char_data[char_upper]['tokens']) < 10:  # Keep sample tokens
+                    char_data[char_upper]['tokens'].append(token_info)
         
-        # Count from CoinGecko tokens
+        # Count from CoinGecko tokens with attribution
         coingecko_tokens = snapshot.get('coingecko_tokens', [])
         for token in coingecko_tokens:
             name = token.get('name', '').upper()
             symbol = token.get('symbol', '').upper()
+            category = token.get('category', 'unknown')
             
             for char in name:
-                if char.isalnum() or char == ' ':
-                    char_counts[char] = char_counts.get(char, 0) + 1
-            
+                add_char(char, 'CoinGecko', category, {'symbol': symbol, 'name': name})
             for char in symbol:
-                if char.isalnum():
-                    char_counts[char] = char_counts.get(char, 0) + 1
+                add_char(char, 'CoinGecko', category, {'symbol': symbol, 'name': name})
         
         # Count from Gate.io tokens
         gateio_tokens = snapshot.get('gateio_tokens', [])
         for token in gateio_tokens:
             symbol = token.get('currency_pair', '').upper()
             for char in symbol:
-                if char.isalnum():
-                    char_counts[char] = char_counts.get(char, 0) + 1
+                add_char(char, 'Gate.io', 'trading_pair', {'pair': symbol})
+        
+        # Count from CoinMarketCap tokens
+        cmc_tokens = snapshot.get('coinmarketcap_tokens', [])
+        for token in cmc_tokens:
+            name = token.get('name', '').upper()
+            symbol = token.get('symbol', '').upper()
+            category = token.get('category', 'unknown')
+            
+            for char in name:
+                add_char(char, 'CoinMarketCap', category, {'symbol': symbol, 'name': name})
+            for char in symbol:
+                add_char(char, 'CoinMarketCap', category, {'symbol': symbol, 'name': name})
         
         # Count from Dexscreener pairs
         dex_pairs = snapshot.get('dexscreener_pairs', [])
         for pair in dex_pairs:
             base_token = pair.get('baseToken', {})
             quote_token = pair.get('quoteToken', {})
+            dex_name = pair.get('dexId', 'unknown')
             
             for token in [base_token, quote_token]:
                 symbol = token.get('symbol', '').upper()
                 for char in symbol:
-                    if char.isalnum():
-                        char_counts[char] = char_counts.get(char, 0) + 1
+                    add_char(char, 'Dexscreener', dex_name, {'symbol': symbol, 'dex': dex_name})
         
         # Count from Jupiter tokens
         jupiter_tokens = snapshot.get('jupiter_tokens', [])
@@ -372,26 +398,21 @@ class KPIEngine:
             symbol = token.get('symbol', '').upper()
             
             for char in name:
-                if char.isalnum() or char == ' ':
-                    char_counts[char] = char_counts.get(char, 0) + 1
-            
+                add_char(char, 'Jupiter', 'Solana', {'symbol': symbol, 'name': name})
             for char in symbol:
-                if char.isalnum():
-                    char_counts[char] = char_counts.get(char, 0) + 1
+                add_char(char, 'Jupiter', 'Solana', {'symbol': symbol, 'name': name})
         
         # Count from Uniswap tokens
         uniswap_tokens = snapshot.get('uniswap_tokens', [])
         for token in uniswap_tokens:
             name = token.get('name', '').upper()
             symbol = token.get('symbol', '').upper()
+            chain = token.get('chainId', 'unknown')
             
             for char in name:
-                if char.isalnum() or char == ' ':
-                    char_counts[char] = char_counts.get(char, 0) + 1
-            
+                add_char(char, 'Uniswap', chain, {'symbol': symbol, 'name': name})
             for char in symbol:
-                if char.isalnum():
-                    char_counts[char] = char_counts.get(char, 0) + 1
+                add_char(char, 'Uniswap', chain, {'symbol': symbol, 'name': name})
         
         # Count from Wikipedia results
         wikipedia_results = snapshot.get('wikipedia_results', [])
@@ -400,14 +421,11 @@ class KPIEngine:
             snippet = result.get('snippet', '').upper()
             
             for char in title:
-                if char.isalnum() or char == ' ':
-                    char_counts[char] = char_counts.get(char, 0) + 1
-            
+                add_char(char, 'Wikipedia', 'crypto_search', {'title': title})
             for char in snippet:
-                if char.isalnum() or char == ' ':
-                    char_counts[char] = char_counts.get(char, 0) + 1
+                add_char(char, 'Wikipedia', 'crypto_search', {'title': title})
         
-        return char_counts
+        return char_data
     
     def calculate_price_from_stats(self, char_counts: Dict[str, int], letter: str) -> float:
         """Calculate letter price based on character occurrence statistics"""
@@ -429,9 +447,9 @@ class KPIEngine:
         return round(scaled_price, 4)
     
     def compute_base_kpis(self, snapshot: Dict) -> Dict[str, Any]:
-        """Compute base deterministic KPIs from all data sources with pricing"""
-        # Count characters from all sources
-        char_counts = self.count_characters_from_all_sources(snapshot)
+        """Compute base deterministic KPIs from all data sources with pricing and attribution"""
+        # Count characters with attribution
+        char_data = self.count_characters_with_attribution(snapshot)
         
         primitives = snapshot.get('primitives', [])
         letters = [p for p in primitives if p.get('type') == 'letter']
@@ -439,17 +457,45 @@ class KPIEngine:
         kpis = {}
         prices = {}
         
+        # Store attribution data
+        kpi_store['char_attribution'] = char_data
+        
+        # Token letter counting statistics
+        token_letter_stats = {}
+        total_tokens = 0
+        
+        for char, data in char_data.items():
+            if char.isalpha() and len(char) == 1:
+                token_letter_stats[char] = {
+                    'total_count': data['total_count'],
+                    'sources': data['sources'],
+                    'topics': data['topics'],
+                    'sample_tokens': data['tokens']
+                }
+                total_tokens += data['total_count']
+        
+        kpi_store['token_letter_stats'] = token_letter_stats
+        kpi_store['total_tokens_analyzed'] = total_tokens
+        
         for letter in letters:
             symbol = letter.get('symbol')
             
             # Letter Volume (total usage from all sources)
-            kpis[f'{symbol}_volume'] = char_counts.get(symbol.upper(), 0)
+            letter_data = char_data.get(symbol.upper(), {})
+            kpis[f'{symbol}_volume'] = letter_data.get('total_count', 0)
             
             # Letter Frequency (relative to total from all sources)
-            total_chars = sum(char_counts.values()) if char_counts else 1
-            kpis[f'{symbol}_frequency'] = char_counts.get(symbol.upper(), 0) / total_chars if total_chars > 0 else 0
+            total_chars = sum(d.get('total_count', 0) for d in char_data.values()) if char_data else 1
+            kpis[f'{symbol}_frequency'] = letter_data.get('total_count', 0) / total_chars if total_chars > 0 else 0
+            
+            # Source distribution for this letter
+            kpis[f'{symbol}_sources'] = letter_data.get('sources', {})
+            
+            # Topic distribution for this letter
+            kpis[f'{symbol}_topics'] = letter_data.get('topics', {})
             
             # Calculate price based on statistics
+            char_counts = {char: data['total_count'] for char, data in char_data.items()}
             price = self.calculate_price_from_stats(char_counts, symbol)
             prices[symbol] = price
             kpis[f'{symbol}_price'] = price
@@ -467,6 +513,7 @@ class KPIEngine:
         kpis['cross_letter_correlation'] = self._compute_correlation(letters)
         
         # Usage entropy (measure of distribution uniformity)
+        char_counts = {char: data['total_count'] for char, data in char_data.items()}
         kpis['usage_entropy'] = self._compute_entropy_from_counts(char_counts)
         
         # Data source diversity
@@ -478,6 +525,10 @@ class KPIEngine:
             kpis['price_std'] = (sum((p - kpis['price_mean']) ** 2 for p in prices.values()) / len(prices)) ** 0.5
             kpis['price_min'] = min(prices.values())
             kpis['price_max'] = max(prices.values())
+        
+        # Token statistics
+        kpis['total_tokens_analyzed'] = total_tokens
+        kpis['unique_letters_found'] = len([c for c in char_data.keys() if c.isalpha()])
         
         return kpis
     
@@ -793,37 +844,64 @@ Output JSON only:
             return self._fallback_reasoning(evolution, current_kpis)
     
     def _llm_reasoning_groq(self, evolution: Dict, current_kpis: Dict) -> Dict[str, Any]:
-        """LLM reasoning using Groq"""
+        """LLM reasoning using Groq - generate infinite KPIs"""
         url = "https://api.groq.com/openai/v1/chat/completions"
+        
+        # Get char attribution data
+        char_attribution = kpi_store.get('char_attribution', {})
         
         # Get top evolving KPIs
         top_evolution = sorted(evolution.items(), key=lambda x: abs(x[1].get('velocity', 0)), reverse=True)[:5]
         
-        prompt = f"""You are a quant researcher analyzing KPI evolution for letter primitives.
+        # Get top letters by occurrence
+        top_letters = sorted(char_attribution.items(), key=lambda x: x[1].get('total_count', 0), reverse=True)[:5]
+        
+        prompt = f"""You are a quant researcher analyzing letter primitives with infinite KPI generation.
+
+LETTER ATTRIBUTION DATA (source, topic, tokens):
+{json.dumps({k: v for k, v in list(char_attribution.items())[:5]}, indent=2)[:1000]}
+
+TOP LETTERS BY OCCURRENCE:
+{json.dumps([(k, v['total_count'], list(v['sources'].keys())[:3]) for k, v in top_letters], indent=2)[:800]}
 
 KPI EVOLUTION DATA:
-{json.dumps(dict(top_evolution), indent=2)[:1500]}
+{json.dumps(dict(top_evolution), indent=2)[:1000]}
 
 CURRENT KPIS:
-{json.dumps(current_kpis, indent=2)[:1000]}
+{json.dumps({k: v for k, v in list(current_kpis.items())[:20]}, indent=2)[:1000]}
 
-TASK:
-1. Analyze the evolution patterns - which KPIs are accelerating/decelerating?
-2. Identify emerging trends that weren't visible before
-3. Propose 3 NEW KPI metrics to capture these trends
-4. Recommend which letters are showing momentum
-5. Suggest improvements to the existing KPI calculation methodology
+TASK - GENERATE INFINITE KPIS:
+1. Analyze which topics/sources each letter appears in (oracleification)
+2. Generate 10 NEW KPI metrics for each letter based on:
+   - Source diversity (how many different sources)
+   - Topic concentration (which topics dominate)
+   - Token relationships (which tokens use this letter)
+   - Cross-source correlation
+   - Temporal patterns
+3. For each new KPI, provide: name, formula, interpretation
+4. Identify which letters are most "oracleified" (appear in most sources)
+5. Suggest new KPI categories that could be generated continuously
 
 Output JSON only:
 {{
-  "trend_analysis": "summary of evolution patterns",
-  "emerging_trends": ["trend1", "trend2", "trend3"],
+  "oracleification_analysis": {{
+    "most_oracleified_letters": ["A", "E", "T"],
+    "source_diversity_scores": {{"A": 0.8, "E": 0.7}},
+    "topic_dominance": {{"A": "DeFi", "E": "meme"}}
+  }},
   "new_kpis": [
-    {{"name": "kpi_name", "formula": "how to compute", "reason": "why valuable"}},
-    ...
+    {{
+      "letter": "A",
+      "kpi_name": "source_diversity_index",
+      "formula": "count(unique_sources) / total_sources",
+      "interpretation": "measures how diverse sources are for this letter"
+    }},
+    ... generate 10 per letter for top 5 letters
   ],
+  "emerging_trends": ["trend1", "trend2"],
   "momentum_letters": ["A", "B", "C"],
-  "methodology_improvements": ["improvement1", "improvement2"]
+  "methodology_improvements": ["imp1", "imp2"],
+  "suggested_kpi_categories": ["category1", "category2"]
 }}"""
         
         headers = {
@@ -835,7 +913,7 @@ Output JSON only:
             "model": "llama3-70b-8192",
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.7,
-            "max_tokens": 800
+            "max_tokens": 2000
         }
         
         response = requests.post(url, headers=headers, json=data, timeout=30)
