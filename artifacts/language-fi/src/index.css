@@ -1072,3 +1072,32 @@ footer > p { color: var(--muted-text); font-size: 0.875rem; margin-bottom: 1rem;
   .hero { padding: 6rem 1rem 3rem; }
   .manifesto { padding: 5rem 1rem; }
 }
+
+/* Status badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.status-badge.active {
+  background: rgba(163, 230, 53, 0.12);
+  color: var(--neon-green);
+  border: 1px solid rgba(163, 230, 53, 0.3);
+}
+.status-badge.inactive {
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+/* Letter hero section */
+.letter-hero { margin-bottom: 1rem; }
+
+/* Stake header */
+.stake-header { margin-bottom: 1.5rem; }

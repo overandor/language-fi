@@ -6,6 +6,7 @@ import LeaderboardPage from "@/pages/LeaderboardPage";
 import StakePage from "@/pages/StakePage";
 import PrimitivesPage from "@/pages/PrimitivesPage";
 import LetterPage from "@/pages/LetterPage";
+import PrimitiveDetailPage from "@/pages/PrimitiveDetailPage";
 
 function Nav() {
   const [, navigate] = useLocation();
@@ -88,6 +89,7 @@ function Router() {
       <Route path="/leaderboard" component={LeaderboardPage} />
       <Route path="/stake" component={StakePage} />
       <Route path="/primitives" component={PrimitivesPage} />
+      <Route path="/primitives/:symbol" component={PrimitiveDetailPage} />
       <Route path="/letter/:letter" component={LetterPage} />
       <Route>
         <div style={{ padding: "10rem 2rem", textAlign: "center" }}>
