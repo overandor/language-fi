@@ -1,0 +1,14 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY kpi_requirements.txt .
+RUN pip install --no-cache-dir -r kpi_requirements.txt
+
+COPY kpi_analyzer.py .
+
+ENV API_BASE_URL=https://language-fi.vercel.app
+ENV OPENAI_API_KEY=
+ENV FETCH_INTERVAL=60
+
+CMD ["python", "kpi_analyzer.py"]
