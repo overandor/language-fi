@@ -1,0 +1,636 @@
+Yeah. This makes the protocol much more concrete: **letters and numbers become API-served primitives**, and sentences become staked baskets of those primitives.
+
+## Core architecture
+
+> **Every character — A-Z, 0-9, SPACE, and selected symbols — has a live oracle price exposed through an API and usable inside sentence staking.**
+
+So the protocol tracks:
+
+```text
+Letters: A-Z
+Numbers: 0-9
+Special primitive: SPACE
+Optional symbols: ., !, ?, -, _, @, #
+```
+
+Each primitive gets:
+
+```text
+current price
+24h change
+weekly change
+usage count
+source breakdown
+volatility
+rank
+staking weight
+last oracle update
+```
+
+## API endpoints
+
+The explorer and app should be powered by endpoints like:
+
+```text
+GET /api/primitives
+```
+
+Returns all letters, numbers, spaces, and symbols.
+
+```json
+{
+  "updated_at": "2026-05-01T00:00:00Z",
+  "primitives": [
+    {
+      "symbol": "A",
+      "type": "letter",
+      "price_lgu": 0.142,
+      "weekly_change": 0.084,
+      "usage_count": 2840112,
+      "rank": 2
+    },
+    {
+      "symbol": "7",
+      "type": "number",
+      "price_lgu": 0.033,
+      "weekly_change": -0.012,
+      "usage_count": 441208,
+      "rank": 31
+    },
+    {
+      "symbol": "SPACE",
+      "type": "separator",
+      "price_lgu": 0.061,
+      "weekly_change": 0.151,
+      "usage_count": 3914420,
+      "rank": 1
+    }
+  ]
+}
+```
+
+Single primitive:
+
+```text
+GET /api/primitives/A
+GET /api/primitives/7
+GET /api/primitives/SPACE
+```
+
+Example:
+
+```json
+{
+  "symbol": "B",
+  "type": "letter",
+  "price_lgu": 0.091,
+  "previous_price_lgu": 0.078,
+  "weekly_change": 0.1672,
+  "usage_count_current_week": 948220,
+  "usage_count_previous_week": 812410,
+  "rank": 11,
+  "volatility": "high",
+  "oracle_confidence": 0.974,
+  "source_breakdown": {
+    "blockchain_content": 148920,
+    "token_names": 1284,
+    "hashes": 54118,
+    "regular_content_sample": 67902,
+    "languagefi_registry": 88210
+  }
+}
+```
+
+Sentence quote endpoint:
+
+```text
+POST /api/sentences/quote
+```
+
+Request:
+
+```json
+{
+  "sentence": "BUILD ON BASE 2026"
+}
+```
+
+Response:
+
+```json
+{
+  "sentence": "BUILD ON BASE 2026",
+  "characters": [
+    { "symbol": "B", "count": 2, "unit_price_lgu": 0.091, "total": 0.182 },
+    { "symbol": "U", "count": 1, "unit_price_lgu": 0.044, "total": 0.044 },
+    { "symbol": "I", "count": 1, "unit_price_lgu": 0.073, "total": 0.073 },
+    { "symbol": "L", "count": 1, "unit_price_lgu": 0.066, "total": 0.066 },
+    { "symbol": "D", "count": 1, "unit_price_lgu": 0.052, "total": 0.052 },
+    { "symbol": "SPACE", "count": 3, "unit_price_lgu": 0.061, "total": 0.183 },
+    { "symbol": "O", "count": 1, "unit_price_lgu": 0.049, "total": 0.049 },
+    { "symbol": "N", "count": 1, "unit_price_lgu": 0.058, "total": 0.058 },
+    { "symbol": "A", "count": 1, "unit_price_lgu": 0.142, "total": 0.142 },
+    { "symbol": "S", "count": 1, "unit_price_lgu": 0.081, "total": 0.081 },
+    { "symbol": "E", "count": 1, "unit_price_lgu": 0.126, "total": 0.126 },
+    { "symbol": "2", "count": 2, "unit_price_lgu": 0.037, "total": 0.074 },
+    { "symbol": "0", "count": 1, "unit_price_lgu": 0.041, "total": 0.041 },
+    { "symbol": "6", "count": 1, "unit_price_lgu": 0.035, "total": 0.035 }
+  ],
+  "base_value_lgu": 1.205,
+  "oracle_updated_at": "2026-05-01T00:00:00Z"
+}
+```
+
+## Oracle pricing model
+
+The oracle determines the price of each letter or number by sampling both:
+
+```text
+blockchain content
+regular content
+Language.fi registry activity
+token names
+hashes / addresses
+```
+
+Clean data pipeline:
+
+```text
+Data Sources
+→ Random Sampler
+→ Normalizer
+→ Character Counter
+→ Source Weighting Engine
+→ Oracle Price Engine
+→ API
+→ Explorer
+→ Sentence Staking
+```
+
+## Sample sources
+
+Blockchain sample:
+
+```text
+token symbols
+token names
+NFT collection names
+contract labels
+transaction metadata where available
+domain names
+protocol registry entries
+hashes and addresses
+```
+
+Regular content sample:
+
+```text
+licensed news/headline feeds
+public RSS metadata where allowed
+approved web corpora
+social/trend data where permitted
+public documentation samples
+```
+
+And yeah, don’t scrape copyrighted content like a feral raccoon. Store **counts, frequencies, and derived metrics**, not full articles.
+
+## Pricing formula
+
+A simple oracle formula:
+
+```text
+Primitive Price =
+Base Price
+× Demand Multiplier
+× Volatility Multiplier
+× Source Confidence Multiplier
++ Congestion Tax
+```
+
+More detailed:
+
+```text
+price(character) =
+base
++ blockchain_usage_weight
++ token_name_weight
++ hash_frequency_weight
++ regular_content_weight
++ registry_demand_weight
++ staking_demand_weight
++ volatility_adjustment
++ congestion_tax
+```
+
+Example for **B**:
+
+```text
+B price =
+
+Base:                       0.020 LGU
+Blockchain usage:           +0.026
+Token name usage:           +0.014
+Regular content sample:     +0.009
+Hash/address sample:        +0.003
+Registry demand:            +0.012
+Staking demand:             +0.005
+Congestion tax:             +0.002
+
+Final B price:              0.091 LGU
+```
+
+## Sentence staking
+
+A staked sentence uses the current oracle prices of its characters.
+
+```text
+Sentence Value =
+Σ(character count × current oracle price)
+```
+
+Then staking score:
+
+```text
+Staking Score =
+Sentence Value
+× Character Performance
+× Stillness Multiplier
+× Diversity Multiplier
+× Anti-Spam Score
+```
+
+Example:
+
+```text
+Sentence:
+BUILD ON BASE 2026
+
+Base Character Value: 1.205 LGU
+Weekly Character Performance: +9.4%
+Stillness Multiplier: 1.25x
+Diversity Multiplier: 1.08x
+Anti-Spam Score: 0.97
+
+Final Weekly Stake Score:
+1.205 × 1.094 × 1.25 × 1.08 × 0.97
+= 1.727 score units
+```
+
+## Important endpoint for staking
+
+```text
+POST /api/staking/sentence-score
+```
+
+Request:
+
+```json
+{
+  "sentence_id": "sent_9281",
+  "sentence": "BUILD ON BASE 2026",
+  "staked_since": "2026-02-17T00:00:00Z",
+  "last_moved_at": "2026-02-17T00:00:00Z"
+}
+```
+
+Response:
+
+```json
+{
+  "sentence_id": "sent_9281",
+  "base_character_value_lgu": 1.205,
+  "weekly_character_performance": 0.094,
+  "stillness_days": 73,
+  "stillness_multiplier": 1.25,
+  "diversity_multiplier": 1.08,
+  "anti_spam_score": 0.97,
+  "final_staking_score": 1.727,
+  "top_contributors": [
+    { "symbol": "B", "contribution": 0.182 },
+    { "symbol": "SPACE", "contribution": 0.183 },
+    { "symbol": "A", "contribution": 0.142 }
+  ]
+}
+```
+
+## Explorer pages
+
+Every primitive gets its own page:
+
+```text
+/l/A
+/l/B
+/n/7
+/p/SPACE
+```
+
+Or cleaner:
+
+```text
+/primitives/A
+/primitives/B
+/primitives/7
+/primitives/SPACE
+```
+
+The page shows:
+
+```text
+Current price
+Weekly change
+Usage count
+Source breakdown
+Top protocols
+Token-name popularity
+Hash/address frequency
+Regular content frequency
+Staking demand
+Sentences exposed to this primitive
+Markets using this primitive
+Oracle confidence
+```
+
+Example page:
+
+```text
+Primitive: 7
+
+Type: Number
+Current Price: 0.033 LGU
+Weekly Change: +6.2%
+Rank: #31
+Top Source: Hashes / Addresses
+Most Active Protocol: Ethereum
+Staked Sentence Exposure: 92,114 sentences
+Oracle Confidence: 96.1%
+```
+
+## The key product explanation
+
+> **Language.fi exposes letters, numbers, spaces, and symbols as live API primitives. Their prices are calculated by an oracle that samples blockchain and regular content, measures character usage, and feeds those values into sentence minting and sentence staking.**
+
+Or the Cartman version:
+
+> Every letter and number gets a price, every sentence becomes a basket, and the oracle sits there counting the alphabet like a greedy little math goblin.
+Yeah, that is the clean oracle source set:
+
+Oracle Sources:
+- Solana token names
+- Solana NFT collection names
+- Solana domain names
+- Language.fi registry entries
+- Gate.io token listings
+
+This becomes the Letter Usage Oracle.
+
+What the oracle measures
+
+For every letter, number, and space, the oracle counts:
+
+Unique items containing the character
+Total character occurrences
+Week-over-week change
+Source-by-source contribution
+Protocol rank
+Volatility
+Oracle confidence
+
+Example for B:
+
+Letter: B
+Oracle Window: Weekly
+Solana Token Names:        18,420 occurrences
+Solana NFT Collections:    44,910 occurrences
+Solana Domains:            9,884 occurrences
+Language.fi Registry:      88,210 occurrences
+Gate.io Token Listings:    1,731 occurrences
+Total Current Week Usage:  163,155
+Previous Week Usage:       132,800
+Weekly Change:             +22.86%
+
+Source weighting
+
+Not every source should count equally, dude. Otherwise one spammy source can ruin the whole oracle.
+
+Suggested weights:
+
+Solana token names:          25%
+Solana NFT collections:      20%
+Solana domains:              15%
+Language.fi registry:        25%
+Gate.io token listings:      15%
+
+Formula:
+
+Weighted Letter Usage =
+Solana Token Names × 0.25
++ Solana NFT Collections × 0.20
++ Solana Domains × 0.15
++ Language.fi Registry × 0.25
++ Gate.io Listings × 0.15
+
+Oracle update cycle
+
+Every few minutes:
+1. Pull latest available data from approved APIs/indexers.
+2. Take randomized samples from each source.
+3. Normalize names to uppercase.
+4. Count A-Z, 0-9, SPACE, and allowed symbols.
+5. Compare current window to previous window.
+6. Update letter prices and usage stats.
+7. Publish oracle snapshot to the explorer.
+
+API response example
+
+{
+  "letter": "B",
+  "window": "weekly",
+  "updated_at": "2026-05-01T00:00:00Z",
+  "current_usage": 163155,
+  "previous_usage": 132800,
+  "weekly_change_percent": 22.86,
+  "oracle_sources": {
+    "solana_token_names": {
+      "occurrences": 18420,
+      "weight": 0.25
+    },
+    "solana_nft_collections": {
+      "occurrences": 44910,
+      "weight": 0.20
+    },
+    "solana_domains": {
+      "occurrences": 9884,
+      "weight": 0.15
+    },
+    "languagefi_registry_entries": {
+      "occurrences": 88210,
+      "weight": 0.25
+    },
+    "gateio_token_listings": {
+      "occurrences": 1731,
+      "weight": 0.15
+    }
+  },
+  "market_result": {
+    "direction": "up",
+    "long_b_on_solana": "winning"
+  }
+}
+
+Explorer display
+
+B / Solana Letter Oracle
+Current Week Usage: 163,155
+Previous Week Usage: 132,800
+Change: +22.86%
+Source Breakdown:
+Solana Token Names       18,420
+NFT Collections          44,910
+Domains                   9,884
+Registry Entries         88,210
+Gate.io Listings          1,731
+Status: Long B Winning
+Oracle Confidence: 96.8%
+Last Updated: 3 minutes ago
+
+Important rule
+
+For real-money settlement, the oracle must publish:
+
+sample size
+source URLs or source IDs
+timestamp
+normalization rules
+duplicate removal rules
+final count
+previous count
+change percentage
+oracle signature
+
+Because if users are staking or taking positions, they need proof that the result was not invented by some backend raccoon in a hoodie.
+
+Clean description:
+
+The Language.fi Oracle measures live letter and number usage across Solana names, NFT collections, domains, registry entries, and Gate.io token listings, then converts those counts into prices, staking scores, and weekly market settlement data.Here are the most disruptive ideas from this chat, stripped down like a little invention inventory, okay:
+
+1. Sentence-as-token asset
+
+A normal written sentence becomes a transferable digital asset when registered by:
+
+hash + owner wallet + issuer signature + transfer registry
+
+Disruption: turns language itself into ownable protocol objects, not just NFTs with metadata.
+
+2. One sentence = one monetary unit
+
+Each unique signed sentence can represent one unit of supply.
+
+Example:
+
+10,000 unique sentences = 10,000 units of one capped supply
+
+Disruption: money supply made from registered linguistic objects instead of identical fungible units.
+
+3. Fixed supply made of different texts
+
+All units can be different sentences but still belong to the same capped monetary supply.
+
+Disruption: combines uniqueness like NFTs with supply accounting like fungible money.
+
+4. Letter-token primitives
+
+Each letter becomes a priced sub-unit of a larger sentence or name.
+
+Example:
+
+TOKEN = T + O + K + E + N
+
+Disruption: breaks token value into character-level components.
+
+5. Dynamic letter pricing oracle
+
+Letter prices update based on real usage across token names, hashes, registry activity, or seasonal patterns.
+
+Disruption: creates a live alphabet market where language usage becomes price data.
+
+6. Token-name intrinsic base value
+
+A token name gets a calculated base value from the sum of its letters.
+
+Example:
+
+T = $0.30, O = $0.05, K = $0.03, E = $0.20, N = $0.05
+TOKEN = $0.63
+
+Disruption: names stop being arbitrary labels and become priced composable assets.
+
+7. Popularity tax on letters
+
+Frequently used letters get taxed or priced higher.
+
+Disruption: introduces congestion pricing for language itself. Popular naming patterns become more expensive.
+
+8. Seasonal linguistic markets
+
+Letter prices may change because token naming trends change over time.
+
+Example:
+
+Winter-themed names increase demand for T, W, I, N, E, R.
+
+Disruption: creates a market where cultural trends, seasons, memes, and naming behavior affect base asset costs.
+
+9. Prepaid sentence slots
+
+Users buy a slot with prepaid value, then fill it with a sentence whose letters consume that value.
+
+Disruption: separates capacity purchase from final linguistic asset creation, like prepaid blockspace for language.
+
+10. Letter-backed sentence minting
+
+To mint a sentence, the user must spend, lock, or burn the component letter-values.
+
+Disruption: gives sentence assets a measurable creation cost instead of pure arbitrary minting.
+
+11. Sentence registry as ownership layer
+
+A registry records:
+
+sentence hash, owner, slot, letter breakdown, mint cost, transfer history
+
+Disruption: creates a canonical ownership system for language-based assets.
+
+12. Formula value vs market value split
+
+Each sentence/name has:
+
+protocol-calculated base value
+actual trading market value
+
+Disruption: creates a dual-pricing system for linguistic assets, like appraised value versus market sale price.
+
+13. Hash + token-name statistical pricing
+
+Letter prices can be calculated from both existing token names and sampled random hashes.
+
+Disruption: combines human naming behavior with cryptographic randomness to price characters.
+
+14. Alphabet as economic infrastructure
+
+The alphabet becomes a market layer, where every letter has price, demand, tax, volatility, and usage history.
+
+Disruption: turns writing systems into programmable economic primitives.
+
+15. Language-derived protocol-intrinsic value
+
+Instead of saying “this token has value because people trade it,” the protocol says:
+
+value comes from measurable letter demand, capped slots, mint costs, and registry ownership
+
+Disruption: creates a new category of intrinsic value based on linguistic scarcity and usage.
+
+The biggest disruptive bundle is this:
+
+A dynamic linguistic asset protocol where letters are volatile priced primitives, names and sentences inherit cumulative value from their characters, and prepaid slots mint transferable sentence-assets through a public registry.
+
+That’s the core monster idea, dude. The letters become commodities, the words become assets, and the sentences become little registered money-goblins.
