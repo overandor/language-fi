@@ -1607,7 +1607,7 @@ def stream():
 @app.route('/health')
 def health():
     """Health check endpoint"""
-    return jsonify({'status': 'healthy'})
+    return jsonify({'status': 'healthy', 'version': 'v2.1-fixed-ranking', 'timestamp': datetime.now(timezone.utc).isoformat()})
 
 @app.route('/api/coingecko/markets')
 def get_coingecko_markets():
