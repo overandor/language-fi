@@ -35,7 +35,14 @@ export async function GET(
       take: 1
     })
 
-    const runNotes = latestRun ? JSON.parse(latestRun.notes || "{}") : {}
+    let inputSnapshot = null
+    if (latestRun?.inputSnapshot) {
+      try {
+        inputSnapshot = JSON.parse(latestRun.inputSnapshot)
+      } catch (e) {
+        inputSnapshot = null
+      }
+    }
 
     return NextResponse.json({
       status: "success",
@@ -53,20 +60,21 @@ export async function GET(
         linkedOracleRun: latestRun ? {
           id: latestRun.id,
           startedAt: latestRun.startedAt,
-          inputHash: runNotes.inputHash,
-          outputHash: runNotes.outputHash,
-          policyVersion: runNotes.policyVersion
+          formulaVersion: latestRun.formulaVersion,
+          runHash: latestRun.runHash,
+          previousRunHash: latestRun.previousRunHash,
+          signature: latestRun.signature
         } : null,
-        sourceWeights: runNotes.sourceWeights || {},
+        sourceWeights: inputSnapshot?.sourceWeights || {},
         priceComponents: {
           frequency: latestPrice.currentWeekUsage,
           velocity: latestPrice.change24h,
           oracleConfidence: latestPrice.oracleConfidence
         },
         confidenceScore: latestPrice.oracleConfidence || 0,
-        excludedObservations: runNotes.excludedObservations || 0,
-        anomalyFlags: runNotes.anomalyFlags || [],
-        quarantineStatus: runNotes.quarantinedSources || []
+        excludedObservations: 0,
+        anomalyFlags: [],
+        quarantineStatus: []
       }
     })
   } catch (error: any) {
