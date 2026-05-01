@@ -14,7 +14,16 @@
     "react-dom": "^18.2.0",
     "@languagefi/db": "*",
     "@languagefi/core": "*",
-    "@languagefi/oracle": "*"
+    "@languagefi/oracle": "*",
+    "@languagefi/providers": "*",
+    "@languagefi/reports": "*",
+    "@languagefi/yield": "*",
+    "@languagefi/billing": "*",
+    "@languagefi/web3": "*",
+    "zod": "^3.22.0",
+    "stripe": "^14.0.0",
+    "ethers": "^6.9.0",
+    "pdfkit": "^0.14.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
