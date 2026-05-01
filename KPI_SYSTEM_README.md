@@ -130,17 +130,62 @@ python kpi_analyzer.py
 python kpi_api.py
 ```
 
+### Run with Docker Compose (Recommended for 24/7)
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit .env with your API keys
+# OPENAI_API_KEY=your_key
+
+# Start all services (PostgreSQL, KPI Analyzer, KPI API)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f kpi-analyzer
+
+# Stop services
+docker-compose down
+```
+
 ### Run with Docker
 ```bash
 # Build and run analyzer
 docker build -f kpi_Dockerfile -t kpi-analyzer .
 docker run -e API_BASE_URL=https://language-fi.vercel.app \
            -e OPENAI_API_KEY=your_key \
+           -e DB_HOST=postgres \
            kpi-analyzer
 
 # Build and run API server
 docker build -f Dockerfile -t kpi-api .
 docker run -p 8080:8080 kpi-api
+```
+
+### Run as Systemd Service (Linux Server)
+```bash
+# Create user
+sudo useradd -r -s /bin/false kpi_user
+
+# Install dependencies
+sudo apt-get install python3-pip python3-venv postgresql
+sudo -u kpi_user mkdir -p /opt/kpi-analyzer
+sudo -u kpi_user python3 -m venv /opt/kpi-analyzer/venv
+sudo -u kpi_user /opt/kpi-analyzer/venv/bin/pip install -r kpi_requirements.txt
+
+# Copy files
+sudo cp kpi_analyzer.py /opt/kpi-analyzer/
+sudo chown -R kpi_user:kpi_user /opt/kpi-analyzer
+
+# Install systemd service
+sudo cp kpi-analyzer.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable kpi-analyzer
+sudo systemctl start kpi-analyzer
+
+# Check status
+sudo systemctl status kpi-analyzer
+sudo journalctl -u kpi-analyzer -f
 ```
 
 ## KPI Categories
@@ -226,7 +271,44 @@ ORDER BY cycle_start DESC
 LIMIT 10;
 ```
 
-## Monitoring
+## 24/7 Operation Features
+
+The KPI analyzer is designed for continuous 24/7 operation with:
+
+**Auto-Restart:**
+- Docker Compose: `restart: always` policy
+- Systemd: `Restart=always` with 10-second delay
+- Automatic recovery from crashes
+
+**Health Checks:**
+- PostgreSQL health check (every 10s)
+- KPI Analyzer database connectivity check (every 30s)
+- KPI API HTTP health check (every 30s)
+- Services wait for dependencies to be healthy before starting
+
+**Error Recovery:**
+- Automatic database reconnection on connection loss
+- Failed cycle logging with error messages
+- Graceful degradation if LLM unavailable (uses fallback KPIs)
+- Analysis cycle tracking in database
+
+**Logging:**
+- Structured logging to systemd journal
+- Docker log rotation (10MB max size, 3 files)
+- Cycle tracking in `analysis_cycles` table
+- Error messages with timestamps
+
+**Monitoring:**
+```bash
+# Docker Compose logs
+docker-compose logs -f kpi-analyzer
+
+# Systemd logs
+sudo journalctl -u kpi-analyzer -f
+
+# Database cycle tracking
+psql kpi_db -c "SELECT * FROM analysis_cycles ORDER BY cycle_start DESC LIMIT 10;"
+```
 
 ### Check Service Health
 ```bash
