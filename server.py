@@ -20,7 +20,7 @@ CORS(app)
 GATE_API_KEY = os.getenv('GATE_API_KEY', '')
 GATE_API_SECRET = os.getenv('GATE_API_SECRET', '')
 COINMARKETCAP_API_KEY = os.getenv('COINMARKETCAP_API_KEY', '')
-COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', 'CG-DD8rr7U4hQsjAxokXt7ERtaG')
+COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '')
 
 # Cache for data
 cache = {}

@@ -2,17 +2,37 @@
  * Oracle Price Engine
  * Deterministic pricing based on character counts from real data
  * NO FABRICATION - only prices what exists in database
+ * REPRODUCIBLE - same input always produces same output with verifiable hash
  */
 
 import { prisma } from "@languagefi/db";
 import { countCharacters } from "@languagefi/core";
+import { createHash } from "crypto";
 
 const WEB2_WEIGHT = 0.05;
+const FORMULA_VERSION = "v1.0";
 
 export interface Web2Signal {
   usage: number;
   change: number;
   confidence: number;
+}
+
+export interface InputSnapshot {
+  sourceDataHash: string;
+  primitiveCounts: Record<string, number>;
+  sourceWeights: Record<string, number>;
+  timestamp: string;
+}
+
+export interface OracleRunMetadata {
+  runId: string;
+  timestamp: string;
+  formulaVersion: string;
+  inputSnapshot: InputSnapshot;
+  runHash: string;
+  previousRunHash: string | null;
+  signature: string | null;
 }
 
 /**

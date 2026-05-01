@@ -1,6 +1,29 @@
-# Language.fi - Protocol-Grade Symbolic Asset Oracle
+# Language.fi - Linguistic Primitive Oracle
 
-Production-grade oracle for symbolic asset pricing with deterministic calculations from real data sources.
+Language.fi is a public oracle that prices 43 linguistic primitives (letters, numbers, spaces, symbols) from observable usage data, with reproducible oracle runs and a registry for composing word/sentence assets.
+
+## Core Product
+
+**What it is:**
+- A pricing oracle for linguistic primitives (A-Z, 0-9, space, common symbols)
+- Prices derived from real usage data across multiple data sources
+- Reproducible oracle runs with cryptographic verification
+- Registry for composing word/sentence assets from priced primitives
+
+**What it is not:**
+- Not a word ownership protocol (you don't own the word "apple")
+- Not a trademark or copyright system
+- Not an investment vehicle
+- Not a fiat conversion system
+
+## How It Works
+
+1. **Data Collection**: Ingest usage data from multiple sources (Gate.io, DexScreener, Solana RPC, etc.)
+2. **Normalization**: Apply consistent rules across all sources
+3. **Pricing Formula**: Calculate primitive prices using a published formula
+4. **Oracle Run**: Generate a cryptographically signed record with hash verification
+5. **Public Ledger**: Store historical oracle runs for reproducibility
+6. **Asset Composition**: Users can compose words/sentences from priced primitives
 
 ## Architecture
 
@@ -10,14 +33,12 @@ Production-grade oracle for symbolic asset pricing with deterministic calculatio
   /web              → Next.js frontend (UI, dashboard)
   /api              → Next.js API routes
   /workers          → Ingestion + oracle jobs
-  /artifact-service → Proof-of-Value Artifact minting service
-  /artifact-ui      → Artifact upload and minting UI
 /packages
   /db               → Prisma schema + client
   /providers        → External data ingestion
   /oracle           → Pricing engine
   /core             → Shared utilities
-  /web3             → Smart contracts (LGU, LGUArtifact)
+  /web3             → Smart contracts (LGU, Staking)
 ```
 
 ## Quick Start
