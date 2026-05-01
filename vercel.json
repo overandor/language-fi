@@ -1,42 +1,19 @@
 {
   "version": 2,
-  "buildCommand": "",
-  "outputDirectory": "",
+  "builds": [
+    {
+      "src": "server.py",
+      "use": "@vercel/python"
+    }
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/server.py",
-      "headers": {
-        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0, private"
-      }
+      "dest": "/server.py"
     },
     {
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0, private"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
-    }
-  ],
-  "crons": []
+  ]
 }
