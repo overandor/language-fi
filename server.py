@@ -322,12 +322,18 @@ CACHE_DURATION = 300  # 5 minutes
 @app.route('/')
 def index():
     """Serve the frontend"""
-    return send_from_directory('.', 'index.html')
+    try:
+        return send_from_directory('.', 'index.html')
+    except Exception as e:
+        return jsonify({'error': 'Frontend not found', 'details': str(e)}), 404
 
 @app.route('/<path:path>')
 def serve_static(path):
     """Serve static files"""
-    return send_from_directory('.', path)
+    try:
+        return send_from_directory('.', path)
+    except Exception as e:
+        return jsonify({'error': 'File not found', 'path': path, 'details': str(e)}), 404
 
 @app.route('/api/letters')
 def get_letters():
