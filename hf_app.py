@@ -499,13 +499,94 @@ def health():
     return jsonify({'status': 'healthy'})
 
 @app.route('/')
-def serve_market_ui():
-    """Serve the tokenization market UI"""
-    try:
-        with open('market_ui.html', 'r') as f:
-            return f.read()
-    except FileNotFoundError:
-        return jsonify({'error': 'Market UI not found'}), 404
+def index():
+    """API documentation and landing page"""
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Language.fi API Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #0f0f0f; color: #fff; }
+        h1 { color: #00ff88; }
+        h2 { color: #00aaff; margin-top: 40px; }
+        .endpoint { background: #1a1a1a; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #00ff88; }
+        .method { color: #00ff88; font-weight: bold; }
+        .url { color: #888; }
+        code { background: #333; padding: 2px 6px; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #333; }
+        th { color: #00aaff; }
+    </style>
+</head>
+<body>
+    <h1>Language.fi API Documentation</h1>
+    <p>Symbolic Asset Pricing Engine with Multi-Source Oracle</p>
+    
+    <h2>Endpoints</h2>
+    
+    <div class="endpoint">
+        <span class="method">GET</span> <span class="url">/health</span>
+        <p>Health check endpoint</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method">GET</span> <span class="url">/api/metrics</span>
+        <p>System metrics for monitoring</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method">GET</span> <span class="url">/api/kpis</span>
+        <p>Current KPI data with live metrics</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method">GET</span> <span class="url">/api/kpis/history</span>
+        <p>KPI history from database</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method">GET</span> <span class="url">/api/kpis/price-history</span>
+        <p>Price history for a specific letter</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method">GET</span> <span class="url">/api/analysis</span>
+        <p>LLM analysis and oracleification insights</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method">GET</span> <span class="url">/api/analysis/history</span>
+        <p>LLM analysis history</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method">POST</span> <span class="url">/api/kpis/start</span>
+        <p>Start the 24/7 KPI engine</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method">GET</span> <span class="url">/dashboard</span>
+        <p>Live metrics dashboard</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method">GET</span> <span class="url">/api/primitives</span>
+        <p>Get letter and number primitives</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method">GET</span> <span class="url">/api/oracle/live-stats</span>
+        <p>Live oracle statistics</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method">GET</span> <span class="url">/api/market/data</span>
+        <p>Comprehensive market data</p>
+    </div>
+</body>
+</html>
+    '''
 
 @app.route('/api/market/data')
 def get_market_data():
