@@ -1636,6 +1636,208 @@ def get_coingecko_markets():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/verification/stats')
+def get_verification_stats():
+    """Get token verification stats from multiple sources"""
+    try:
+        verification_data = {
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'sources': {},
+            'cross_reference': {},
+            'confidence_scores': {},
+            'discrepancies': []
+        }
+        
+        # CoinGecko data
+        coingecko_tokens = fetch_coingecko_tokens()
+        if coingecko_tokens:
+            verification_data['sources']['coingecko'] = {
+                'count': len(coingecko_tokens),
+                'status': 'success',
+                'sample_symbols': [t.get('symbol', '') for t in coingecko_tokens[:5]]
+            }
+        else:
+            verification_data['sources']['coingecko'] = {
+                'count': 0,
+                'status': 'failed',
+                'error': 'Failed to fetch data'
+            }
+        
+        # Gate.io data
+        gateio_tokens = fetch_gateio_tokens()
+        if gateio_tokens:
+            verification_data['sources']['gateio'] = {
+                'count': len(gateio_tokens),
+                'status': 'success',
+                'sample_symbols': [t.get('base', '') if isinstance(t, dict) else '' for t in gateio_tokens[:5]]
+            }
+        else:
+            verification_data['sources']['gateio'] = {
+                'count': 0,
+                'status': 'failed',
+                'error': 'Failed to fetch data'
+            }
+        
+        # CoinMarketCap data (if API key available)
+        cmc_tokens = fetch_coinmarketcap_tokens()
+        if cmc_tokens:
+            verification_data['sources']['coinmarketcap'] = {
+                'count': len(cmc_tokens),
+                'status': 'success',
+                'sample_symbols': [t.get('symbol', '') for t in cmc_tokens[:5]]
+            }
+        else:
+            verification_data['sources']['coinmarketcap'] = {
+                'count': 0,
+                'status': 'skipped',
+                'error': 'No API key or fetch failed'
+            }
+        
+        # Cross-reference analysis
+        if coingecko_tokens and gateio_tokens:
+            cg_symbols = set(t.get('symbol', '').upper() for t in coingecko_tokens)
+            gate_symbols = set(t.get('base', '').upper() if isinstance(t, dict) else '' for t in gateio_tokens)
+            
+            common_symbols = cg_symbols.intersection(gate_symbols)
+            cg_only = cg_symbols - gate_symbols
+            gate_only = gate_symbols - cg_symbols
+            
+            verification_data['cross_reference'] = {
+                'coingecko_vs_gateio': {
+                    'common_count': len(common_symbols),
+                    'coingecko_only': len(cg_only),
+                    'gateio_only': len(gate_only),
+                    'overlap_percentage': round(len(common_symbols) / max(len(cg_symbols), 1) * 100, 2)
+                }
+            }
+        
+        # Calculate confidence scores
+        successful_sources = sum(1 for s in verification_data['sources'].values() if s['status'] == 'success')
+        total_sources = len(verification_data['sources'])
+        
+        verification_data['confidence_scores'] = {
+            'overall': round(successful_sources / total_sources * 100, 2) if total_sources > 0 else 0,
+            'source_coverage': successful_sources,
+            'total_sources': total_sources,
+            'recommendation': 'high' if successful_sources >= 2 else 'medium' if successful_sources == 1 else 'low'
+        }
+        
+        # Detect discrepancies
+        if coingecko_tokens and gateio_tokens:
+            # Check for significant symbol count differences
+            cg_count = len(coingecko_tokens)
+            gate_count = len(gateio_tokens)
+            
+            if abs(cg_count - gate_count) / max(cg_count, gate_count) > 0.5:
+                verification_data['discrepancies'].append({
+                    'type': 'count_mismatch',
+                    'severity': 'high',
+                    'message': f'Large count difference: CoinGecko ({cg_count}) vs Gate.io ({gate_count})'
+                })
+        
+        return jsonify(verification_data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/verification/token/<symbol>')
+def verify_token(symbol):
+    """Verify a specific token across multiple sources"""
+    try:
+        symbol_upper = symbol.upper()
+        verification_result = {
+            'symbol': symbol_upper,
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'sources': {},
+            'verified': False,
+            'confidence': 0
+        }
+        
+        # Check CoinGecko
+        if coingecko_tokens := fetch_coingecko_tokens():
+            cg_match = next((t for t in coingecko_tokens if t.get('symbol', '').upper() == symbol_upper), None)
+            if cg_match:
+                verification_result['sources']['coingecko'] = {
+                    'found': True,
+                    'name': cg_match.get('name', ''),
+                    'price': cg_match.get('current_price', 0),
+                    'market_cap': cg_match.get('market_cap', 0),
+                    'rank': cg_match.get('market_cap_rank', 0)
+                }
+            else:
+                verification_result['sources']['coingecko'] = {'found': False}
+        
+        # Check Gate.io
+        if gateio_tokens := fetch_gateio_tokens():
+            gate_match = next((t for t in gateio_tokens if isinstance(t, dict) and t.get('base', '').upper() == symbol_upper), None)
+            if gate_match:
+                verification_result['sources']['gateio'] = {
+                    'found': True,
+                    'id': gate_match.get('id', ''),
+                    'base': gate_match.get('base', '')
+                }
+            else:
+                verification_result['sources']['gateio'] = {'found': False}
+        
+        # Calculate verification status
+        found_count = sum(1 for s in verification_result['sources'].values() if s.get('found', False))
+        total_sources = len(verification_result['sources'])
+        
+        verification_result['verified'] = found_count >= 1
+        verification_result['confidence'] = round(found_count / total_sources * 100, 2) if total_sources > 0 else 0
+        verification_result['source_agreement'] = found_count == total_sources if total_sources > 0 else False
+        
+        return jsonify(verification_result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/verification/batch', methods=['POST'])
+def verify_tokens_batch():
+    """Verify multiple tokens in batch"""
+    try:
+        data = request.get_json()
+        symbols = data.get('symbols', [])
+        
+        if not symbols:
+            return jsonify({'error': 'No symbols provided'}), 400
+        
+        results = []
+        for symbol in symbols:
+            try:
+                symbol_upper = symbol.upper()
+                verification_result = {
+                    'symbol': symbol_upper,
+                    'sources': {}
+                }
+                
+                # Check CoinGecko
+                if coingecko_tokens := fetch_coingecko_tokens():
+                    cg_match = next((t for t in coingecko_tokens if t.get('symbol', '').upper() == symbol_upper), None)
+                    verification_result['sources']['coingecko'] = {'found': cg_match is not None}
+                
+                # Check Gate.io
+                if gateio_tokens := fetch_gateio_tokens():
+                    gate_match = next((t for t in gateio_tokens if isinstance(t, dict) and t.get('base', '').upper() == symbol_upper), None)
+                    verification_result['sources']['gateio'] = {'found': gate_match is not None}
+                
+                # Calculate confidence
+                found_count = sum(1 for s in verification_result['sources'].values() if s.get('found', False))
+                verification_result['confidence'] = round(found_count / len(verification_result['sources']) * 100, 2)
+                
+                results.append(verification_result)
+            except Exception as e:
+                results.append({
+                    'symbol': symbol,
+                    'error': str(e)
+                })
+        
+        return jsonify({
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'total_symbols': len(symbols),
+            'results': results
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/llm/insights')
 def get_llm_insights():
     """Get LLM-based exploratory data analysis insights"""
