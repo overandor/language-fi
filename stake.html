@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentence Staking - Language.fi</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="letter.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="index.html" class="logo">LANGUAGE.FI</a>
+            <div class="nav-links">
+                <a href="index.html">Explorer</a>
+                <a href="stake.html" class="active">Stake Sentence</a>
+                <a href="letter.html">Letters</a>
+            </div>
+        </nav>
+
+        <main class="stake-page">
+            <div class="stake-header">
+                <h1>Sentence Staking</h1>
+                <p class="subtitle">Stake sentences as character baskets with stillness mining</p>
+            </div>
+
+            <div class="stake-form-section">
+                <div class="stake-input-card">
+                    <h2>Stake a Sentence</h2>
+                    <form id="stakeForm">
+                        <div class="input-group">
+                            <label for="sentence">Enter Sentence</label>
+                            <input 
+                                type="text" 
+                                id="sentence" 
+                                placeholder="BUILD ON BASE"
+                                maxlength="100"
+                                required
+                            >
+                            <small class="hint">Spaces count as linguistic separator assets</small>
+                        </div>
+                        <button type="submit" class="btn-primary">Stake Sentence</button>
+                    </form>
+                </div>
+
+                <div class="space-info-card">
+                    <h3>SPACE Character</h3>
+                    <div class="space-stats">
+                        <div class="stat">
+                            <span class="label">Current Price</span>
+                            <span class="value" id="spacePrice">0.012 LGU</span>
+                        </div>
+                        <div class="stat">
+                            <span class="label">24h Change</span>
+                            <span class="value positive" id="spaceChange">+18.4%</span>
+                        </div>
+                        <div class="stat">
+                            <span class="label">Rank</span>
+                            <span class="value">#4</span>
+                        </div>
+                    </div>
+                    <p class="description">Linguistic separator token - spaces add structural value to sentences</p>
+                </div>
+            </div>
+
+            <div id="stakeResult" class="stake-result hidden">
+                <div class="result-header">
+                    <h2 id="resultSentence">BUILD ON BASE</h2>
+                    <span class="hash" id="resultHash">st_847291</span>
+                </div>
+
+                <div class="result-grid">
+                    <div class="result-card">
+                        <h3>Staking Score</h3>
+                        <div class="score-display">
+                            <span class="score-value" id="finalScore">+10.875%</span>
+                            <span class="score-label">Weekly Performance</span>
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <h3>Stillness Bonus</h3>
+                        <div class="stillness-display">
+                            <span class="days-staked" id="daysStaked">74 days</span>
+                            <span class="multiplier" id="stillnessMultiplier">1.25x</span>
+                        </div>
+                        <p class="stillness-info">Longer-held sentences earn higher multipliers</p>
+                    </div>
+
+                    <div class="result-card">
+                        <h3>Character Exposure</h3>
+                        <div class="exposure-list" id="characterExposure">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <h3>Anti-Spam Score</h3>
+                        <div class="spam-display">
+                            <span class="spam-score" id="spamScore">95</span>
+                            <span class="spam-label">Quality Score</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="performance-breakdown">
+                    <h3>Weekly Character Performance</h3>
+                    <div class="performance-table" id="performanceTable">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="stillness-info">
+                    <h3>Stillness Mining Schedule</h3>
+                    <div class="stillness-tiers">
+                        <div class="tier">
+                            <span class="days">0-7 days</span>
+                            <span class="multiplier">1.00x</span>
+                        </div>
+                        <div class="tier">
+                            <span class="days">8-30 days</span>
+                            <span class="multiplier">1.10x</span>
+                        </div>
+                        <div class="tier">
+                            <span class="days">31-90 days</span>
+                            <span class="multiplier">1.25x</span>
+                        </div>
+                        <div class="tier">
+                            <span class="days">91-180 days</span>
+                            <span class="multiplier">1.50x</span>
+                        </div>
+                        <div class="tier">
+                            <span class="days">181-365 days</span>
+                            <span class="multiplier">2.00x</span>
+                        </div>
+                        <div class="tier highlight">
+                            <span class="days">365+ days</span>
+                            <span class="multiplier">3.00x</span>
+                        </div>
+                    </div>
+                    <p class="warning">⚠️ Transfer resets stillness bonus. Vaulted transfer preserves partial stillness.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        document.getElementById('stakeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const sentence = document.getElementById('sentence').value.toUpperCase();
+            
+            try {
+                const response = await fetch('/api/stake-sentence', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sentence })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                displayStakeResult(data);
+            } catch (error) {
+                console.error('Error staking sentence:', error);
+                alert('Error staking sentence');
+            }
+        });
+
+        function displayStakeResult(data) {
+            document.getElementById('resultSentence').textContent = data.sentence;
+            document.getElementById('resultHash').textContent = data.sentence_hash;
+            document.getElementById('finalScore').textContent = `${data.final_score > 0 ? '+' : ''}${data.final_score}%`;
+            document.getElementById('daysStaked').textContent = `${data.days_staked} days`;
+            document.getElementById('stillnessMultiplier').textContent = `${data.stillness_multiplier}x`;
+            document.getElementById('spamScore').textContent = data.spam_score;
+            
+            // Character exposure
+            const exposureList = document.getElementById('characterExposure');
+            exposureList.innerHTML = '';
+            Object.entries(data.character_performance).forEach(([char, perf]) => {
+                const div = document.createElement('div');
+                div.className = 'exposure-item';
+                div.innerHTML = `
+                    <span class="char">${char}</span>
+                    <span class="weight">${perf.weight}%</span>
+                `;
+                exposureList.appendChild(div);
+            });
+            
+            // Performance table
+            const perfTable = document.getElementById('performanceTable');
+            perfTable.innerHTML = '';
+            Object.entries(data.character_performance).forEach(([char, perf]) => {
+                const row = document.createElement('div');
+                row.className = 'perf-row';
+                row.innerHTML = `
+                    <span class="char">${char}</span>
+                    <span class="count">${data.character_counts[char]}x</span>
+                    <span class="perf ${perf.performance >= 0 ? 'positive' : 'negative'}">${perf.performance > 0 ? '+' : ''}${perf.performance}%</span>
+                `;
+                perfTable.appendChild(row);
+            });
+            
+            document.getElementById('stakeResult').classList.remove('hidden');
+        }
+
+        // Load SPACE price on page load
+        async function loadSpacePrice() {
+            try {
+                const response = await fetch('/api/space-price');
+                const data = await response.json();
+                document.getElementById('spacePrice').textContent = `${data.price} LGU`;
+                document.getElementById('spaceChange').textContent = `${data.change_24h > 0 ? '+' : ''}${data.change_24h}%`;
+                document.getElementById('spaceChange').className = `value ${data.change_24h >= 0 ? 'positive' : 'negative'}`;
+            } catch (error) {
+                console.error('Error loading SPACE price:', error);
+            }
+        }
+
+        loadSpacePrice();
+    </script>
+</body>
+</html>
