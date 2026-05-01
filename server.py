@@ -6,11 +6,9 @@ Provides live data for letter prices, usage statistics, and protocol breakdown
 
 from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
-import requests
 import random
 import time
-from datetime import datetime, timedelta
-import json
+from datetime import datetime
 import os
 
 app = Flask(__name__)
@@ -161,6 +159,250 @@ def get_sentence_leaderboard():
     leaderboard = generate_sentence_leaderboard()
     cache['leaderboard'] = {'data': leaderboard, 'timestamp': time.time()}
     return jsonify(leaderboard)
+
+@app.route('/api/primitives')
+def get_primitives():
+    """Get all primitives (letters, numbers, spaces, symbols)"""
+    if 'primitives' in cache and time.time() - cache['primitives']['timestamp'] < CACHE_DURATION:
+        return jsonify(cache['primitives']['data'])
+    
+    # Generate all primitives
+    primitives = generate_all_primitives()
+    cache['primitives'] = {'data': primitives, 'timestamp': time.time()}
+    return jsonify(primitives)
+
+@app.route('/api/primitives/<symbol>')
+def get_primitive(symbol):
+    """Get single primitive details"""
+    symbol_upper = symbol.upper()
+    cache_key = f'primitive_{symbol_upper}'
+    
+    if cache_key in cache and time.time() - cache[cache_key]['timestamp'] < CACHE_DURATION:
+        return jsonify(cache[cache_key]['data'])
+    
+    # Generate primitive details
+    primitive = generate_primitive_detail(symbol_upper)
+    cache[cache_key] = {'data': primitive, 'timestamp': time.time()}
+    return jsonify(primitive)
+
+@app.route('/api/sentences/quote', methods=['POST'])
+def quote_sentence():
+    """Get sentence pricing quote with character breakdown"""
+    data = request.get_json()
+    sentence = data.get('sentence', '').upper()
+    
+    if not sentence:
+        return jsonify({'error': 'Sentence required'}), 400
+    
+    # Generate sentence quote
+    quote = generate_sentence_quote(sentence)
+    return jsonify(quote)
+
+@app.route('/api/staking/sentence-score', methods=['POST'])
+def calculate_staking_score():
+    """Calculate staking score for a sentence"""
+    data = request.get_json()
+    sentence_id = data.get('sentence_id')
+    sentence = data.get('sentence', '').upper()
+    staked_since = data.get('staked_since')
+    last_moved_at = data.get('last_moved_at')
+    
+    if not sentence:
+        return jsonify({'error': 'Sentence required'}), 400
+    
+    # Calculate staking score
+    score = calculate_sentence_staking_score(sentence_id, sentence, staked_since, last_moved_at)
+    return jsonify(score)
+
+def generate_all_primitives():
+    """Generate all primitives (letters, numbers, spaces, symbols)"""
+    primitives = []
+    
+    # Letters A-Z
+    alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    for letter in alphabet:
+        primitives.append(generate_primitive_base(letter, 'letter'))
+    
+    # Numbers 0-9
+    for num in '0123456789':
+        primitives.append(generate_primitive_base(num, 'number'))
+    
+    # SPACE
+    primitives.append(generate_primitive_base('SPACE', 'separator'))
+    
+    # Symbols
+    symbols = ['.', '!', '?', '-', '_', '@', '#']
+    for symbol in symbols:
+        primitives.append(generate_primitive_base(symbol, 'symbol'))
+    
+    return {
+        'updated_at': datetime.utcnow().isoformat() + 'Z',
+        'primitives': primitives
+    }
+
+def generate_primitive_base(symbol, primitive_type):
+    """Generate base primitive data"""
+    base_prices = {
+        'E': 0.142, 'T': 0.185, 'A': 0.142, 'O': 0.085, 'N': 0.072,
+        'I': 0.095, 'R': 0.068, 'S': 0.105, 'H': 0.062, 'L': 0.058,
+        'D': 0.062, 'C': 0.118, 'U': 0.045, 'M': 0.075, 'W': 0.058,
+        'F': 0.052, 'G': 0.048, 'Y': 0.072, 'P': 0.065, 'B': 0.091,
+        'V': 0.042, 'K': 0.045, 'J': 0.038, 'X': 0.035, 'Q': 0.032, 'Z': 0.028,
+        'SPACE': 0.061,
+        '0': 0.041, '1': 0.043, '2': 0.037, '3': 0.039, '4': 0.038,
+        '5': 0.040, '6': 0.035, '7': 0.033, '8': 0.036, '9': 0.034,
+        '.': 0.015, '!': 0.018, '?': 0.016, '-': 0.012, '_': 0.014,
+        '@': 0.022, '#': 0.020
+    }
+    
+    base_price = base_prices.get(symbol, 0.03)
+    weekly_change = random.uniform(-0.05, 0.20)
+    usage_count = random.randint(200000, 4000000)
+    
+    return {
+        'symbol': symbol,
+        'type': primitive_type,
+        'price_lgu': round(base_price * (1 + weekly_change), 3),
+        'weekly_change': round(weekly_change, 3),
+        'usage_count': usage_count,
+        'rank': 1
+    }
+
+def generate_primitive_detail(symbol):
+    """Generate detailed primitive data with oracle breakdown"""
+    base_prices = {
+        'E': 0.142, 'T': 0.185, 'A': 0.142, 'O': 0.085, 'N': 0.072,
+        'I': 0.095, 'R': 0.068, 'S': 0.105, 'H': 0.062, 'L': 0.058,
+        'D': 0.062, 'C': 0.118, 'U': 0.045, 'M': 0.075, 'W': 0.058,
+        'F': 0.052, 'G': 0.048, 'Y': 0.072, 'P': 0.065, 'B': 0.091,
+        'V': 0.042, 'K': 0.045, 'J': 0.038, 'X': 0.035, 'Q': 0.032, 'Z': 0.028,
+        'SPACE': 0.061,
+        '0': 0.041, '1': 0.043, '2': 0.037, '3': 0.039, '4': 0.038,
+        '5': 0.040, '6': 0.035, '7': 0.033, '8': 0.036, '9': 0.034
+    }
+    
+    base_price = base_prices.get(symbol, 0.03)
+    previous_price = base_price * random.uniform(0.85, 1.15)
+    weekly_change = (base_price - previous_price) / previous_price if previous_price > 0 else 0
+    usage_current = random.randint(500000, 3500000)
+    usage_previous = int(usage_current * random.uniform(0.8, 1.2))
+    
+    # Determine type
+    if symbol == 'SPACE':
+        primitive_type = 'separator'
+    elif symbol.isdigit():
+        primitive_type = 'number'
+    else:
+        primitive_type = 'letter'
+    
+    # Generate source breakdown
+    source_breakdown = {
+        'blockchain_content': random.randint(50000, 300000),
+        'token_names': random.randint(500, 5000),
+        'hashes': random.randint(20000, 100000),
+        'regular_content_sample': random.randint(50000, 200000),
+        'languagefi_registry': random.randint(30000, 150000)
+    }
+    
+    return {
+        'symbol': symbol,
+        'type': primitive_type,
+        'price_lgu': round(base_price, 3),
+        'previous_price_lgu': round(previous_price, 3),
+        'weekly_change': round(weekly_change, 4),
+        'usage_count_current_week': usage_current,
+        'usage_count_previous_week': usage_previous,
+        'rank': random.randint(1, 40),
+        'volatility': random.choice(['low', 'medium', 'high']),
+        'oracle_confidence': round(random.uniform(0.85, 0.99), 3),
+        'source_breakdown': source_breakdown
+    }
+
+def generate_sentence_quote(sentence):
+    """Generate sentence pricing quote with character breakdown"""
+    base_prices = {
+        'E': 0.142, 'T': 0.185, 'A': 0.142, 'O': 0.085, 'N': 0.072,
+        'I': 0.095, 'R': 0.068, 'S': 0.105, 'H': 0.062, 'L': 0.058,
+        'D': 0.062, 'C': 0.118, 'U': 0.045, 'M': 0.075, 'W': 0.058,
+        'F': 0.052, 'G': 0.048, 'Y': 0.072, 'P': 0.065, 'B': 0.091,
+        'V': 0.042, 'K': 0.045, 'J': 0.038, 'X': 0.035, 'Q': 0.032, 'Z': 0.028,
+        'SPACE': 0.061,
+        '0': 0.041, '1': 0.043, '2': 0.037, '3': 0.039, '4': 0.038,
+        '5': 0.040, '6': 0.035, '7': 0.033, '8': 0.036, '9': 0.034,
+        '.': 0.015, '!': 0.018, '?': 0.016, '-': 0.012, '_': 0.014,
+        '@': 0.022, '#': 0.020
+    }
+    
+    characters = []
+    base_value = 0
+    
+    for char in sentence:
+        char_key = 'SPACE' if char == ' ' else char.upper()
+        unit_price = base_prices.get(char_key, 0.03)
+        count = 1
+        total = unit_price * count
+        base_value += total
+        
+        characters.append({
+            'symbol': char_key,
+            'count': count,
+            'unit_price_lgu': round(unit_price, 3),
+            'total': round(total, 3)
+        })
+    
+    return {
+        'sentence': sentence,
+        'characters': characters,
+        'base_value_lgu': round(base_value, 3),
+        'oracle_updated_at': datetime.utcnow().isoformat() + 'Z'
+    }
+
+def calculate_sentence_staking_score(sentence_id, sentence, staked_since, last_moved_at):
+    """Calculate staking score using oracle-based pricing"""
+    # Generate quote for base value
+    quote = generate_sentence_quote(sentence)
+    base_value = quote['base_value_lgu']
+    
+    # Calculate stillness
+    stillness_days = 73
+    stillness_multiplier = calculate_stillness_multiplier(stillness_days)
+    
+    # Calculate weekly performance
+    weekly_performance = random.uniform(0.05, 0.15)
+    
+    # Calculate diversity multiplier
+    unique_chars = len(set(sentence.replace(' ', '')))
+    diversity_multiplier = calculate_rarity_bonus(unique_chars, len(sentence))
+    
+    # Anti-spam score
+    spam_score = calculate_spam_score(sentence) / 100
+    
+    # Final score
+    final_score = base_value * (1 + weekly_performance) * stillness_multiplier * diversity_multiplier * spam_score
+    
+    # Find top contributors
+    char_counts = {}
+    for char in sentence:
+        char_key = 'SPACE' if char == ' ' else char.upper()
+        char_counts[char_key] = char_counts.get(char_key, 0) + 1
+    
+    top_contributors = sorted(
+        [{'symbol': k, 'contribution': v} for k, v in char_counts.items()],
+        key=lambda x: x['contribution'],
+        reverse=True
+    )[:3]
+    
+    return {
+        'sentence_id': sentence_id or f'sent_{random.randint(1000, 9999)}',
+        'base_character_value_lgu': round(base_value, 3),
+        'weekly_character_performance': round(weekly_performance, 3),
+        'stillness_days': stillness_days,
+        'stillness_multiplier': stillness_multiplier,
+        'diversity_multiplier': diversity_multiplier,
+        'anti_spam_score': round(spam_score, 2),
+        'final_staking_score': round(final_score, 3),
+        'top_contributors': top_contributors
+    }
 
 def generate_letter_data():
     """Generate live letter price data with random sampling"""

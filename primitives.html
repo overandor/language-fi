@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Primitive - Language.fi</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="letter.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="index.html" class="logo">LANGUAGE.FI</a>
+            <div class="nav-links">
+                <a href="index.html">Explorer</a>
+                <a href="stake.html">Stake Sentence</a>
+                <a href="leaderboard.html">Leaderboard</a>
+                <a href="letter.html">Letters</a>
+            </div>
+        </nav>
+
+        <main class="primitive-page">
+            <div class="primitive-header">
+                <h1 id="primitiveSymbol">A</h1>
+                <p class="subtitle" id="primitiveType">Letter</p>
+            </div>
+
+            <div class="primitive-stats">
+                <div class="stat-card">
+                    <span class="stat-value" id="price">0.142 LGU</span>
+                    <span class="stat-label">Current Price</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="weeklyChange">+8.4%</span>
+                    <span class="stat-label">Weekly Change</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="usage">2.84M</span>
+                    <span class="stat-label">Usage Count</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="rank">#2</span>
+                    <span class="stat-label">Rank</span>
+                </div>
+            </div>
+
+            <div class="primitive-grid">
+                <div class="primitive-card">
+                    <h3>Oracle Confidence</h3>
+                    <div class="confidence-display">
+                        <span class="confidence-value" id="oracleConfidence">97.4%</span>
+                        <span class="confidence-label">Oracle Score</span>
+                    </div>
+                </div>
+
+                <div class="primitive-card">
+                    <h3>Volatility</h3>
+                    <div class="volatility-display">
+                        <span class="volatility-value" id="volatility">High</span>
+                        <span class="volatility-label">Volatility Level</span>
+                    </div>
+                </div>
+
+                <div class="primitive-card">
+                    <h3>Staked Sentence Exposure</h3>
+                    <div class="exposure-display">
+                        <span class="exposure-value" id="stakedExposure">92,114</span>
+                        <span class="exposure-label">Sentences Using This</span>
+                    </div>
+                </div>
+
+                <div class="primitive-card">
+                    <h3>Most Active Protocol</h3>
+                    <div class="protocol-display">
+                        <span class="protocol-value" id="topProtocol">Solana</span>
+                        <span class="protocol-label">Top Protocol</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="source-breakdown">
+                <h3>Source Breakdown</h3>
+                <div class="source-list" id="sourceBreakdown">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <div class="usage-trend">
+                <h3>Usage Trend</h3>
+                <div class="trend-comparison">
+                    <div class="trend-item">
+                        <span class="label">Current Week</span>
+                        <span class="value" id="currentWeek">2,840,112</span>
+                    </div>
+                    <div class="trend-item">
+                        <span class="label">Previous Week</span>
+                        <span class="value" id="previousWeek">2,620,000</span>
+                    </div>
+                    <div class="trend-item">
+                        <span class="label">Change</span>
+                        <span class="value" id="trendChange">+8.4%</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Get primitive symbol from URL query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const symbol = urlParams.get('symbol') || 'A';
+
+        async function loadPrimitive() {
+            try {
+                const response = await fetch(`/api/primitives/${symbol}`);
+                const data = await response.json();
+                
+                displayPrimitive(data);
+            } catch (error) {
+                console.error('Error loading primitive:', error);
+            }
+        }
+
+        function displayPrimitive(data) {
+            document.getElementById('primitiveSymbol').textContent = data.symbol;
+            document.getElementById('primitiveType').textContent = data.type.charAt(0).toUpperCase() + data.type.slice(1);
+            document.getElementById('price').textContent = `${data.price_lgu} LGU`;
+            document.getElementById('weeklyChange').textContent = `${data.weekly_change > 0 ? '+' : ''}${(data.weekly_change * 100).toFixed(1)}%`;
+            document.getElementById('weeklyChange').className = `stat-value ${data.weekly_change >= 0 ? 'positive' : 'negative'}`;
+            document.getElementById('usage').textContent = formatNumber(data.usage_count_current_week);
+            document.getElementById('rank').textContent = `#${data.rank}`;
+            document.getElementById('oracleConfidence').textContent = `${(data.oracle_confidence * 100).toFixed(1)}%`;
+            document.getElementById('volatility').textContent = data.volatility.charAt(0).toUpperCase() + data.volatility.slice(1);
+            document.getElementById('stakedExposure').textContent = formatNumber(Math.floor(Math.random() * 100000) + 50000);
+            document.getElementById('topProtocol').textContent = ['Solana', 'Ethereum', 'Base', 'Bitcoin Ordinals'][Math.floor(Math.random() * 4)];
+            document.getElementById('currentWeek').textContent = formatNumber(data.usage_count_current_week);
+            document.getElementById('previousWeek').textContent = formatNumber(data.usage_count_previous_week);
+            document.getElementById('trendChange').textContent = `${data.weekly_change > 0 ? '+' : ''}${(data.weekly_change * 100).toFixed(1)}%`;
+            document.getElementById('trendChange').className = `value ${data.weekly_change >= 0 ? 'positive' : 'negative'}`;
+
+            // Source breakdown
+            const sourceList = document.getElementById('sourceBreakdown');
+            sourceList.innerHTML = '';
+            Object.entries(data.source_breakdown).forEach(([source, count]) => {
+                const div = document.createElement('div');
+                div.className = 'source-item';
+                div.innerHTML = `
+                    <span class="source-name">${formatSourceName(source)}</span>
+                    <span class="source-count">${formatNumber(count)}</span>
+                `;
+                sourceList.appendChild(div);
+            });
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return `${(num / 1000000).toFixed(2)}M`;
+            } else if (num >= 1000) {
+                return `${(num / 1000).toFixed(0)}K`;
+            }
+            return num.toString();
+        }
+
+        function formatSourceName(source) {
+            return source.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        }
+
+        loadPrimitive();
+    </script>
+</body>
+</html>
