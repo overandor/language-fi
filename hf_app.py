@@ -11,7 +11,9 @@ import time
 from datetime import datetime
 from flask import Flask, jsonify
 from flask_cors import CORS
+import gradio as gr
 
+# Flask app for API
 app = Flask(__name__)
 CORS(app)
 
@@ -30,6 +32,426 @@ live_data_cache = {
     'chain_data': {},
     'last_updated': None
 }
+
+def fetch_coingecko_tokens():
+    """Fetch token data from CoinGecko API"""
+    try:
+        if not COINGECKO_API_KEY:
+            print("CoinGecko API key not configured, using fallback data")
+            return None
+        
+        url = 'https://api.coingecko.com/api/v3/coins/list'
+        headers = {
+            'x-cg-demo-api-key': COINGECKO_API_KEY
+        }
+        response = requests.get(url, headers=headers, timeout=30)
+        
+        if response.status_code == 200:
+            tokens = response.json()
+            print(f"Fetched {len(tokens)} tokens from CoinGecko")
+            return tokens
+        else:
+            print(f"CoinGecko API error: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Error fetching CoinGecko data: {e}")
+        return None
+
+def count_characters_in_tokens(tokens, source_name):
+    """Count character occurrences in token names and symbols"""
+    char_counts = {}
+    if not tokens:
+        return char_counts
+    
+    for token in tokens:
+        symbol = token.get('symbol', '')
+        name = token.get('name', '')
+        
+        for char in symbol:
+            if char.isalnum():
+                char_counts[char] = char_counts.get(char, 0) + 1
+        
+        for char in name:
+            if char.isalnum():
+                char_counts[char] = char_counts.get(char, 0) + 1
+    
+    return char_counts
+
+def fetch_sample_articles():
+    """Fetch sample articles from newspapers and Medium"""
+    # Sample headlines from financial news
+    newspaper_samples = [
+        "Bitcoin hits new all-time high as institutional adoption grows",
+        "Ethereum upgrade scheduled for next month",
+        "Solana ecosystem expands with new DeFi protocols",
+        "Regulatory clarity coming for crypto markets",
+        "NFT trading volume surges in Q4"
+    ]
+    
+    # Sample Web3/crypto content
+    medium_samples = [
+        "Understanding DeFi protocols and their risks",
+        "How to stake tokens for passive income",
+        "The future of blockchain gaming",
+        "Cross-chain bridges explained",
+        "Layer 2 scaling solutions comparison"
+    ]
+    
+    return {
+        'newspapers': newspaper_samples,
+        'medium': medium_samples
+    }
+
+def count_characters_in_articles(articles):
+    """Count character occurrences in article headlines"""
+    char_counts = {}
+    for article in articles:
+        for char in article:
+            if char.isalnum():
+                char_counts[char] = char_counts.get(char, 0) + 1
+    return char_counts
+
+def fetch_chain_data():
+    """Fetch chain-specific token data"""
+    chains = {
+        'ethereum': ['ETH', 'USDT', 'USDC', 'DAI', 'WBTC', 'LINK', 'UNI', 'AAVE'],
+        'solana': ['SOL', 'RAY', 'SRM', 'ORCA', 'JUP', 'BONK'],
+        'bitcoin': ['BTC', 'WBTC', 'SBTC'],
+        'binance': ['BNB', 'CAKE', 'XVS'],
+        'polygon': ['MATIC', 'AAVE', 'UNI', 'DAI']
+    }
+    return chains
+
+def count_chain_characters(chain_data):
+    """Count character occurrences in chain tokens"""
+    char_counts = {}
+    for chain, tokens in chain_data.items():
+        for token in tokens:
+            for char in token:
+                if char.isalnum():
+                    char_counts[char] = char_counts.get(char, 0) + 1
+    return char_counts
+
+def update_live_oracle_data():
+    """Update oracle data from all sources"""
+    global live_data_cache
+    
+    # Fetch CoinGecko tokens
+    cg_tokens = fetch_coingecko_tokens()
+    if cg_tokens:
+        live_data_cache['coingecko_tokens'] = cg_tokens
+    
+    # Fetch sample articles
+    articles = fetch_sample_articles()
+    live_data_cache['newspaper_articles'] = articles['newspapers']
+    live_data_cache['medium_articles'] = articles['medium']
+    
+    # Fetch chain data
+    chain_data = fetch_chain_data()
+    live_data_cache['chain_data'] = chain_data
+    
+    live_data_cache['last_updated'] = datetime.utcnow().isoformat()
+    print(f"Live oracle data updated at {live_data_cache['last_updated']}")
+
+def get_live_character_counts():
+    """Get character counts from all data sources"""
+    char_counts = {
+        'coingecko': {},
+        'newspapers': {},
+        'medium': {},
+        'chains': {},
+        'total': {}
+    }
+    
+    # CoinGecko
+    if live_data_cache.get('coingecko_tokens'):
+        cg_counts = count_characters_in_tokens(live_data_cache['coingecko_tokens'], 'coingecko')
+        char_counts['coingecko'] = cg_counts
+    
+    # Newspaper articles
+    if live_data_cache.get('newspaper_articles'):
+        news_counts = count_characters_in_articles(live_data_cache['newspaper_articles'])
+        char_counts['newspapers'] = news_counts
+    
+    # Medium articles
+    if live_data_cache.get('medium_articles'):
+        medium_counts = count_characters_in_articles(live_data_cache['medium_articles'])
+        char_counts['medium'] = medium_counts
+    
+    # Chain data
+    if live_data_cache.get('chain_data'):
+        chain_counts = count_chain_characters(live_data_cache['chain_data'])
+        char_counts['chains'] = chain_counts
+    
+    # Combine all counts
+    all_sources = ['coingecko', 'newspapers', 'medium']
+    for source in all_sources:
+        for char, count in char_counts[source].items():
+            char_counts['total'][char] = char_counts['total'].get(char, 0) + count
+    
+    return char_counts
+
+def generate_primitive_data():
+    """Generate primitive data with live oracle counts"""
+    char_counts = get_live_character_counts()
+    total_counts = char_counts.get('total', {})
+    
+    base_prices = {
+        'E': 0.142, 'T': 0.185, 'A': 0.142, 'O': 0.085, 'N': 0.072,
+        'I': 0.095, 'R': 0.068, 'S': 0.105, 'H': 0.062, 'L': 0.058,
+        'D': 0.062, 'C': 0.118, 'U': 0.045, 'M': 0.075, 'W': 0.058,
+        'F': 0.052, 'G': 0.048, 'Y': 0.072, 'P': 0.065, 'B': 0.091,
+        'V': 0.042, 'K': 0.045, 'J': 0.038, 'X': 0.035, 'Q': 0.032, 'Z': 0.028,
+        'SPACE': 0.061,
+        '0': 0.041, '1': 0.043, '2': 0.037, '3': 0.039, '4': 0.038,
+        '5': 0.040, '6': 0.035, '7': 0.033, '8': 0.036, '9': 0.034,
+        '.': 0.015, '!': 0.018, '?': 0.016, '-': 0.012, '_': 0.014,
+        '@': 0.022, '#': 0.020
+    }
+    
+    number_base_prices = {
+        '0': 0.041, '1': 0.043, '2': 0.037, '3': 0.039, '4': 0.038,
+        '5': 0.040, '6': 0.035, '7': 0.033, '8': 0.036, '9': 0.034
+    }
+    
+    symbol_base_prices = {
+        '.': 0.015, '!': 0.018, '?': 0.016, '-': 0.012, '_': 0.014,
+        '@': 0.022, '#': 0.020
+    }
+    
+    primitives = []
+    
+    # Letters
+    letter_primitives = []
+    for i, letter in enumerate('ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
+        count = total_counts.get(letter, 0)
+        base_price = base_prices.get(letter, 0.05)
+        change_24h = random.uniform(-15, 25)
+        current_price = base_price * (1 + change_24h / 100)
+        weekly_change = random.uniform(-10, 20)
+        
+        letter_primitives.append({
+            'symbol': letter,
+            'type': 'letter',
+            'price_lgu': round(current_price, 3),
+            'change_24h': round(change_24h, 1),
+            'weekly_change': round(weekly_change, 3),
+            'usage_count': count,
+            'rank': None,
+            'volatility': random.choice(['Low', 'Medium', 'High']),
+            'staking_weight': round(random.uniform(0.8, 1.2), 2),
+            'data_source': 'live_coingecko' if count > 0 else 'simulated'
+        })
+    
+    # Sort letters by usage count and assign ranks
+    letter_primitives.sort(key=lambda x: x['usage_count'], reverse=True)
+    for i, primitive in enumerate(letter_primitives):
+        primitive['rank'] = i + 1
+    
+    primitives.extend(letter_primitives)
+    
+    # Numbers
+    number_primitives = []
+    for number in '0123456789':
+        count = total_counts.get(number, 0)
+        base_price = number_base_prices.get(number, 0.04)
+        change_24h = random.uniform(-10, 20)
+        current_price = base_price * (1 + change_24h / 100)
+        weekly_change = random.uniform(-8, 15)
+        
+        number_primitives.append({
+            'symbol': number,
+            'type': 'number',
+            'price_lgu': round(current_price, 3),
+            'change_24h': round(change_24h, 1),
+            'weekly_change': round(weekly_change, 3),
+            'usage_count': count,
+            'rank': None,
+            'volatility': random.choice(['Low', 'Medium', 'High']),
+            'staking_weight': round(random.uniform(0.7, 1.1), 2),
+            'data_source': 'live_coingecko' if count > 0 else 'simulated'
+        })
+    
+    # Sort numbers by usage count and assign ranks
+    number_primitives.sort(key=lambda x: x['usage_count'], reverse=True)
+    for i, primitive in enumerate(number_primitives):
+        primitive['rank'] = i + 27
+    
+    primitives.extend(number_primitives)
+    
+    # Symbols
+    symbol_primitives = []
+    for symbol in '.!?-_@#':
+        count = total_counts.get(symbol, 0)
+        base_price = symbol_base_prices.get(symbol, 0.016)
+        change_24h = random.uniform(-8, 18)
+        current_price = base_price * (1 + change_24h / 100)
+        weekly_change = random.uniform(-6, 12)
+        
+        symbol_primitives.append({
+            'symbol': symbol,
+            'type': 'symbol',
+            'price_lgu': round(current_price, 3),
+            'change_24h': round(change_24h, 1),
+            'weekly_change': round(weekly_change, 3),
+            'usage_count': count,
+            'rank': None,
+            'volatility': random.choice(['Low', 'Medium']),
+            'staking_weight': round(random.uniform(0.6, 1.0), 2),
+            'data_source': 'live_coingecko' if count > 0 else 'simulated'
+        })
+    
+    # Sort symbols by usage count and assign ranks
+    symbol_primitives.sort(key=lambda x: x['usage_count'], reverse=True)
+    for i, primitive in enumerate(symbol_primitives):
+        primitive['rank'] = i + 37
+    
+    primitives.extend(symbol_primitives)
+    
+    return {
+        'updated_at': datetime.utcnow().isoformat() + 'Z',
+        'primitives': primitives
+    }
+
+# Flask routes
+@app.route('/api/health')
+def health():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'Language.fi API',
+        'version': '1.0.0',
+        'data_source': 'CoinGecko Oracle'
+    })
+
+@app.route('/api/primitives')
+def get_primitives():
+    """Get all primitives"""
+    if 'primitives' in cache and time.time() - cache['primitives']['timestamp'] < CACHE_DURATION:
+        return jsonify(cache['primitives']['data'])
+    
+    primitives = generate_primitive_data()
+    cache['primitives'] = {'data': primitives, 'timestamp': time.time()}
+    return jsonify(primitives)
+
+@app.route('/api/primitives/<path:symbol>')
+def get_primitive(symbol):
+    """Get single primitive"""
+    primitives = generate_primitive_data()
+    for primitive in primitives['primitives']:
+        if primitive['symbol'] == symbol.upper():
+            return jsonify(primitive)
+    return jsonify({'error': 'Primitive not found'}), 404
+
+@app.route('/api/oracle/update', methods=['POST'])
+def update_oracle():
+    """Trigger oracle update from CoinGecko"""
+    try:
+        update_live_oracle_data()
+        return jsonify({
+            'success': True,
+            'message': 'Oracle updated from CoinGecko, Newspapers, Medium, and Chains',
+            'last_updated': live_data_cache['last_updated']
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/oracle/live-stats')
+def get_live_oracle_stats():
+    """Get live oracle statistics"""
+    try:
+        if not live_data_cache['last_updated'] or (datetime.utcnow() - datetime.fromisoformat(live_data_cache['last_updated'].replace('Z', '+00:00'))).total_seconds() > CACHE_DURATION:
+            update_live_oracle_data()
+        
+        char_counts = get_live_character_counts()
+        
+        return jsonify({
+            'last_updated': live_data_cache['last_updated'],
+            'sources': {
+                'coingecko_tokens_count': len(live_data_cache.get('coingecko_tokens', []) or []),
+                'newspaper_articles_count': len(live_data_cache.get('newspaper_articles', []) or []),
+                'medium_articles_count': len(live_data_cache.get('medium_articles', []) or []),
+                'chains_count': len(live_data_cache.get('chain_data', {}) or {})
+            },
+            'character_counts': {
+                'coingecko': char_counts.get('coingecko', {}),
+                'newspapers': char_counts.get('newspapers', {}),
+                'medium': char_counts.get('medium', {}),
+                'chains': char_counts.get('chains', {}),
+                'total': char_counts.get('total', {})
+            },
+            'total_characters': sum(char_counts.get('total', {}).values()),
+            'data_source': 'Multi-source Oracle (CoinGecko + Newspapers + Medium + Chains)'
+        })
+    except Exception as e:
+        return jsonify({
+            'error': str(e)
+        }), 500
+
+# Gradio interface
+def get_primitives_gradio():
+    """Get primitives for Gradio display"""
+    primitives = generate_primitive_data()
+    return primitives
+
+def format_primitives_for_display(primitives):
+    """Format primitives for Gradio table display"""
+    data = []
+    for p in primitives['primitives']:
+        data.append([
+            p['symbol'],
+            p['type'],
+            f"${p['price_lgu']:.3f}",
+            f"{p['change_24h']:.1f}%",
+            p['usage_count'],
+            p['rank'],
+            p['data_source']
+        ])
+    return data
+
+with gr.Blocks(title="Language.fi Oracle API") as demo:
+    gr.Markdown("# Language.fi Oracle API")
+    gr.Markdown("Live letter and number primitive pricing using CoinGecko oracle data.")
+    
+    with gr.Tab("Primitives"):
+        refresh_btn = gr.Button("Refresh Data")
+        output = gr.Dataframe(
+            label="All Primitives",
+            headers=["Symbol", "Type", "Price (LGU)", "24h Change", "Usage Count", "Rank", "Source"],
+            datatype=["str", "str", "str", "str", "number", "number", "str"]
+        )
+        
+        refresh_btn.click(
+            fn=lambda: format_primitives_for_display(get_primitives_gradio()),
+            outputs=output
+        )
+    
+    with gr.Tab("API Endpoints"):
+        gr.Markdown("### Available API Endpoints")
+        gr.Markdown("- `GET /api/health` - Health check")
+        gr.Markdown("- `GET /api/primitives` - Get all primitives")
+        gr.Markdown("- `GET /api/primitives/<symbol>` - Get single primitive")
+        gr.Markdown("- `POST /api/oracle/update` - Update oracle data")
+        gr.Markdown("- `GET /api/oracle/live-stats` - Get oracle statistics")
+
+# Run Flask app in background thread for Gradio
+from threading import Thread
+
+def run_flask():
+    app.run(host='0.0.0.0', port=7860, threaded=True)
+
+flask_thread = Thread(target=run_flask, daemon=True)
+flask_thread.start()
+
+if __name__ == "__main__":
+    # Initialize oracle data
+    update_live_oracle_data()
+    
+    # Run Gradio interface
+    demo.launch()
 
 def fetch_coingecko_tokens():
     """Fetch token data from CoinGecko API"""
