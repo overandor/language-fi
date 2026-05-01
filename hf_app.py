@@ -12,15 +12,10 @@ import time
 from datetime import datetime, timezone
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from functools import wraps
-from collections import defaultdict
 
 # Flask app for API
 app = Flask(__name__)
 CORS(app)
-
-# API Keys
-COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '')
 
 # Cache
 cache = {}
@@ -38,10 +33,6 @@ live_data_cache = {
 def fetch_coingecko_tokens():
     """Fetch token data from CoinGecko API"""
     try:
-        if not COINGECKO_API_KEY:
-            print("CoinGecko API key not configured, using fallback data")
-            return None
-        
         url = 'https://api.coingecko.com/api/v3/coins/markets'
         headers = {
             'Accept': 'application/json'
@@ -54,9 +45,6 @@ def fetch_coingecko_tokens():
             'page': '1',
             'sparkline': 'false'
         }
-        
-        if COINGECKO_API_KEY:
-            params['x_cg_demo_api_key'] = COINGECKO_API_KEY
         
         response = requests.get(url, headers=headers, params=params, timeout=30)
         response.raise_for_status()
@@ -192,13 +180,66 @@ def update_oracle():
             'message': str(e)
         }), 500
 
-@app.route('/api/oracle/live-stats')
-def get_live_stats():
-    """Get live oracle statistics"""
-    return jsonify({
-        'coingecko_tokens_count': len(live_data_cache['coingecko_tokens']) if live_data_cache['coingecko_tokens'] else 0,
-        'last_updated': live_data_cache['last_updated']
-    })
+@app.route('/health')
+def health_check():
+    """Health check endpoint"""
+    try:
+        from kpi_engine import kpi_store, engine
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'kpi_engine_running': engine.running,
+            'history_count': len(kpi_store.get('history', [])),
+            'database_connected': os.path.exists(os.getenv('DB_PATH', 'kpi_history.db'))
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 500
+
+@app.route('/api/metrics')
+def get_system_metrics():
+    """Get system metrics for monitoring"""
+    try:
+        from kpi_engine import kpi_store
+        import sqlite3
+        
+        db_path = os.getenv('DB_PATH', 'kpi_history.db')
+        db_size = os.path.getsize(db_path) if os.path.exists(db_path) else 0
+        
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT COUNT(*) FROM kpi_history')
+        kpi_history_count = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM price_history')
+        price_history_count = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM llm_analysis_history')
+        llm_analysis_count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return jsonify({
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'memory': {
+                'history_count': len(kpi_store.get('history', [])),
+                'new_kpis_count': len(kpi_store.get('new_kpis', [])),
+                'llm_insights_count': len(kpi_store.get('llm_insights', [])),
+                'reasoning_history_count': len(kpi_store.get('reasoning_history', []))
+            },
+            'database': {
+                'kpi_history_count': kpi_history_count,
+                'price_history_count': price_history_count,
+                'llm_analysis_count': llm_analysis_count,
+                'db_size_bytes': db_size
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/kpis')
 def get_kpis():
