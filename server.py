@@ -19,7 +19,7 @@ CORS(app)
 GATE_API_KEY = os.getenv('GATE_API_KEY', '5f35c83ea82aafa977f46a7b1f75c873')
 GATE_API_SECRET = os.getenv('GATE_API_SECRET', '9467d896f5bf2980d0c66bb948608aca3a619a00eb7dbbdfe9f2ef94b594fb3')
 COINMARKETCAP_API_KEY = os.getenv('COINMARKETCAP_API_KEY', '')
-COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '')
+COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', 'CG-DD8rr7U4hQsjAxokXt7ERtaG')
 
 # Cache for data
 cache = {}
@@ -28,6 +28,7 @@ CACHE_DURATION = 300  # 5 minutes
 # Live data cache
 live_data_cache = {
     'coinmarketcap_tokens': None,
+    'gateio_tokens': None,
     'coingecko_tokens': None,
     'last_updated': None
 }
@@ -62,17 +63,46 @@ def fetch_coinmarketcap_tokens():
         print(f"Error fetching CoinMarketCap data: {e}")
         return None
 
+def fetch_gateio_tokens():
+    """Fetch token data from Gate.io API"""
+    try:
+        url = 'https://api.gate.io/api/v4/spot/currency_pairs'
+        headers = {
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        data = response.json()
+        tokens = data if isinstance(data, list) else []
+        
+        print(f"Fetched {len(tokens)} token pairs from Gate.io")
+        return tokens
+    except Exception as e:
+        print(f"Error fetching Gate.io data: {e}")
+        return None
+
 def fetch_coingecko_tokens():
     """Fetch token data from CoinGecko API"""
     try:
-        url = 'https://api.coingecko.com/api/v3/coins/list'
+        # Fetch top cryptocurrencies
+        url = 'https://api.coingecko.com/api/v3/coins/markets'
         headers = {
             'Accept': 'application/json'
         }
         if COINGECKO_API_KEY:
             headers['x-cg-demo-api-key'] = COINGECKO_API_KEY
         
-        response = requests.get(url, headers=headers, timeout=30)
+        params = {
+            'vs_currency': 'usd',
+            'order': 'market_cap_desc',
+            'per_page': '250',
+            'page': '1',
+            'sparkline': 'false'
+        }
+        
+        response = requests.get(url, headers=headers, params=params, timeout=30)
         response.raise_for_status()
         
         data = response.json()
@@ -95,11 +125,12 @@ def count_characters_in_tokens(tokens, source_name):
         if source_name == 'coinmarketcap':
             name = token.get('name', '').upper()
             symbol = token.get('symbol', '').upper()
+        elif source_name == 'gateio':
+            name = token.get('id', '').upper() if isinstance(token, dict) else ''
+            symbol = token.get('base', '').upper() if isinstance(token, dict) else ''
         elif source_name == 'coingecko':
-            name = token.get('name', '').upper()
-            symbol = token.get('symbol', '').upper()
-        else:
-            continue
+            name = token.get('name', '').upper() if isinstance(token, dict) else ''
+            symbol = token.get('symbol', '').upper() if isinstance(token, dict) else ''
         
         # Count characters in name
         for char in name:
@@ -122,6 +153,11 @@ def update_live_oracle_data():
     if cmc_tokens:
         live_data_cache['coinmarketcap_tokens'] = cmc_tokens
     
+    # Fetch Gate.io tokens
+    gate_tokens = fetch_gateio_tokens()
+    if gate_tokens:
+        live_data_cache['gateio_tokens'] = gate_tokens
+    
     # Fetch CoinGecko tokens
     cg_tokens = fetch_coingecko_tokens()
     if cg_tokens:
@@ -135,6 +171,7 @@ def get_live_character_counts():
     """Get character counts from live token data"""
     char_counts = {
         'coinmarketcap': {},
+        'gateio': {},
         'coingecko': {},
         'total': {}
     }
@@ -144,13 +181,18 @@ def get_live_character_counts():
         cmc_counts = count_characters_in_tokens(live_data_cache['coinmarketcap_tokens'], 'coinmarketcap')
         char_counts['coinmarketcap'] = cmc_counts
     
+    # Count from Gate.io
+    if live_data_cache.get('gateio_tokens'):
+        gate_counts = count_characters_in_tokens(live_data_cache['gateio_tokens'], 'gateio')
+        char_counts['gateio'] = gate_counts
+    
     # Count from CoinGecko
     if live_data_cache.get('coingecko_tokens'):
         cg_counts = count_characters_in_tokens(live_data_cache['coingecko_tokens'], 'coingecko')
         char_counts['coingecko'] = cg_counts
     
     # Combine counts
-    for source in ['coinmarketcap', 'coingecko']:
+    for source in ['coinmarketcap', 'gateio', 'coingecko']:
         for char, count in char_counts[source].items():
             char_counts['total'][char] = char_counts['total'].get(char, 0) + count
     
@@ -393,7 +435,7 @@ def get_live_oracle_stats():
         return jsonify({
             'last_updated': live_data_cache['last_updated'],
             'coinmarketcap_tokens_count': len(live_data_cache.get('coinmarketcap_tokens', [])),
-            'coingecko_tokens_count': len(live_data_cache.get('coingecko_tokens', [])),
+            'gateio_tokens_count': len(live_data_cache.get('gateio_tokens', [])),
             'character_counts': char_counts,
             'total_characters': sum(char_counts['total'].values())
         })
@@ -465,6 +507,7 @@ def tokenize_oracle_stats():
             'total_characters': sum(char_counts['total'].values()),
             'data_sources': {
                 'coinmarketcap': len(live_data_cache.get('coinmarketcap_tokens', [])),
+                'gateio': len(live_data_cache.get('gateio_tokens', [])),
                 'coingecko': len(live_data_cache.get('coingecko_tokens', []))
             },
             'token_metadata': {
@@ -585,7 +628,7 @@ def generate_primitive_detail(symbol):
     solana_nft_collections = random.randint(20000, 80000)
     solana_domains = random.randint(5000, 20000)
     languagefi_registry = random.randint(30000, 150000)
-    coingecko_listings = random.randint(500, 3000)
+    gateio_listings = random.randint(500, 3000)
     
     # Calculate weighted usage
     weighted_usage = (
@@ -593,7 +636,7 @@ def generate_primitive_detail(symbol):
         solana_nft_collections * 0.20 +
         solana_domains * 0.15 +
         languagefi_registry * 0.25 +
-        coingecko_listings * 0.15
+        gateio_listings * 0.15
     )
     
     # Oracle sources with weights
@@ -618,10 +661,10 @@ def generate_primitive_detail(symbol):
             'weight': 0.25,
             'source_id': 'langfi_registry_v1'
         },
-        'coingecko_token_listings': {
-            'occurrences': coingecko_listings,
+        'gateio_token_listings': {
+            'occurrences': gateio_listings,
             'weight': 0.15,
-            'source_id': 'coingecko_listings_v1'
+            'source_id': 'gateio_listings_v1'
         }
     }
     
@@ -763,7 +806,7 @@ def generate_oracle_snapshot():
             'solana_nft_collections': 0.20,
             'solana_domains': 0.15,
             'languagefi_registry': 0.25,
-            'coingecko_token_listings': 0.15
+            'gateio_token_listings': 0.15
         },
         'total_sample_size': random.randint(500000, 5000000),
         'primitives': []
@@ -1181,12 +1224,6 @@ def generate_sentence_leaderboard():
     return leaderboard
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 4000))
+    port = int(os.getenv('PORT', 3000))
     print(f"Language.fi Backend Server running on port {port}")
-    
-    # Initialize oracle with CoinGecko data on startup
-    print("Initializing CoinGecko oracle...")
-    update_live_oracle_data()
-    print(f"Oracle initialized. Found {len(live_data_cache.get('coingecko_tokens', []))} tokens from CoinGecko.")
-    
     app.run(host='0.0.0.0', port=port)
