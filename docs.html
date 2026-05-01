@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - Language.fi</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">LANGUAGE.FI</a>
+            <ul class="nav-links">
+                <li><a href="index.html#protocol">Protocol</a></li>
+                <li><a href="explorer.html">Explorer</a></li>
+                <li><a href="index.html#letters">Letters</a></li>
+                <li><a href="index.html#words">Words</a></li>
+                <li><a href="index.html#sentences">Sentences</a></li>
+                <li><a href="index.html#oracle">Oracle</a></li>
+                <li><a href="docs.html" class="active">Docs</a></li>
+                <li><a href="explorer.html" class="nav-cta">Launch App</a></li>
+            </ul>
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+
+    <main class="docs-page">
+        <div class="docs-container">
+            <aside class="docs-sidebar">
+                <h3>Documentation</h3>
+                <ul class="docs-nav">
+                    <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#primitives">Primitives</a></li>
+                    <li><a href="#oracle">Oracle</a></li>
+                    <li><a href="#sentence-staking">Sentence Staking</a></li>
+                    <li><a href="#api">API Reference</a></li>
+                    <li><a href="#deployment">Deployment</a></li>
+                </ul>
+            </aside>
+
+            <div class="docs-content">
+                <section id="overview" class="docs-section">
+                    <h1>Overview</h1>
+                    <p>Language.fi is a character oracle and sentence staking protocol. It prices letters, numbers, spaces, and symbols using live usage data from token names, NFT collections, domains, registry entries, and exchange listings. Users mint or stake sentences whose values are calculated from the live prices of their underlying characters.</p>
+                    
+                    <h2>Core Invention</h2>
+                    <p>Characters become priced API primitives, and sentences become staked baskets of those primitives.</p>
+                    
+                    <h3>Meaning:</h3>
+                    <ul>
+                        <li>A, B, C, 7, SPACE, etc. each have live oracle prices</li>
+                        <li>A sentence is valued by summing its characters</li>
+                        <li>A staked sentence earns score based on its character basket, time held, diversity, and anti-spam rules</li>
+                    </ul>
+                    
+                    <h3>Value Logic:</h3>
+                    <p>More used character → higher demand score → higher primitive price → higher sentence value → stronger staking score or minting cost</p>
+                </section>
+
+                <section id="primitives" class="docs-section">
+                    <h1>Primitives</h1>
+                    <p>The protocol tracks the following primitives:</p>
+                    <ul>
+                        <li><strong>Letters:</strong> A-Z</li>
+                        <li><strong>Numbers:</strong> 0-9</li>
+                        <li><strong>Special primitive:</strong> SPACE</li>
+                        <li><strong>Optional symbols:</strong> ., !, ?, -, _, @, #</li>
+                    </ul>
+                    
+                    <h2>Primitive Data</h2>
+                    <p>Each primitive includes:</p>
+                    <ul>
+                        <li>Current price</li>
+                        <li>24h change</li>
+                        <li>Weekly change</li>
+                        <li>Usage count</li>
+                        <li>Source breakdown</li>
+                        <li>Volatility</li>
+                        <li>Rank</li>
+                        <li>Staking weight</li>
+                        <li>Last oracle update</li>
+                    </ul>
+                </section>
+
+                <section id="oracle" class="docs-section">
+                    <h1>Oracle</h1>
+                    <p>The Language.fi Oracle measures live letter and number usage across multiple data sources:</p>
+                    
+                    <h2>Oracle Sources</h2>
+                    <ul>
+                        <li>Solana token names (25% weight)</li>
+                        <li>Solana NFT collections (20% weight)</li>
+                        <li>Solana domains (15% weight)</li>
+                        <li>Language.fi registry entries (25% weight)</li>
+                        <li>Gate.io token listings (15% weight)</li>
+                    </ul>
+                    
+                    <h2>Live Data Integration</h2>
+                    <p>The oracle connects to live APIs:</p>
+                    <ul>
+                        <li>CoinMarketCap Pro API - Token listings and names</li>
+                        <li>Gate.io API - Trading pairs and symbols</li>
+                    </ul>
+                    
+                    <h2>Oracle Confidence</h2>
+                    <p>Oracle confidence is calculated based on sample size and source diversity to ensure reliable pricing data.</p>
+                </section>
+
+                <section id="sentence-staking" class="docs-section">
+                    <h1>Sentence Staking</h1>
+                    <p>Users can stake sentences as character baskets that earn score based on:</p>
+                    
+                    <h2>Staking Score Formula</h2>
+                    <pre><code>Staking Score = Sentence Value × Character Performance × Stillness Multiplier × Diversity Multiplier × Anti-Spam Score</code></pre>
+                    
+                    <h2>Stillness Bonus</h2>
+                    <p>Longer-held sentences earn higher multipliers:</p>
+                    <ul>
+                        <li>0-7 days: 1.00x</li>
+                        <li>7-30 days: 1.10x</li>
+                        <li>30-90 days: 1.25x</li>
+                        <li>90-180 days: 1.50x</li>
+                        <li>180-365 days: 2.00x</li>
+                        <li>365+ days: 3.00x</li>
+                    </ul>
+                    
+                    <h2>Anti-Spam Rules</h2>
+                    <ul>
+                        <li>Penalties for repeated characters</li>
+                        <li>Low diversity penalties</li>
+                        <li>Length caps</li>
+                        <li>Transfer resets stillness</li>
+                    </ul>
+                </section>
+
+                <section id="api" class="docs-section">
+                    <h1>API Reference</h1>
+                    
+                    <h2>GET /api/primitives</h2>
+                    <p>Returns all primitives (letters, numbers, spaces, symbols)</p>
+                    
+                    <h2>GET /api/primitives/{symbol}</h2>
+                    <p>Returns detailed information for a single primitive</p>
+                    
+                    <h2>POST /api/sentences/quote</h2>
+                    <p>Get sentence pricing quote with character breakdown</p>
+                    
+                    <h2>POST /api/staking/sentence-score</h2>
+                    <p>Calculate staking score for a sentence</p>
+                    
+                    <h2>POST /api/oracle/update</h2>
+                    <p>Trigger live oracle data update</p>
+                    
+                    <h2>GET /api/oracle/live-stats</h2>
+                    <p>Get live oracle statistics from real token data</p>
+                    
+                    <h2>GET /api/primitives/live</h2>
+                    <p>Get primitives with live oracle data</p>
+                    
+                    <h2>POST /api/tokenize/oracle-stats</h2>
+                    <p>Tokenize oracle statistics as on-chain assets</h2>
+                    
+                    <h2>GET /api/oracle/snapshot</h2>
+                    <p>Get oracle snapshot for settlement proof</p>
+                </section>
+
+                <section id="deployment" class="docs-section">
+                    <h1>Deployment</h1>
+                    
+                    <h2>Prerequisites</h2>
+                    <pre><code># Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your API keys</code></pre>
+                    
+                    <h2>Local Development</h2>
+                    <pre><code># Start development server
+npm run dev
+
+# Access at http://localhost:3000</code></pre>
+                    
+                    <h2>Quick Deploy (Vercel)</h2>
+                    <pre><code># Deploy to Vercel
+vercel --prod</code></pre>
+                    
+                    <h2>Environment Variables</h2>
+                    <ul>
+                        <li><code>GATE_API_KEY</code> - Gate.io API key</li>
+                        <li><code>GATE_API_SECRET</code> - Gate.io API secret</li>
+                        <li><code>COINMARKETCAP_API_KEY</code> - CoinMarketCap Pro API key</li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-links">
+            <a href="explorer.html">Explorer</a>
+            <a href="index.html#letters">Letters</a>
+            <a href="index.html#words">Words</a>
+            <a href="index.html#sentences">Sentences</a>
+            <a href="index.html#oracle">Oracle</a>
+            <a href="docs.html">Docs</a>
+        </div>
+        <p>&copy; 2026 Language.fi — Language is liquidity.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
