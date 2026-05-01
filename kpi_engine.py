@@ -26,7 +26,10 @@ kpi_store = {
     'letter_kpis': {},
     'history': deque(maxlen=1000),  # Keep last 1000 snapshots
     'new_kpis': [],
-    'llm_insights': []
+    'llm_insights': [],
+    'historical_kpis': {},  # Historical tracking per letter/KPI
+    'kpi_evolution': {},  # KPI evolution metrics
+    'reasoning_history': deque(maxlen=500)  # LLM reasoning history
 }
 
 # Base KPIs (deterministic)
@@ -321,23 +324,228 @@ Output JSON only:
         
         return advanced_kpis
     
+    def track_historical_kpis(self, kpis: Dict, timestamp: str):
+        """Track KPI values over time for historical analysis"""
+        for kpi_name, kpi_value in kpis.items():
+            if kpi_name not in kpi_store['historical_kpis']:
+                kpi_store['historical_kpis'][kpi_name] = deque(maxlen=100)
+            
+            kpi_store['historical_kpis'][kpi_name].append({
+                'value': kpi_value,
+                'timestamp': timestamp
+            })
+    
+    def compute_kpi_evolution(self):
+        """Compute KPI evolution metrics (trends, velocity, acceleration)"""
+        evolution = {}
+        
+        for kpi_name, history in kpi_store['historical_kpis'].items():
+            if len(history) < 2:
+                continue
+            
+            # Get recent values
+            recent = list(history)[-10:]  # Last 10 data points
+            values = [point['value'] for point in recent]
+            
+            # Calculate trend (linear regression slope)
+            n = len(values)
+            if n >= 2:
+                x = list(range(n))
+                sum_x = sum(x)
+                sum_y = sum(values)
+                sum_xy = sum(xi * yi for xi, yi in zip(x, values))
+                sum_x2 = sum(xi ** 2 for xi in x)
+                
+                slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x ** 2) if (n * sum_x2 - sum_x ** 2) != 0 else 0
+                
+                # Calculate velocity (rate of change)
+                velocity = (values[-1] - values[0]) / n if n > 0 else 0
+                
+                # Calculate acceleration (change in velocity)
+                if n >= 3:
+                    velocities = [(values[i] - values[i-1]) for i in range(1, n)]
+                    acceleration = (velocities[-1] - velocities[0]) / len(velocities) if len(velocities) > 0 else 0
+                else:
+                    acceleration = 0
+                
+                evolution[kpi_name] = {
+                    'trend': slope,
+                    'velocity': velocity,
+                    'acceleration': acceleration,
+                    'current_value': values[-1],
+                    'change_percent': ((values[-1] - values[0]) / values[0] * 100) if values[0] != 0 else 0,
+                    'volatility': (max(values) - min(values)) / n if n > 0 else 0
+                }
+        
+        kpi_store['kpi_evolution'] = evolution
+        return evolution
+    
+    def llm_reasoning_loop(self, evolution: Dict, current_kpis: Dict) -> Dict[str, Any]:
+        """LLM reasoning loop to analyze KPI evolution and propose improvements"""
+        try:
+            if GROQ_API_KEY:
+                return self._llm_reasoning_groq(evolution, current_kpis)
+            elif OPENROUTER_API_KEY:
+                return self._llm_reasoning_openrouter(evolution, current_kpis)
+            else:
+                return self._fallback_reasoning(evolution, current_kpis)
+        except Exception as e:
+            print(f"Error in LLM reasoning loop: {e}")
+            return self._fallback_reasoning(evolution, current_kpis)
+    
+    def _llm_reasoning_groq(self, evolution: Dict, current_kpis: Dict) -> Dict[str, Any]:
+        """LLM reasoning using Groq"""
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        
+        # Get top evolving KPIs
+        top_evolution = sorted(evolution.items(), key=lambda x: abs(x[1].get('velocity', 0)), reverse=True)[:5]
+        
+        prompt = f"""You are a quant researcher analyzing KPI evolution for letter primitives.
+
+KPI EVOLUTION DATA:
+{json.dumps(dict(top_evolution), indent=2)[:1500]}
+
+CURRENT KPIS:
+{json.dumps(current_kpis, indent=2)[:1000]}
+
+TASK:
+1. Analyze the evolution patterns - which KPIs are accelerating/decelerating?
+2. Identify emerging trends that weren't visible before
+3. Propose 3 NEW KPI metrics to capture these trends
+4. Recommend which letters are showing momentum
+5. Suggest improvements to the existing KPI calculation methodology
+
+Output JSON only:
+{{
+  "trend_analysis": "summary of evolution patterns",
+  "emerging_trends": ["trend1", "trend2", "trend3"],
+  "new_kpis": [
+    {{"name": "kpi_name", "formula": "how to compute", "reason": "why valuable"}},
+    ...
+  ],
+  "momentum_letters": ["A", "B", "C"],
+  "methodology_improvements": ["improvement1", "improvement2"]
+}}"""
+        
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        data = {
+            "model": "llama3-70b-8192",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.7,
+            "max_tokens": 800
+        }
+        
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+        response.raise_for_status()
+        
+        result = response.json()
+        content = result['choices'][0]['message']['content']
+        
+        try:
+            return json.loads(content)
+        except:
+            return self._fallback_reasoning(evolution, current_kpis)
+    
+    def _llm_reasoning_openrouter(self, evolution: Dict, current_kpis: Dict) -> Dict[str, Any]:
+        """LLM reasoning using OpenRouter"""
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        
+        top_evolution = sorted(evolution.items(), key=lambda x: abs(x[1].get('velocity', 0)), reverse=True)[:5]
+        
+        prompt = f"""You are a quant researcher analyzing KPI evolution.
+
+EVOLUTION DATA:
+{json.dumps(dict(top_evolution), indent=2)[:1500]}
+
+TASK:
+1. Analyze evolution patterns
+2. Identify emerging trends
+3. Propose 3 new KPIs with formulas
+4. Recommend momentum letters
+5. Suggest methodology improvements
+
+Output JSON only:
+{{
+  "trend_analysis": "summary",
+  "emerging_trends": ["trend1", "trend2"],
+  "new_kpis": [
+    {{"name": "kpi", "formula": "how", "reason": "why"}}
+  ],
+  "momentum_letters": ["A", "B"],
+  "methodology_improvements": ["imp1"]
+}}"""
+        
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        data = {
+            "model": "anthropic/claude-3-haiku",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.7,
+            "max_tokens": 800
+        }
+        
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+        response.raise_for_status()
+        
+        result = response.json()
+        content = result['choices'][0]['message']['content']
+        
+        try:
+            return json.loads(content)
+        except:
+            return self._fallback_reasoning(evolution, current_kpis)
+    
+    def _fallback_reasoning(self, evolution: Dict, current_kpis: Dict) -> Dict[str, Any]:
+        """Fallback reasoning when LLM unavailable"""
+        # Identify top changing KPIs
+        top_changes = sorted(evolution.items(), key=lambda x: abs(x[1].get('velocity', 0)), reverse=True)[:3]
+        
+        return {
+            "trend_analysis": f"Top changing KPIs: {', '.join(k[0] for k in top_changes)}",
+            "emerging_trends": ["volatility_concentration", "momentum_shift", "entropy_stabilization"],
+            "new_kpis": [
+                {"name": "trend_momentum", "formula": "velocity * acceleration", "reason": "captures directional strength"},
+                {"name": "volatility_decay", "formula": "current_volatility / historical_avg", "reason": "measures volatility persistence"},
+                {"name": "trend_convergence", "formula": "correlation_of_trends", "reason": "identifies synchronized movements"}
+            ],
+            "momentum_letters": ["A", "E", "T"],
+            "methodology_improvements": ["add weighted moving averages", "implement anomaly detection"]
+        }
+    
     def store_snapshot(self, snapshot: Dict, kpis: Dict, llm_output: Dict):
         """Store snapshot and KPIs in history"""
+        timestamp = datetime.now(timezone.utc).isoformat()
+        
         record = {
             'snapshot': snapshot,
             'base_kpis': kpis,
             'llm_output': llm_output,
-            'timestamp': datetime.now(timezone.utc).isoformat()
+            'timestamp': timestamp
         }
         
         kpi_store['history'].append(record)
         kpi_store['llm_insights'].append(llm_output)
+        
+        # Track historical KPIs
+        self.track_historical_kpis(kpis, timestamp)
+        
+        # Compute KPI evolution
+        evolution = self.compute_kpi_evolution()
         
         # Update new KPIs list
         if llm_output.get('new_kpis'):
             for new_kpi in llm_output['new_kpis']:
                 if new_kpi not in kpi_store['new_kpis']:
                     kpi_store['new_kpis'].append(new_kpi)
+        
+        return evolution
     
     def update_registry(self, llm_output: Dict):
         """Update letter registry based on LLM insights"""
@@ -360,8 +568,8 @@ Output JSON only:
         base_kpis = self.compute_base_kpis(snapshot)
         print(f"Computed {len(base_kpis)} base KPIs")
         
-        # Call LLM for analysis
-        print("Calling LLM for analysis...")
+        # Call LLM for initial analysis
+        print("Calling LLM for initial analysis...")
         llm_output = self.call_llm(snapshot, base_kpis)
         print(f"LLM analysis complete: {llm_output.get('insight', 'No insight')[:100]}")
         
@@ -369,8 +577,19 @@ Output JSON only:
         advanced_kpis = self.compute_advanced_kpis(snapshot, llm_output)
         print(f"Computed {len(advanced_kpis)} advanced KPIs")
         
-        # Store snapshot
-        self.store_snapshot(snapshot, base_kpis, llm_output)
+        # Store snapshot and compute evolution
+        evolution = self.store_snapshot(snapshot, base_kpis, llm_output)
+        print(f"Computed evolution for {len(evolution)} KPIs")
+        
+        # Run LLM reasoning loop on evolution
+        if len(kpi_store['historical_kpis']) > 5:  # Only run if we have enough history
+            print("Running LLM reasoning loop on KPI evolution...")
+            reasoning_output = self.llm_reasoning_loop(evolution, base_kpis)
+            kpi_store['reasoning_history'].append({
+                'reasoning': reasoning_output,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+            print(f"Reasoning complete: {reasoning_output.get('trend_analysis', 'No analysis')[:100]}")
         
         # Update registry
         self.update_registry(llm_output)

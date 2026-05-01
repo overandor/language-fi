@@ -230,6 +230,44 @@ def start_kpi_engine():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+@app.route('/api/kpis/historical')
+def get_historical_kpis():
+    """Get historical KPI data"""
+    try:
+        from kpi_engine import kpi_store
+        return jsonify({
+            'historical_kpis': dict(kpi_store.get('historical_kpis', {})),
+            'kpi_evolution': kpi_store.get('kpi_evolution', {}),
+            'reasoning_history': list(kpi_store.get('reasoning_history', []))
+        })
+    except ImportError:
+        return jsonify({
+            'historical_kpis': {},
+            'kpi_evolution': {},
+            'reasoning_history': [],
+            'status': 'KPI engine not available'
+        })
+
+@app.route('/api/kpis/evolution')
+def get_kpi_evolution():
+    """Get KPI evolution metrics"""
+    try:
+        from kpi_engine import kpi_store
+        return jsonify({
+            'kpi_evolution': kpi_store.get('kpi_evolution', {}),
+            'top_changing_kpis': sorted(
+                kpi_store.get('kpi_evolution', {}).items(),
+                key=lambda x: abs(x[1].get('velocity', 0)),
+                reverse=True
+            )[:10]
+        })
+    except ImportError:
+        return jsonify({
+            'kpi_evolution': {},
+            'top_changing_kpis': [],
+            'status': 'KPI engine not available'
+        })
+
 @app.route('/health')
 def health():
     """Health check endpoint"""
