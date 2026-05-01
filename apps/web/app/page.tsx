@@ -4,12 +4,16 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"landing" | "llm" | "registry">("landing")
+  const [activeTab, setActiveTab] = useState<"landing" | "llm" | "registry" | "snapshots">("landing")
   const [sentence, setSentence] = useState("")
   const [analyzing, setAnalyzing] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [primitives, setPrimitives] = useState<any[]>([])
   const [loadingPrimitives, setLoadingPrimitives] = useState(false)
+  const [snapshots, setSnapshots] = useState<any[]>([])
+  const [loadingSnapshots, setLoadingSnapshots] = useState(false)
+  const [snapshotUrl, setSnapshotUrl] = useState("")
+  const [creatingSnapshot, setCreatingSnapshot] = useState(false)
 
   const analyzeSentence = async () => {
     if (!sentence.trim()) return

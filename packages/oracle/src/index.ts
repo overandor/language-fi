@@ -3,4 +3,5 @@
  * Pricing engine and oracle logic
  */
 
-export * from './priceEngine';
+export { runOracle, getCurrentPrices, calculateInputHash, calculateRunHash } from "./priceEngine";
+export type { OracleResult, OracleRunResult, OracleRunMetadata, InputSnapshot } from "./priceEngine";

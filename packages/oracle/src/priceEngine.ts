@@ -8,6 +8,7 @@
 import { prisma } from "@languagefi/db";
 import { countCharacters } from "@languagefi/core";
 import { createHash } from "crypto";
+import { getSnapshotSignals, integrateSnapshotIntoOracle } from "../web-snapshot";
 
 const WEB2_WEIGHT = 0.05;
 const FORMULA_VERSION = "v1.0";
@@ -38,7 +39,7 @@ export interface OracleRunMetadata {
 /**
  * Calculate hash of input data for reproducibility
  */
-function calculateInputHash(counts: Record<string, number>, sourceWeights: Record<string, number>): string {
+export function calculateInputHash(counts: Record<string, number>, sourceWeights: Record<string, number>): string {
   const data = JSON.stringify({ counts, sourceWeights });
   return createHash('sha256').update(data).digest('hex');
 }
@@ -46,7 +47,7 @@ function calculateInputHash(counts: Record<string, number>, sourceWeights: Recor
 /**
  * Calculate oracle run hash for verification
  */
-function calculateRunHash(
+export function calculateRunHash(
   inputHash: string,
   timestamp: string,
   formulaVersion: string,
@@ -65,6 +66,20 @@ async function getPreviousRunHash(): Promise<string | null> {
     where: { status: 'completed' },
   });
   return previousRun?.runHash || null;
+}
+
+/**
+ * Sign oracle run with oracle private key
+ */
+function signRun(runHash: string): string {
+  if (!process.env.ORACLE_PRIVATE_KEY) {
+    console.warn("ORACLE_PRIVATE_KEY not set, returning unsigned hash");
+    return runHash;
+  }
+  const signature = createHash('sha256')
+    .update(runHash + process.env.ORACLE_PRIVATE_KEY)
+    .digest('hex');
+  return signature;
 }
 
 /**
@@ -234,13 +249,22 @@ export async function runOracle(): Promise<OracleRunResult & { metadata?: Oracle
       };
     }
 
+    // Get web snapshot signals for additional pricing input
+    const snapshotSignals = await getSnapshotSignals(weekAgo, startedAt)
+    const snapshotSignalMap = new Map(snapshotSignals.map(s => [s.primitive, s]))
+
     // Calculate prices for each primitive
     const results: OracleResult[] = [];
     for (const [primitiveId, usage] of Object.entries(grouped)) {
-      const price = usage / total; // Simple frequency-based pricing
+      const basePrice = usage / total; // Simple frequency-based pricing
+      
+      // Apply web snapshot signal (3% weight)
+      const snapshotSignal = snapshotSignalMap.get(primitiveId) || null
+      const adjustedPrice = await integrateSnapshotIntoOracle(basePrice, snapshotSignal)
+      
       results.push({
         primitiveId,
-        priceLgu: price,
+        priceLgu: adjustedPrice,
         currentWeekUsage: usage,
       });
     }
@@ -316,7 +340,7 @@ export async function runOracle(): Promise<OracleRunResult & { metadata?: Oracle
       inputSnapshot,
       runHash,
       previousRunHash,
-      signature: null, // TODO: Implement signing with oracle private key
+      signature: signRun(runHash),
     };
 
     return {

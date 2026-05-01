@@ -224,3 +224,36 @@ model Web2Signal {
   
   @@index([primitive])
 }
+
+// Web content snapshots for primitive pricing
+model WebSnapshot {
+  id           String   @id @default(cuid())
+  url          String
+  domain       String
+  title        String?
+  contentHash  String   // SHA256 of content for deduplication
+  content      String   @db.Text
+  extractedAt  DateTime @default(now())
+  status       String   // "pending", "processed", "failed"
+  
+  primitiveCounts PrimitiveCountSnapshot[]
+  
+  @@index([url])
+  @@index([domain])
+  @@index([contentHash])
+  @@index([status])
+}
+
+// Primitive counts extracted from web snapshots
+model PrimitiveCountSnapshot {
+  id            String   @id @default(cuid())
+  snapshotId    String
+  primitive     String
+  count         Int
+  extractedAt   DateTime @default(now())
+  
+  snapshot      WebSnapshot @relation(fields: [snapshotId], references: [id])
+  
+  @@index([snapshotId])
+  @@index([primitive])
+}
