@@ -4,7 +4,8 @@ Language.fi Backend Server
 Provides live data for letter prices, usage statistics, and protocol breakdown
 """
 
-from flask import Flask, jsonify, send_from_directory, request, Response, os
+import os
+from flask import Flask, jsonify, send_from_directory, request, Response
 from flask_cors import CORS
 import json
 import random
