@@ -29,6 +29,11 @@ HELIUS_API_KEY = os.getenv('HELIUS_API_KEY', '')
 NEWSAPI_API_KEY = os.getenv('NEWSAPI_API_KEY', '')
 NYT_API_KEY = os.getenv('NYT_API_KEY', '')
 
+# Disable CoinMarketCap if no API key
+DISABLE_CMC = not COINMARKETCAP_API_KEY
+if DISABLE_CMC:
+    print("CoinMarketCap disabled - no API key configured")
+
 # Data sources
 API_BASE = os.getenv('API_BASE', 'https://language-fi.vercel.app')
 
@@ -748,8 +753,9 @@ class KPIEngine:
             return []
     
     def count_characters_with_attribution(self, snapshot: Dict) -> Dict[str, Dict]:
-        """Count character occurrences with source/topic attribution"""
+        """Count character occurrences with source/topic attribution and timeline"""
         char_data = {}
+        timestamp = datetime.now(timezone.utc)
         
         def add_char(char, source, topic, token_info=None):
             if char.isalnum() or char == ' ':
@@ -759,7 +765,8 @@ class KPIEngine:
                         'total_count': 0,
                         'sources': {},
                         'topics': {},
-                        'tokens': []
+                        'tokens': {},
+                        'timeline': []
                     }
                 char_data[char_upper]['total_count'] += 1
                 
@@ -773,9 +780,12 @@ class KPIEngine:
                     char_data[char_upper]['topics'][topic] = 0
                 char_data[char_upper]['topics'][topic] += 1
                 
-                # Track token info
-                if token_info and len(char_data[char_upper]['tokens']) < 10:  # Keep sample tokens
-                    char_data[char_upper]['tokens'].append(token_info)
+                # Track token info (as dict for easier querying)
+                if token_info:
+                    token_key = token_info.get('symbol', token_info.get('name', 'unknown'))
+                    if token_key not in char_data[char_upper]['tokens']:
+                        char_data[char_upper]['tokens'][token_key] = 0
+                    char_data[char_upper]['tokens'][token_key] += 1
         
         # Count from CoinGecko tokens with attribution
         coingecko_tokens = snapshot.get('coingecko_tokens', [])
@@ -796,56 +806,50 @@ class KPIEngine:
             for char in symbol:
                 add_char(char, 'Gate.io', 'trading_pair', {'pair': symbol})
         
-        # Count from CoinMarketCap tokens
-        cmc_tokens = snapshot.get('coinmarketcap_tokens', [])
-        for token in cmc_tokens:
-            name = token.get('name', '').upper()
-            symbol = token.get('symbol', '').upper()
-            category = token.get('category', 'unknown')
-            
-            for char in name:
-                add_char(char, 'CoinMarketCap', category, {'symbol': symbol, 'name': name})
-            for char in symbol:
-                add_char(char, 'CoinMarketCap', category, {'symbol': symbol, 'name': name})
+        # Count from CoinMarketCap tokens (skip if disabled)
+        if not DISABLE_CMC:
+            cmc_tokens = snapshot.get('coinmarketcap_tokens', [])
+            for token in cmc_tokens:
+                name = token.get('name', '').upper()
+                symbol = token.get('symbol', '').upper()
+                category = token.get('category', 'unknown')
+                
+                for char in name:
+                    add_char(char, 'CoinMarketCap', category, {'symbol': symbol, 'name': name})
+                for char in symbol:
+                    add_char(char, 'CoinMarketCap', category, {'symbol': symbol, 'name': name})
         
         # Count from Dexscreener pairs
         dex_pairs = snapshot.get('dexscreener_pairs', [])
         for pair in dex_pairs:
-            base_token = pair.get('baseToken', {})
-            quote_token = pair.get('quoteToken', {})
-            dex_name = pair.get('dexId', 'unknown')
-            
-            for token in [base_token, quote_token]:
-                symbol = token.get('symbol', '').upper()
-                for char in symbol:
-                    add_char(char, 'Dexscreener', dex_name, {'symbol': symbol, 'dex': dex_name})
+            base_token = pair.get('baseToken', {}).get('symbol', '').upper()
+            for char in base_token:
+                add_char(char, 'Dexscreener', 'dex_pair', {'pair': base_token})
         
-        # Count from Jupiter tokens
-        jupiter_tokens = snapshot.get('jupiter_tokens', [])
-        for token in jupiter_tokens:
-            name = token.get('name', '').upper()
-            symbol = token.get('symbol', '').upper()
-            
-            for char in name:
-                add_char(char, 'Jupiter', 'Solana', {'symbol': symbol, 'name': name})
-            for char in symbol:
-                add_char(char, 'Jupiter', 'Solana', {'symbol': symbol, 'name': name})
+        # Count from Solana RPC domains
+        solana_domains = snapshot.get('solana_domains', [])
+        for domain in solana_domains:
+            domain_name = domain.get('name', '').upper()
+            for char in domain_name:
+                add_char(char, 'Solana_RPC', 'domain', {'domain': domain_name})
         
-        # Count from Uniswap tokens
-        uniswap_tokens = snapshot.get('uniswap_tokens', [])
-        for token in uniswap_tokens:
-            name = token.get('name', '').upper()
-            symbol = token.get('symbol', '').upper()
-            chain = token.get('chainId', 'unknown')
-            
-            for char in name:
-                add_char(char, 'Uniswap', chain, {'symbol': symbol, 'name': name})
-            for char in symbol:
-                add_char(char, 'Uniswap', chain, {'symbol': symbol, 'name': name})
+        # Count from Solana NFT collections
+        solana_nfts = snapshot.get('solana_nft_collections', [])
+        for nft in solana_nfts:
+            nft_name = nft.get('name', '').upper()
+            for char in nft_name:
+                add_char(char, 'Solana_RPC', 'nft', {'nft': nft_name})
         
-        # Count from Wikipedia results
-        wikipedia_results = snapshot.get('wikipedia_results', [])
-        for result in wikipedia_results:
+        # Count from Solana token names
+        solana_tokens = snapshot.get('solana_token_names', [])
+        for token in solana_tokens:
+            token_name = token.get('name', '').upper()
+            for char in token_name:
+                add_char(char, 'Solana_RPC', 'token', {'token': token_name})
+        
+        # Count from Wikipedia
+        wiki_results = snapshot.get('wikipedia_results', [])
+        for result in wiki_results:
             title = result.get('title', '').upper()
             snippet = result.get('snippet', '').upper()
             
@@ -854,11 +858,48 @@ class KPIEngine:
             for char in snippet:
                 add_char(char, 'Wikipedia', 'crypto_search', {'title': title})
         
+        # Add timeline entries for each character
+        for char_upper in char_data:
+            char_data[char_upper]['timeline'].append({
+                't': timestamp,
+                'count': char_data[char_upper]['total_count']
+            })
+            # Keep only last 100 timeline entries
+            if len(char_data[char_upper]['timeline']) > 100:
+                char_data[char_upper]['timeline'] = char_data[char_upper]['timeline'][-100:]
+        
         return char_data
     
-    def calculate_price_from_live_metrics(self, char_counts: Dict[str, int], letter: str, snapshot: Dict) -> float:
-        """Calculate letter price based on live market metrics from multiple sources"""
-        letter_count = char_counts.get(letter.upper(), 0)
+    def calculate_entropy(self, distribution: Dict[str, int]) -> float:
+        """Calculate Shannon entropy for a distribution"""
+        if not distribution:
+            return 0.0
+        
+        total = sum(distribution.values())
+        if total == 0:
+            return 0.0
+        
+        import math
+        entropy = 0.0
+        for count in distribution.values():
+            if count > 0:
+                probability = count / total
+                entropy -= probability * math.log2(probability)
+        
+        return entropy
+    
+    def calculate_price_from_live_metrics(self, char_counts: Dict[str, int], letter: str, snapshot: Dict, char_data: Dict[str, Dict]) -> float:
+        """Calculate letter price using multi-factor formula with entropy, velocity, and cross-source correlation"""
+        letter = letter.upper()
+        letter_data = char_data.get(letter, {})
+        
+        # Extract attribution data
+        sources = letter_data.get('sources', {})
+        topics = letter_data.get('topics', {})
+        tokens = letter_data.get('tokens', {})
+        timeline = letter_data.get('timeline', [])
+        
+        letter_count = char_counts.get(letter, 0)
         total_chars = sum(char_counts.values()) if char_counts else 1
         
         if total_chars == 0:
@@ -866,44 +907,46 @@ class KPIEngine:
         
         import math
         
-        # Base frequency component
-        frequency = letter_count / total_chars
-        base_price = frequency * 10.0
+        # Volume weight: log(total_count + 1)
+        volume_weight = 0.4
+        volume_component = math.log(letter_count + 1) * volume_weight
         
-        # Gate.io market impact
-        gateio_tokens = snapshot.get('gateio_tokens', [])
-        gateio_volume = sum(float(t.get('volume', '0').replace(',', '')) if isinstance(t.get('volume'), str) else 0 for t in gateio_tokens[:10])
-        gateio_factor = min(gateio_volume / 1000000000, 2.0)  # Cap at 2x
+        # Source diversity weight: len(sources)
+        source_diversity_weight = 0.2
+        source_diversity_component = len(sources) * source_diversity_weight * 0.1
         
-        # CoinGecko market cap impact
-        coingecko_tokens = snapshot.get('coingecko_tokens', [])
-        coingecko_market_cap = sum(t.get('market_cap', 0) for t in coingecko_tokens[:10]) if coingecko_tokens else 0
-        coingecko_factor = min(coingecko_market_cap / 1000000000000, 1.5)  # Cap at 1.5x
+        # Topic entropy weight: entropy(topics)
+        topic_entropy_weight = 0.15
+        topic_entropy = self.calculate_entropy(topics)
+        topic_entropy_component = topic_entropy * topic_entropy_weight
         
-        # Dexscreener liquidity impact
-        dex_pairs = snapshot.get('dexscreener_pairs', [])
-        dex_liquidity = sum(p.get('liquidity', {}).get('usd', 0) for p in dex_pairs[:5] if p.get('liquidity'))
-        dex_factor = min(dex_liquidity / 10000000, 1.2)  # Cap at 1.2x
+        # Velocity weight: delta_count / time_diff
+        velocity_weight = 0.15
+        if len(timeline) >= 2:
+            delta_count = timeline[-1]['count'] - timeline[-2]['count']
+            time_diff = (timeline[-1]['t'] - timeline[-2]['t']).total_seconds() / 60  # minutes
+            velocity = delta_count / time_diff if time_diff > 0 else 0
+            velocity_component = velocity * velocity_weight
+        else:
+            velocity_component = 0
         
-        # RPC connectivity bonus
-        rpc_bonus = 0
-        if snapshot.get('solana_rpc'): rpc_bonus += 0.05
-        if snapshot.get('ethereum_rpc'): rpc_bonus += 0.05
-        if snapshot.get('base_rpc'): rpc_bonus += 0.05
-        
-        # Token list diversity
-        jupiter_tokens = snapshot.get('jupiter_tokens', [])
-        uniswap_tokens = snapshot.get('uniswap_tokens', [])
-        diversity_bonus = min((len(jupiter_tokens) + len(uniswap_tokens)) / 10000, 0.3)
+        # Cross-source correlation weight: presence across multiple sources
+        cross_source_weight = 0.1
+        cross_source_component = min(len(sources) / 10, 1.0) * cross_source_weight
         
         # Combine all factors
-        combined_factor = 1 + gateio_factor + coingecko_factor + dex_factor + rpc_bonus + diversity_bonus
-        adjusted_price = base_price * combined_factor
+        price = (
+            volume_component +
+            source_diversity_component +
+            topic_entropy_component +
+            velocity_component +
+            cross_source_component
+        )
         
-        # Apply logarithmic scaling
-        scaled_price = math.log(adjusted_price + 1) * 0.5
+        # Apply logarithmic scaling to prevent extreme values
+        scaled_price = math.log(price + 1) * 0.5
         
-        return round(scaled_price, 4)
+        return round(max(scaled_price, 0.01), 4)
     
     def compute_base_kpis(self, snapshot: Dict) -> Dict[str, Any]:
         """Compute base deterministic KPIs from all data sources with pricing and attribution"""

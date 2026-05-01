@@ -1,0 +1,26 @@
+{
+  "name": "language-fi",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "db:generate": "cd packages/db && npx prisma generate",
+    "db:push": "cd packages/db && npx prisma db push",
+    "db:migrate": "cd packages/db && npx prisma migrate dev",
+    "db:studio": "cd packages/db && npx prisma studio"
+  },
+  "devDependencies": {
+    "turbo": "^1.11.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

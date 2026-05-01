@@ -1,18 +1,9 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "server.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "15mb"
-      }
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 10
     }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/server.py"
-    }
-  ]
+  }
 }

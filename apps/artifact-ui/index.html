@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LGU Artifact Minting - Proof-of-Value</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+        }
+
+        .header p {
+            color: #a0a0b0;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .flow-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        @media (max-width: 768px) {
+            .flow-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px;
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 24px;
+            color: #00d4ff;
+        }
+
+        .upload-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-zone:hover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .upload-zone.dragover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            color: #a0a0b0;
+            margin-bottom: 8px;
+        }
+
+        .upload-subtext {
+            color: #606070;
+            font-size: 0.9rem;
+        }
+
+        .preview-container {
+            margin-top: 24px;
+            display: none;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .analysis-result {
+            margin-top: 24px;
+            display: none;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .result-label {
+            color: #a0a0b0;
+        }
+
+        .result-value {
+            font-weight: 600;
+            color: #00d4ff;
+        }
+
+        .score-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            transition: width 0.5s;
+        }
+
+        .wallet-section {
+            margin-top: 24px;
+            padding: 16px;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .wallet-address {
+            font-family: monospace;
+            color: #00d4ff;
+            word-break: break-all;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        .status-success {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+
+        .status-error {
+            background: rgba(255, 82, 82, 0.2);
+            color: #ff5252;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .info-box {
+            background: rgba(124, 58, 237, 0.1);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 24px;
+        }
+
+        .info-box h3 {
+            color: #7c3aed;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .info-box p {
+            color: #a0a0b0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            padding: 0 20px;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            position: relative;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+        }
+
+        .step.active .step-number {
+            background: #00d4ff;
+            border-color: #00d4ff;
+        }
+
+        .step.completed .step-number {
+            background: #00d4ff;
+            border-color: #00d4ff;
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            color: #a0a0b0;
+        }
+
+        .step.active .step-label,
+        .step.completed .step-label {
+            color: #fff;
+        }
+
+        .step-connector {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .step.completed .step-connector {
+            background: #00d4ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>LGU Artifact Minting</h1>
+            <p>Proof-of-Value Artifact System • Upload → Analyze → Mint → Stake</p>
+        </div>
+
+        <div class="steps">
+            <div class="step active" id="step1">
+                <div class="step-number">1</div>
+                <div class="step-label">Upload</div>
+                <div class="step-connector"></div>
+            </div>
+            <div class="step" id="step2">
+                <div class="step-number">2</div>
+                <div class="step-label">Analyze</div>
+                <div class="step-connector"></div>
+            </div>
+            <div class="step" id="step3">
+                <div class="step-number">3</div>
+                <div class="step-label">Mint</div>
+                <div class="step-connector"></div>
+            </div>
+            <div class="step" id="step4">
+                <div class="step-number">4</div>
+                <div class="step-label">Stake</div>
+            </div>
+        </div>
+
+        <div class="flow-container">
+            <div class="card">
+                <h2>Upload Artifact</h2>
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📷</div>
+                    <div class="upload-text">Drag & drop your artifact image</div>
+                    <div class="upload-subtext">or click to browse</div>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                </div>
+
+                <div class="preview-container" id="previewContainer">
+                    <img id="previewImage" class="preview-image" alt="Preview">
+                    <button class="btn btn-secondary" id="reuploadBtn">Choose Different Image</button>
+                </div>
+
+                <div class="wallet-section" id="walletSection">
+                    <div style="margin-bottom: 8px; color: #a0a0b0;">Wallet Status</div>
+                    <div id="walletStatus">Not connected</div>
+                    <button class="btn" id="connectWalletBtn" style="margin-top: 12px;">Connect Wallet</button>
+                </div>
+
+                <button class="btn" id="analyzeBtn" disabled style="margin-top: 24px;">
+                    Analyze Artifact
+                </button>
+            </div>
+
+            <div class="card">
+                <h2>Analysis Results</h2>
+                <div id="analysisPlaceholder" style="color: #a0a0b0; text-align: center; padding: 40px;">
+                    Upload an artifact to see analysis results
+                </div>
+
+                <div class="analysis-result" id="analysisResult">
+                    <div class="result-item">
+                        <span class="result-label">CID</span>
+                        <span class="result-value" id="cidValue">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Confidence</span>
+                        <span class="result-value" id="confidenceValue">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Detected Denomination</span>
+                        <span class="result-value" id="denominationValue">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Protocol Score</span>
+                        <span class="result-value" id="scoreValue">-</span>
+                    </div>
+                    <div class="score-bar">
+                        <div class="score-fill" id="scoreFill" style="width: 0%"></div>
+                    </div>
+                    <div class="result-item" style="margin-top: 16px;">
+                        <span class="result-label">Minted LGU</span>
+                        <span class="result-value" id="mintAmountValue">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Status</span>
+                        <span class="status-badge status-pending" id="statusBadge">Pending</span>
+                    </div>
+
+                    <button class="btn" id="mintBtn" disabled style="margin-top: 24px;">
+                        Mint LGU Tokens
+                    </button>
+
+                    <div class="info-box">
+                        <h3>🔐 Production-Safe Design</h3>
+                        <p>This system uses a protocol score, not a dollar conversion. The LGU credits are non-redeemable and usable only within the protocol for staking, fees, and boosts.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let selectedFile = null;
+        let walletAddress = null;
+        let analysisResult = null;
+        let artifactAttestation = null;
+
+        // DOM Elements
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const reuploadBtn = document.getElementById('reuploadBtn');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const walletSection = document.getElementById('walletSection');
+        const walletStatus = document.getElementById('walletStatus');
+        const connectWalletBtn = document.getElementById('connectWalletBtn');
+        const analysisPlaceholder = document.getElementById('analysisPlaceholder');
+        const analysisResultDiv = document.getElementById('analysisResult');
+        const mintBtn = document.getElementById('mintBtn');
+
+        // File Upload Handlers
+        uploadZone.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file');
+                return;
+            }
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                uploadZone.style.display = 'none';
+                previewContainer.style.display = 'block';
+                updateAnalyzeButton();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        reuploadBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            uploadZone.style.display = 'block';
+            previewContainer.style.display = 'none';
+            updateAnalyzeButton();
+        });
+
+        // Wallet Connection
+        connectWalletBtn.addEventListener('click', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    await provider.send('eth_requestAccounts', []);
+                    const signer = provider.getSigner();
+                    walletAddress = await signer.getAddress();
+                    walletStatus.innerHTML = `<span class="wallet-address">${walletAddress}</span>`;
+                    connectWalletBtn.textContent = 'Connected';
+                    connectWalletBtn.disabled = true;
+                    updateAnalyzeButton();
+                } catch (error) {
+                    console.error('Wallet connection failed:', error);
+                    alert('Failed to connect wallet');
+                }
+            } else {
+                alert('Please install MetaMask or another Web3 wallet');
+            }
+        });
+
+        // Analysis
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile || !walletAddress) return;
+
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<span class="loading"></span> Analyzing...';
+            updateStep(2);
+
+            try {
+                // In production, this would call your backend API
+                // For demo, we'll simulate the analysis
+                await simulateAnalysis();
+            } catch (error) {
+                console.error('Analysis failed:', error);
+                alert('Analysis failed. Please try again.');
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = 'Analyze Artifact';
+            }
+        });
+
+        async function simulateAnalysis() {
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Mock analysis result
+            analysisResult = {
+                cid: 'QmXxx... (IPFS CID)',
+                confidence: 0.85,
+                denomination: 100,
+                year: 2020,
+                score: 63.0,
+                mint_amount: 630.0,
+                timestamp: new Date().toISOString()
+            };
+
+            // Update UI
+            analysisPlaceholder.style.display = 'none';
+            analysisResultDiv.style.display = 'block';
+            
+            document.getElementById('cidValue').textContent = analysisResult.cid;
+            document.getElementById('confidenceValue').textContent = (analysisResult.confidence * 100).toFixed(0) + '%';
+            document.getElementById('denominationValue').textContent = '$' + analysisResult.denomination;
+            document.getElementById('scoreValue').textContent = analysisResult.score.toFixed(1);
+            document.getElementById('scoreFill').style.width = analysisResult.score + '%';
+            document.getElementById('mintAmountValue').textContent = analysisResult.mint_amount.toFixed(1) + ' LGU';
+            document.getElementById('statusBadge').textContent = 'Ready to Mint';
+            document.getElementById('statusBadge').className = 'status-badge status-success';
+
+            mintBtn.disabled = false;
+            analyzeBtn.textContent = 'Analysis Complete';
+            updateStep(3);
+        }
+
+        // Minting
+        mintBtn.addEventListener('click', async () => {
+            if (!analysisResult || !walletAddress) return;
+
+            mintBtn.disabled = true;
+            mintBtn.innerHTML = '<span class="loading"></span> Minting...';
+
+            try {
+                // In production, this would:
+                // 1. Get oracle attestation from backend
+                // 2. Call smart contract with attestation
+                await simulateMint();
+            } catch (error) {
+                console.error('Mint failed:', error);
+                alert('Mint failed. Please try again.');
+                mintBtn.disabled = false;
+                mintBtn.textContent = 'Mint LGU Tokens';
+            }
+        });
+
+        async function simulateMint() {
+            // Simulate contract call delay
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // Update UI
+            document.getElementById('statusBadge').textContent = 'Minted Successfully';
+            document.getElementById('statusBadge').className = 'status-badge status-success';
+            mintBtn.textContent = 'Mint Complete';
+            updateStep(4);
+
+            // Show staking option
+            setTimeout(() => {
+                if (confirm('LGU tokens minted successfully! Would you like to stake them?')) {
+                    alert('Staking flow would open here');
+                }
+            }, 500);
+        }
+
+        // Helper Functions
+        function updateAnalyzeButton() {
+            analyzeBtn.disabled = !(selectedFile && walletAddress);
+        }
+
+        function updateStep(step) {
+            for (let i = 1; i <= 4; i++) {
+                const stepEl = document.getElementById('step' + i);
+                if (i < step) {
+                    stepEl.classList.add('completed');
+                    stepEl.classList.remove('active');
+                } else if (i === step) {
+                    stepEl.classList.add('active');
+                    stepEl.classList.remove('completed');
+                } else {
+                    stepEl.classList.remove('active', 'completed');
+                }
+            }
+        }
+
+        // Check for existing wallet connection
+        if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.request({ method: 'eth_accounts' }).then(accounts => {
+                if (accounts.length > 0) {
+                    walletAddress = accounts[0];
+                    walletStatus.innerHTML = `<span class="wallet-address">${walletAddress}</span>`;
+                    connectWalletBtn.textContent = 'Connected';
+                    connectWalletBtn.disabled = true;
+                    updateAnalyzeButton();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

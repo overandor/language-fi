@@ -1,0 +1,39 @@
+type Sentence @entity {
+  id: ID!
+  hash: String!
+  owner: Bytes!
+  normalizedText: String!
+  createdAt: BigInt!
+  staked: Boolean!
+  lastMovedAt: BigInt
+  transfers: [Transfer!]! @derivedFrom(field: "sentence")
+  stakes: [Stake!]! @derivedFrom(field: "sentence")
+}
+
+type Stake @entity {
+  id: ID!
+  sentence: Sentence!
+  owner: Bytes!
+  stakedAt: BigInt!
+  score: BigDecimal!
+  unstakedAt: BigInt
+  active: Boolean!
+}
+
+type Transfer @entity {
+  id: ID!
+  sentence: Sentence!
+  from: Bytes!
+  to: Bytes!
+  txHash: String!
+  transferredAt: BigInt!
+  transferStatus: String!
+}
+
+type Reward @entity {
+  id: ID!
+  owner: Bytes!
+  amount: BigDecimal!
+  claimedAt: BigInt!
+  stake: Stake!
+}

@@ -1,0 +1,220 @@
+// Language.fi Production Database Schema
+// Protocol-grade architecture with deterministic pricing
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Data source configuration (CoinGecko, Gate.io, etc.)
+model DataSource {
+  id             String   @id @default(cuid())
+  name           String   // "CoinGecko", "Gate.io", etc.
+  type           String   // "token_list", "trading_pair", "rpc"
+  baseUrl        String
+  requiresApiKey Boolean  @default(false)
+  enabled        Boolean  @default(true)
+  healthStatus   String   @default("unknown") // "healthy", "degraded", "down"
+  lastSuccessAt  DateTime?
+  lastErrorAt    DateTime?
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@index([enabled])
+  @@index([type])
+}
+
+// Raw observations from data sources (immutable audit trail)
+model RawObservation {
+  id          String   @id @default(cuid())
+  sourceId    String
+  protocol    String   // "coingecko", "gateio", "solana_rpc"
+  objectType  String   // "token", "domain", "nft"
+  objectId    String   // token symbol, domain name, etc.
+  textValue   String   // full text for character counting
+  observedAt  DateTime
+  windowStart DateTime
+  windowEnd   DateTime
+  hash        String   // for deduplication
+  createdAt   DateTime @default(now())
+  
+  @@index([sourceId])
+  @@index([protocol])
+  @@index([hash])
+  @@index([windowStart, windowEnd])
+}
+
+// Primitives (letters, numbers, spaces, symbols)
+model Primitive {
+  id            String   @id @default(cuid())
+  symbol        String   @unique
+  displaySymbol String   // "A", "1", " ", "@"
+  type          String   // "letter", "number", "space", "symbol"
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  counts        PrimitiveCount[]
+  prices        PrimitivePrice[]
+  
+  @@index([type])
+  @@index([enabled])
+}
+
+// Character counts per primitive per source
+model PrimitiveCount {
+  id                String   @id @default(cuid())
+  primitiveId       String
+  sourceId          String
+  protocol          String
+  occurrenceCount   Int      // total character occurrences
+  uniqueObjectCount Int      // number of unique tokens/objects
+  windowStart       DateTime
+  windowEnd         DateTime
+  createdAt         DateTime @default(now())
+  
+  primitive         Primitive @relation(fields: [primitiveId], references: [id])
+  
+  @@index([primitiveId])
+  @@index([sourceId])
+  @@index([windowStart, windowEnd])
+  @@unique([primitiveId, sourceId, windowStart, windowEnd])
+}
+
+// Primitive prices calculated by oracle
+model PrimitivePrice {
+  id                   String   @id @default(cuid())
+  primitiveId          String
+  priceLgu             Float    // price in LGU (Language Governance Units)
+  previousPriceLgu     Float?
+  change24h            Float?
+  weeklyChange         Float?
+  currentWeekUsage     Int
+  previousWeekUsage    Int?
+  rank                 Int?
+  volatility           String?  // "low", "medium", "high"
+  oracleConfidence     Float?   // 0-1
+  calculatedAt         DateTime
+  createdAt            DateTime @default(now())
+  
+  primitive            Primitive @relation(fields: [primitiveId], references: [id])
+  
+  @@index([primitiveId])
+  @@index([calculatedAt])
+  @@index([rank])
+}
+
+// Oracle run records (audit trail for pricing calculations)
+model OracleRun {
+  id                String   @id @default(cuid())
+  status            String   // "running", "completed", "failed"
+  startedAt         DateTime
+  completedAt       DateTime?
+  sourceCount       Int      // number of active data sources
+  observationCount  Int      // total observations processed
+  primitiveCount    Int      // number of primitives priced
+  errorCount        Int
+  notes             String?  // any issues or warnings
+  createdAt         DateTime @default(now())
+  
+  @@index([status])
+  @@index([startedAt])
+}
+
+// Sentences for quoting/staking
+model Sentence {
+  id            String   @id @default(cuid())
+  sentenceHash  String   @unique // normalized text hash
+  normalizedText String  // uppercase, normalized
+  ownerWallet   String?  // wallet address if staked
+  baseValueLgu  Float?   // calculated value
+  status        String   // "available", "staked", "locked"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([sentenceHash])
+  @@index([ownerWallet])
+  @@index([status])
+}
+
+// Signal persistence for trading intelligence
+model Signal {
+  id           String   @id @default(cuid())
+  symbol       String
+  source       String
+  value        Float
+  velocity     Float?
+  acceleration Float?
+  confidence   Float?
+  createdAt    DateTime @default(now())
+  
+  @@index([symbol])
+  @@index([source])
+  @@index([createdAt])
+}
+
+// Anonymous session tracking (privacy-first)
+model Session {
+  id           String   @id @default(cuid())
+  sessionId    String   @unique // UUID from cookie
+  walletAddress String?  // Optional wallet linking (explicit consent only)
+  userAgent    String?  // For analytics, not identification
+  createdAt    DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+  
+  events       Event[]
+  
+  @@index([sessionId])
+  @@index([walletAddress])
+  @@index([createdAt])
+}
+
+// Event tracking for anonymous usage signals
+model Event {
+  id        String   @id @default(cuid())
+  sessionId String
+  type      String   // "quote", "explore", "search", "stake_preview"
+  payload   Json     // Flexible event data
+  createdAt DateTime @default(now())
+  
+  session   Session  @relation(fields: [sessionId], references: [id])
+  
+  @@index([sessionId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// Web2 primitive demand aggregation (anti-manipulation)
+model Web2PrimitiveDemand {
+  id              String   @id @default(cuid())
+  primitive       String   // "A", "1", "SPACE"
+  windowStart     DateTime
+  windowEnd       DateTime
+  rawCount        Int
+  uniqueSessions  Int
+  normalizedScore Float
+  changePercent   Float?
+  createdAt       DateTime @default(now())
+  
+  @@index([primitive])
+  @@index([windowStart, windowEnd])
+}
+
+// Web2 signals for oracle integration (5% weight)
+model Web2Signal {
+  id          String   @id @default(cuid())
+  primitive   String
+  usage       Float
+  change      Float
+  confidence  Float
+  windowStart DateTime
+  windowEnd   DateTime
+  createdAt   DateTime @default(now())
+  
+  @@index([primitive])
+}

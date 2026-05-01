@@ -1,0 +1,9 @@
+{
+  "name": "@languagefi/indexer",
+  "version": "1.0.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "dependencies": {
+    "@graphprotocol/graph-ts": "^0.31.0"
+  }
+}
