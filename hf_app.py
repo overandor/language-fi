@@ -9,14 +9,14 @@ import requests
 import random
 import time
 from datetime import datetime
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
 
 # API Keys
-COINGECKO_API_KEY = 'CG-DD8rr7U4hQsjAxokXt7ERtaG'
+COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '')
 
 # Cache
 cache = {}

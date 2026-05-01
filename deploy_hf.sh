@@ -1,18 +1,19 @@
 #!/bin/bash
 
 # Deploy Language.fi API to Hugging Face Spaces
+# Note: Set HUGGINGFACE_TOKEN environment variable before running
 
-HUGGINGFACE_TOKEN="${HUGGINGFACE_TOKEN:-}"
 SPACE_NAME="language-fi-oracle-api"
 SPACE_ID="luguog/$SPACE_NAME"
 
 # Login to Hugging Face
-if [ -z "$HUGGINGFACE_TOKEN" ]; then
+echo "Logging in to Hugging Face..."
+if [ -n "$HUGGINGFACE_TOKEN" ]; then
+    huggingface-cli login --token "$HUGGINGFACE_TOKEN"
+else
     echo "Error: HUGGINGFACE_TOKEN environment variable not set"
     exit 1
 fi
-echo "Logging in to Hugging Face..."
-huggingface-cli login --token $HUGGINGFACE_TOKEN
 
 # Create space
 echo "Creating Hugging Face Space..."

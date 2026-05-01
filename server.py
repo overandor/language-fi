@@ -16,10 +16,10 @@ app = Flask(__name__)
 CORS(app)
 
 # API Keys from environment
-GATE_API_KEY = os.getenv('GATE_API_KEY', '5f35c83ea82aafa977f46a7b1f75c873')
-GATE_API_SECRET = os.getenv('GATE_API_SECRET', '9467d896f5bf2980d0c66bb948608aca3a619a00eb7dbbdfe9f2ef94b594fb3')
+GATE_API_KEY = os.getenv('GATE_API_KEY', '')
+GATE_API_SECRET = os.getenv('GATE_API_SECRET', '')
 COINMARKETCAP_API_KEY = os.getenv('COINMARKETCAP_API_KEY', '')
-COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', 'CG-DD8rr7U4hQsjAxokXt7ERtaG')
+COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '')
 
 # Cache for data
 cache = {}
@@ -575,23 +575,23 @@ def get_live_oracle_stats():
         return jsonify({
             'last_updated': live_data_cache['last_updated'],
             'sources': {
-                'coinmarketcap_tokens_count': len(live_data_cache.get('coinmarketcap_tokens', [])),
-                'gateio_tokens_count': len(live_data_cache.get('gateio_tokens', [])),
-                'coingecko_tokens_count': len(live_data_cache.get('coingecko_tokens', [])),
-                'newspaper_articles_count': len(live_data_cache.get('newspaper_articles', [])),
-                'medium_articles_count': len(live_data_cache.get('medium_articles', [])),
-                'chains_count': len(live_data_cache.get('chain_data', {}))
+                'coinmarketcap_tokens_count': len(live_data_cache.get('coinmarketcap_tokens', []) or []),
+                'gateio_tokens_count': len(live_data_cache.get('gateio_tokens', []) or []),
+                'coingecko_tokens_count': len(live_data_cache.get('coingecko_tokens', []) or []),
+                'newspaper_articles_count': len(live_data_cache.get('newspaper_articles', []) or []),
+                'medium_articles_count': len(live_data_cache.get('medium_articles', []) or []),
+                'chains_count': len(live_data_cache.get('chain_data', {}) or {})
             },
             'character_counts': {
-                'coinmarketcap': char_counts['coinmarketcap'],
-                'gateio': char_counts['gateio'],
-                'coingecko': char_counts['coingecko'],
-                'newspapers': char_counts['newspapers'],
-                'medium': char_counts['medium'],
-                'chains': char_counts['chains'],
-                'total': char_counts['total']
+                'coinmarketcap': char_counts.get('coinmarketcap', {}),
+                'gateio': char_counts.get('gateio', {}),
+                'coingecko': char_counts.get('coingecko', {}),
+                'newspapers': char_counts.get('newspapers', {}),
+                'medium': char_counts.get('medium', {}),
+                'chains': char_counts.get('chains', {}),
+                'total': char_counts.get('total', {})
             },
-            'total_characters': sum(char_counts['total'].values()),
+            'total_characters': sum(char_counts.get('total', {}).values()),
             'data_source': 'Multi-source Oracle (CoinMarketCap + Gate.io + CoinGecko + Newspapers + Medium + Chains)'
         })
     except Exception as e:
