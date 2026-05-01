@@ -689,9 +689,8 @@ def generate_all_primitives():
     
     primitives.extend(number_primitives)
     
-    # SPACE
+    # SPACE - will be ranked with symbols
     space_primitive = generate_primitive_base('SPACE', 'separator')
-    primitives.append(space_primitive)
     
     # Symbols
     symbol_primitives = []
