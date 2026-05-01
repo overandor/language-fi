@@ -456,7 +456,7 @@ def get_sentence_leaderboard():
     cache['leaderboard'] = {'data': leaderboard, 'timestamp': time.time()}
     return jsonify(leaderboard)
 
-@app.route('/api/primitives/v2')
+@app.route('/api/primitives-v2')
 def get_primitives_v2():
     """Get all primitives (letters, numbers, spaces, symbols) - v2 endpoint to bypass cache"""
     # Skip cache for now to ensure ranking logic works
