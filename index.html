@@ -270,38 +270,38 @@
     </section>
 
     <section class="oracle" id="oracle">
-        <h2 class="section-title">Explainable letter pricing.</h2>
-        <p class="section-subtitle">The oracle uses multiple source categories to determine letter prices with full transparency.</p>
+        <h2 class="section-title">Letter Usage Oracle.</h2>
+        <p class="section-subtitle">The oracle measures weekly character usage from five clean source sets, then publishes settlement-ready snapshots.</p>
         <div class="oracle-sources">
             <div class="oracle-source-card">
-                <h3>Registry Activity</h3>
-                <p>Counts letters used in minted Language.fi assets.</p>
+                <h3>Solana Token Names (25%)</h3>
+                <p>Counts character occurrences and unique-name coverage across sampled Solana token names.</p>
             </div>
             <div class="oracle-source-card">
-                <h3>Token Name Data</h3>
-                <p>Counts letters from sampled token names and market-native naming behavior.</p>
+                <h3>Solana NFT Collections (20%)</h3>
+                <p>Tracks character usage from Solana NFT collection names in the active measurement window.</p>
             </div>
             <div class="oracle-source-card">
-                <h3>Blockchain Hash Data</h3>
-                <p>Uses sampled hashes and addresses as a cryptographic frequency baseline.</p>
+                <h3>Solana Domains (15%)</h3>
+                <p>Measures character frequencies from Solana domain names and naming activity.</p>
             </div>
             <div class="oracle-source-card">
-                <h3>Text Sample Data</h3>
-                <p>Uses permitted or licensed text samples, public metadata, RSS feeds, or derived frequency counts.</p>
+                <h3>Language.fi Registry (25%)</h3>
+                <p>Uses minted Language.fi entries to capture protocol-native demand for letters and numbers.</p>
             </div>
             <div class="oracle-source-card">
-                <h3>Seasonal and Meme Trends</h3>
-                <p>Captures temporary demand spikes from cultural naming patterns.</p>
+                <h3>Gate.io Listings (15%)</h3>
+                <p>Adds centralized-exchange naming signal by counting Gate.io token listings.</p>
             </div>
         </div>
         <div class="formula-display">
-            <div class="formula-title">Pricing Formula</div>
+            <div class="formula-title">Weighted Letter Usage Formula</div>
             <div class="formula-content">
-                Letter Price = Base Price + Registry Demand + Token Name Demand + Hash Baseline + Text Sample Demand + Seasonal Modifier + Popularity Tax - Decay Adjustment
+                Weighted Usage = (Solana Tokens × 0.25) + (Solana NFT Collections × 0.20) + (Solana Domains × 0.15) + (Language.fi Registry × 0.25) + (Gate.io Listings × 0.15)
             </div>
         </div>
         <div class="compliance-note">
-            <strong>Important:</strong> Language.fi stores derived counts and statistics from third-party text sources, not full copyrighted articles.
+            <strong>Settlement rule:</strong> Every signed oracle snapshot must include sample size, source IDs/URLs, timestamp, normalization and deduplication rules, final count, previous count, and change percentage.
         </div>
     </section>
 
