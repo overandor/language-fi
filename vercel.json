@@ -1,11 +1,18 @@
 {
   "version": 2,
-  "buildCommand": "pip install -r requirements.txt && python server.py",
-  "outputDirectory": "",
+  "builds": [
+    {
+      "src": "server.py",
+      "use": "@vercel/python"
+    }
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/server.py"
+      "dest": "/server.py",
+      "headers": {
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0"
+      }
     },
     {
       "src": "/(.*)",
