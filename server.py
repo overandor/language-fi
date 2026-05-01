@@ -214,6 +214,17 @@ def calculate_staking_score():
     score = calculate_sentence_staking_score(sentence_id, sentence, staked_since, last_moved_at)
     return jsonify(score)
 
+@app.route('/api/oracle/snapshot')
+def get_oracle_snapshot():
+    """Get oracle snapshot for settlement proof"""
+    if 'oracle_snapshot' in cache and time.time() - cache['oracle_snapshot']['timestamp'] < CACHE_DURATION:
+        return jsonify(cache['oracle_snapshot']['data'])
+    
+    # Generate oracle snapshot
+    snapshot = generate_oracle_snapshot()
+    cache['oracle_snapshot'] = {'data': snapshot, 'timestamp': time.time()}
+    return jsonify(snapshot)
+
 def generate_all_primitives():
     """Generate all primitives (letters, numbers, spaces, symbols)"""
     primitives = []
@@ -295,14 +306,59 @@ def generate_primitive_detail(symbol):
     else:
         primitive_type = 'letter'
     
-    # Generate source breakdown
-    source_breakdown = {
-        'blockchain_content': random.randint(50000, 300000),
-        'token_names': random.randint(500, 5000),
-        'hashes': random.randint(20000, 100000),
-        'regular_content_sample': random.randint(50000, 200000),
-        'languagefi_registry': random.randint(30000, 150000)
+    # Generate oracle source breakdown with specific weights
+    solana_token_names = random.randint(10000, 50000)
+    solana_nft_collections = random.randint(20000, 80000)
+    solana_domains = random.randint(5000, 20000)
+    languagefi_registry = random.randint(30000, 150000)
+    gateio_listings = random.randint(500, 3000)
+    
+    # Calculate weighted usage
+    weighted_usage = (
+        solana_token_names * 0.25 +
+        solana_nft_collections * 0.20 +
+        solana_domains * 0.15 +
+        languagefi_registry * 0.25 +
+        gateio_listings * 0.15
+    )
+    
+    # Oracle sources with weights
+    oracle_sources = {
+        'solana_token_names': {
+            'occurrences': solana_token_names,
+            'weight': 0.25,
+            'source_id': 'sol_token_names_v1'
+        },
+        'solana_nft_collections': {
+            'occurrences': solana_nft_collections,
+            'weight': 0.20,
+            'source_id': 'sol_nft_collections_v1'
+        },
+        'solana_domains': {
+            'occurrences': solana_domains,
+            'weight': 0.15,
+            'source_id': 'sol_domains_v1'
+        },
+        'languagefi_registry': {
+            'occurrences': languagefi_registry,
+            'weight': 0.25,
+            'source_id': 'langfi_registry_v1'
+        },
+        'gateio_token_listings': {
+            'occurrences': gateio_listings,
+            'weight': 0.15,
+            'source_id': 'gateio_listings_v1'
+        }
     }
+    
+    # Calculate oracle confidence based on sample size and source diversity
+    total_sample = sum(s['occurrences'] for s in oracle_sources.values())
+    source_diversity = len([s for s in oracle_sources.values() if s['occurrences'] > 1000])
+    oracle_confidence = min(0.99, 0.85 + (total_sample / 1000000) * 0.1 + (source_diversity / 5) * 0.04)
+    
+    # Market result
+    market_direction = 'up' if weekly_change > 0 else 'down'
+    market_status = 'winning' if weekly_change > 0.05 else 'neutral'
     
     return {
         'symbol': symbol,
@@ -314,8 +370,20 @@ def generate_primitive_detail(symbol):
         'usage_count_previous_week': usage_previous,
         'rank': random.randint(1, 40),
         'volatility': random.choice(['low', 'medium', 'high']),
-        'oracle_confidence': round(random.uniform(0.85, 0.99), 3),
-        'source_breakdown': source_breakdown
+        'oracle_confidence': round(oracle_confidence, 3),
+        'oracle_sources': oracle_sources,
+        'weighted_usage': round(weighted_usage, 0),
+        'market_result': {
+            'direction': market_direction,
+            'status': f'long_{symbol.lower()}_winning' if market_status == 'winning' else f'long_{symbol.lower()}_neutral'
+        },
+        'oracle_metadata': {
+            'sample_size': total_sample,
+            'window': 'weekly',
+            'normalization_rules': 'uppercase, remove_special_chars, remove_duplicates',
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'oracle_version': 'v1.0'
+        }
     }
 
 def generate_sentence_quote(sentence):
@@ -403,6 +471,45 @@ def calculate_sentence_staking_score(sentence_id, sentence, staked_since, last_m
         'final_staking_score': round(final_score, 3),
         'top_contributors': top_contributors
     }
+
+def generate_oracle_snapshot():
+    """Generate oracle snapshot for settlement proof"""
+    # Get all primitives with oracle data
+    primitives = generate_all_primitives()['primitives']
+    
+    # Add oracle details to each primitive
+    oracle_snapshot = {
+        'snapshot_id': f'oracle_{random.randint(100000, 999999)}',
+        'timestamp': datetime.utcnow().isoformat() + 'Z',
+        'window': 'weekly',
+        'oracle_version': 'v1.0',
+        'normalization_rules': 'uppercase, remove_special_chars, remove_duplicates',
+        'source_weights': {
+            'solana_token_names': 0.25,
+            'solana_nft_collections': 0.20,
+            'solana_domains': 0.15,
+            'languagefi_registry': 0.25,
+            'gateio_token_listings': 0.15
+        },
+        'total_sample_size': random.randint(500000, 5000000),
+        'primitives': []
+    }
+    
+    for primitive in primitives:
+        symbol = primitive['symbol']
+        detail = generate_primitive_detail(symbol)
+        oracle_snapshot['primitives'].append({
+            'symbol': symbol,
+            'type': primitive['type'],
+            'price_lgu': detail['price_lgu'],
+            'weekly_change': detail['weekly_change'],
+            'oracle_sources': detail['oracle_sources'],
+            'weighted_usage': detail['weighted_usage'],
+            'oracle_confidence': detail['oracle_confidence'],
+            'market_result': detail['market_result']
+        })
+    
+    return oracle_snapshot
 
 def generate_letter_data():
     """Generate live letter price data with random sampling"""
