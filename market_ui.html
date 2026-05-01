@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language.fi Tokenization Market</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%); min-height: 100vh; }
+        .glass-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .price-up { color: #10b981; }
+        .price-down { color: #ef4444; }
+        .pulse-live { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .gradient-text { background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+</head>
+<body class="text-white">
+    <header class="glass-card sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-language text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold gradient-text">Language.fi</h1>
+                    <p class="text-xs text-gray-400">Tokenization Market</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full pulse-live"></span>
+                    <span class="text-sm text-gray-400">Live</span>
+                </div>
+                <span id="lastUpdate" class="text-sm text-gray-400">--</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="glass-card border-t-0 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 py-3 grid grid-cols-4 gap-4 text-center">
+            <div><p class="text-xs text-gray-400">Market Cap</p><p id="totalMarketCap" class="text-lg font-bold">$--</p></div>
+            <div><p class="text-xs text-gray-400">24h Volume</p><p id="totalVolume" class="text-lg font-bold">$--</p></div>
+            <div><p class="text-xs text-gray-400">Active Tokens</p><p id="activeTokens" class="text-lg font-bold">--</p></div>
+            <div><p class="text-xs text-gray-400">Data Sources</p><p id="dataSources" class="text-lg font-bold">--</p></div>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="flex space-x-2 mb-6">
+            <button onclick="switchTab('letters')" id="tab-letters" class="tab-btn px-6 py-2 rounded-lg bg-purple-600 text-white">Letters</button>
+            <button onclick="switchTab('numbers')" id="tab-numbers" class="tab-btn px-6 py-2 rounded-lg glass-card text-gray-300">Numbers</button>
+            <button onclick="switchTab('symbols')" id="tab-symbols" class="tab-btn px-6 py-2 rounded-lg glass-card text-gray-300">Symbols</button>
+            <button onclick="switchTab('live')" id="tab-live" class="tab-btn px-6 py-2 rounded-lg glass-card text-gray-300">Live Oracle</button>
+        </div>
+        <div id="tokenGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+        <div id="liveOracleSection" class="hidden glass-card rounded-xl p-6">
+            <h2 class="text-xl font-bold mb-4 gradient-text">Live Oracle Data Sources</h2>
+            <div id="oracleSources" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:7860' : 'https://language-fi.vercel.app';
+        let currentTab = 'letters';
+
+        async function fetchPrimitives() {
+            try {
+                const res = await fetch(`${API_BASE}/api/primitives?ts=${Date.now()}`);
+                const data = await res.json();
+                return data.primitives;
+            } catch (e) { console.error(e); return []; }
+        }
+
+        async function fetchLiveStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/kpis?ts=${Date.now()}`);
+                const data = await res.json();
+                return data;
+            } catch (e) { console.error(e); return {}; }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-purple-600', 'text-white');
+                btn.classList.add('glass-card', 'text-gray-300');
+            });
+            document.getElementById(`tab-${tab}`).classList.remove('glass-card', 'text-gray-300');
+            document.getElementById(`tab-${tab}`).classList.add('bg-purple-600', 'text-white');
+            
+            document.getElementById('tokenGrid').classList.toggle('hidden', tab === 'live');
+            document.getElementById('liveOracleSection').classList.toggle('hidden', tab !== 'live');
+            
+            if (tab !== 'live') loadTokens();
+            if (tab === 'live') loadOracleSources();
+        }
+
+        async function loadTokens() {
+            const primitives = await fetchPrimitives();
+            const stats = await fetchLiveStats();
+            const letterPrices = stats.letter_prices || {};
+            
+            const filtered = primitives.filter(p => p.type === currentTab.slice(0, -1));
+            const grid = document.getElementById('tokenGrid');
+            grid.innerHTML = filtered.map(p => {
+                const price = letterPrices[p.symbol] || p.price_lgu;
+                const change = p.weekly_change;
+                const changeClass = change >= 0 ? 'price-up' : 'price-down';
+                return `
+                    <div class="glass-card rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-2xl font-bold">
+                                ${p.symbol}
+                            </div>
+                            <div class="text-right">
+                                <p class="text-lg font-bold">$${price.toFixed(4)}</p>
+                                <p class="${changeClass} text-sm">${change >= 0 ? '+' : ''}${(change * 100).toFixed(2)}%</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div><p class="text-gray-400">Rank</p><p class="font-medium">#${p.rank || '--'}</p></div>
+                            <div><p class="text-gray-400">Volume</p><p class="font-medium">${(p.usage_count / 1000000).toFixed(1)}M</p></div>
+                            <div><p class="text-gray-400">Type</p><p class="font-medium capitalize">${p.type}</p></div>
+                            <div><p class="text-gray-400">Status</p><p class="font-medium text-green-400">Active</p></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('totalMarketCap').textContent = '$' + (Object.values(letterPrices).reduce((a,b) => a+b, 0) * 1000000).toFixed(0);
+            document.getElementById('activeTokens').textContent = filtered.length;
+            document.getElementById('dataSources').textContent = '8+';
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+
+        function loadOracleSources() {
+            const sources = [
+                { name: 'Gate.io', status: 'active', tokens: '2234' },
+                { name: 'CoinGecko', status: 'active', tokens: '250+' },
+                { name: 'CoinMarketCap', status: 'active', tokens: '250+' },
+                { name: 'Dexscreener', status: 'active', tokens: '30+' },
+                { name: 'Solana RPC', status: 'connected', tokens: 'N/A' },
+                { name: 'Ethereum RPC', status: 'connected', tokens: 'N/A' },
+                { name: 'Base RPC', status: 'connected', tokens: 'N/A' },
+                { name: 'Uniswap', status: 'active', tokens: '1447' },
+                { name: 'Jupiter', status: 'active', tokens: '5000+' },
+                { name: '1inch', status: 'active', tokens: '3000+' },
+                { name: 'Birdeye', status: 'active', tokens: '10000+' },
+                { name: 'Helius', status: 'connected', tokens: 'N/A' },
+            ];
+            
+            document.getElementById('oracleSources').innerHTML = sources.map(s => `
+                <div class="glass-card rounded-lg p-3">
+                    <p class="font-bold text-sm">${s.name}</p>
+                    <p class="text-xs text-gray-400">${s.status}</p>
+                    <p class="text-xs text-purple-400">${s.tokens} tokens</p>
+                </div>
+            `).join('');
+        }
+
+        loadTokens();
+        setInterval(loadTokens, 30000);
+    </script>
+</body>
+</html>

@@ -282,6 +282,22 @@ class KPIEngine:
             gateio_data = self.fetch_gateio()
             print(f"Gate.io: {len(gateio_data) if gateio_data else 0} tokens")
             
+            # Etherscan (API key required)
+            etherscan_data = self.fetch_etherscan()
+            print(f"Etherscan: {len(etherscan_data) if etherscan_data else 0} transactions")
+            
+            # Basescan (API key required)
+            basescan_data = self.fetch_basescan()
+            print(f"Basescan: {len(basescan_data) if basescan_data else 0} transactions")
+            
+            # Birdeye (no API key)
+            birdeye_data = self.fetch_birdeye()
+            print(f"Birdeye: {len(birdeye_data) if birdeye_data else 0} tokens")
+            
+            # Helius (API key required)
+            helius_data = self.fetch_helius()
+            print(f"Helius: {'connected' if helius_data else 'failed'}")
+            
             # Dexscreener (no API key)
             dexscreener_data = self.fetch_dexscreener()
             print(f"Dexscreener: {len(dexscreener_data) if dexscreener_data else 0} pairs")
@@ -316,6 +332,10 @@ class KPIEngine:
                 'coingecko_tokens': coingecko_data,
                 'coinmarketcap_tokens': cmc_data,
                 'gateio_tokens': gateio_data,
+                'etherscan_txs': etherscan_data,
+                'basescan_txs': basescan_data,
+                'birdeye_tokens': birdeye_data,
+                'helius_data': helius_data,
                 'dexscreener_pairs': dexscreener_data,
                 'solana_rpc': solana_data,
                 'ethereum_rpc': ethereum_data,
@@ -357,11 +377,11 @@ class KPIEngine:
     def fetch_gateio(self) -> List[Dict]:
         """Fetch Gate.io token data"""
         try:
-            url = 'https://api.gateio.ws/api/v4/spot/tickers'
-            response = requests.get(url, timeout=30)
-            response.raise_for_status()
-            data = response.json()
-            return data if isinstance(data, list) else []
+            # Fetch tickers
+            tickers_url = 'https://api.gateio.ws/api/v4/spot/tickers'
+            tickers = requests.get(tickers_url, timeout=30).json()
+            
+            return tickers if isinstance(tickers, list) else []
         except Exception as e:
             print(f"Error fetching Gate.io data: {e}")
             return []
@@ -389,6 +409,80 @@ class KPIEngine:
         except Exception as e:
             print(f"Error fetching CoinMarketCap data: {e}")
             return []
+    
+    def fetch_etherscan(self) -> List[Dict]:
+        """Fetch Etherscan token data"""
+        try:
+            if not ETHERSCAN_API_KEY:
+                return []
+            
+            url = 'https://api.etherscan.io/api'
+            params = {
+                'module': 'account',
+                'action': 'tokentx',
+                'address': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',  # WETH
+                'apikey': ETHERSCAN_API_KEY
+            }
+            
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            return data.get('result', []) if isinstance(data, dict) else []
+        except Exception as e:
+            print(f"Error fetching Etherscan data: {e}")
+            return []
+    
+    def fetch_basescan(self) -> List[Dict]:
+        """Fetch Basescan token data"""
+        try:
+            if not BASESCAN_API_KEY:
+                return []
+            
+            url = 'https://api.basescan.org/api'
+            params = {
+                'module': 'account',
+                'action': 'tokentx',
+                'address': '0x4200000000000000000000000000000000000006',  # WETH on Base
+                'apikey': BASESCAN_API_KEY
+            }
+            
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            return data.get('result', []) if isinstance(data, dict) else []
+        except Exception as e:
+            print(f"Error fetching Basescan data: {e}")
+            return []
+    
+    def fetch_birdeye(self) -> List[Dict]:
+        """Fetch Birdeye token data"""
+        try:
+            url = 'https://public-api.birdeye.so/defi/tokenlist'
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            return data.get('data', {}).get('tokens', []) if isinstance(data, dict) else []
+        except Exception as e:
+            print(f"Error fetching Birdeye data: {e}")
+            return []
+    
+    def fetch_helius(self) -> Dict[str, Any]:
+        """Fetch Helius Solana data"""
+        try:
+            if not HELIUS_API_KEY:
+                return {}
+            
+            url = f'https://api.helius.xyz/v0/token-metadata?api-key={HELIUS_API_KEY}'
+            params = {
+                'mintAddresses': ['So11111111111111111111111111111111111111112']  # SOL
+            }
+            
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Error fetching Helius data: {e}")
+            return {}
     
     def fetch_dexscreener(self, query: str = '') -> List[Dict]:
         """Fetch Dexscreener DEX data"""
@@ -620,22 +714,52 @@ class KPIEngine:
         
         return char_data
     
-    def calculate_price_from_stats(self, char_counts: Dict[str, int], letter: str) -> float:
-        """Calculate letter price based on character occurrence statistics"""
+    def calculate_price_from_live_metrics(self, char_counts: Dict[str, int], letter: str, snapshot: Dict) -> float:
+        """Calculate letter price based on live market metrics from multiple sources"""
         letter_count = char_counts.get(letter.upper(), 0)
         total_chars = sum(char_counts.values()) if char_counts else 1
         
         if total_chars == 0:
             return 0.01  # Base minimum price
         
-        # Price formula: (letter_count / total_chars) * base_multiplier
-        # Higher frequency = higher price
-        frequency = letter_count / total_chars
-        base_price = frequency * 10.0  # Base multiplier
-        
-        # Apply logarithmic scaling to prevent extreme prices
         import math
-        scaled_price = math.log(base_price + 1) * 0.5
+        
+        # Base frequency component
+        frequency = letter_count / total_chars
+        base_price = frequency * 10.0
+        
+        # Gate.io market impact
+        gateio_tokens = snapshot.get('gateio_tokens', [])
+        gateio_volume = sum(float(t.get('volume', '0').replace(',', '')) if isinstance(t.get('volume'), str) else 0 for t in gateio_tokens[:10])
+        gateio_factor = min(gateio_volume / 1000000000, 2.0)  # Cap at 2x
+        
+        # CoinGecko market cap impact
+        coingecko_tokens = snapshot.get('coingecko_tokens', [])
+        coingecko_market_cap = sum(t.get('market_cap', 0) for t in coingecko_tokens[:10]) if coingecko_tokens else 0
+        coingecko_factor = min(coingecko_market_cap / 1000000000000, 1.5)  # Cap at 1.5x
+        
+        # Dexscreener liquidity impact
+        dex_pairs = snapshot.get('dexscreener_pairs', [])
+        dex_liquidity = sum(p.get('liquidity', {}).get('usd', 0) for p in dex_pairs[:5] if p.get('liquidity'))
+        dex_factor = min(dex_liquidity / 10000000, 1.2)  # Cap at 1.2x
+        
+        # RPC connectivity bonus
+        rpc_bonus = 0
+        if snapshot.get('solana_rpc'): rpc_bonus += 0.05
+        if snapshot.get('ethereum_rpc'): rpc_bonus += 0.05
+        if snapshot.get('base_rpc'): rpc_bonus += 0.05
+        
+        # Token list diversity
+        jupiter_tokens = snapshot.get('jupiter_tokens', [])
+        uniswap_tokens = snapshot.get('uniswap_tokens', [])
+        diversity_bonus = min((len(jupiter_tokens) + len(uniswap_tokens)) / 10000, 0.3)
+        
+        # Combine all factors
+        combined_factor = 1 + gateio_factor + coingecko_factor + dex_factor + rpc_bonus + diversity_bonus
+        adjusted_price = base_price * combined_factor
+        
+        # Apply logarithmic scaling
+        scaled_price = math.log(adjusted_price + 1) * 0.5
         
         return round(scaled_price, 4)
     
@@ -687,9 +811,9 @@ class KPIEngine:
             # Topic distribution for this letter
             kpis[f'{symbol}_topics'] = letter_data.get('topics', {})
             
-            # Calculate price based on statistics
+            # Calculate price based on live metrics
             char_counts = {char: data['total_count'] for char, data in char_data.items()}
-            price = self.calculate_price_from_stats(char_counts, symbol)
+            price = self.calculate_price_from_live_metrics(char_counts, symbol, snapshot)
             prices[symbol] = price
             kpis[f'{symbol}_price'] = price
             

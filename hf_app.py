@@ -10,8 +10,10 @@ import requests
 import random
 import time
 from datetime import datetime, timezone
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
+from functools import wraps
+from collections import defaultdict
 
 # Flask app for API
 app = Flask(__name__)
@@ -200,15 +202,26 @@ def get_live_stats():
 
 @app.route('/api/kpis')
 def get_kpis():
-    """Get current KPI data"""
+    """Get current KPI data with live metrics"""
     try:
-        from kpi_engine import kpi_store
+        from kpi_engine import kpi_store, get_kpi_history
+        
+        # Get latest from database
+        kpi_history = get_kpi_history(limit=1)
+        latest_db = kpi_history[0] if kpi_history else None
+        
         return jsonify({
             'letter_kpis': kpi_store.get('letter_kpis', {}),
             'new_kpis': kpi_store.get('new_kpis', []),
             'llm_insights': kpi_store.get('llm_insights', []),
             'history_count': len(kpi_store.get('history', [])),
-            'last_updated': kpi_store.get('history', [{}])[-1].get('timestamp') if kpi_store.get('history') else None
+            'last_updated': kpi_store.get('history', [{}])[-1].get('timestamp') if kpi_store.get('history') else None,
+            'char_attribution': kpi_store.get('char_attribution', {}),
+            'token_letter_stats': kpi_store.get('token_letter_stats', {}),
+            'total_tokens_analyzed': kpi_store.get('total_tokens_analyzed', 0),
+            'letter_prices': kpi_store.get('letter_prices', {}),
+            'kpi_evolution': kpi_store.get('kpi_evolution', {}),
+            'latest_db_snapshot': latest_db
         })
     except ImportError:
         return jsonify({
@@ -220,6 +233,29 @@ def get_kpis():
             'status': 'KPI engine not available'
         })
 
+@app.route('/api/kpis/history')
+def get_kpi_history_endpoint():
+    """Get KPI history from database"""
+    try:
+        from kpi_engine import get_kpi_history
+        limit = int(request.args.get('limit', 100))
+        history = get_kpi_history(limit=limit)
+        return jsonify({'history': history, 'count': len(history)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/kpis/price-history')
+def get_price_history_endpoint():
+    """Get price history from database"""
+    try:
+        from kpi_engine import get_price_history
+        letter = request.args.get('letter')
+        limit = int(request.args.get('limit', 100))
+        history = get_price_history(letter=letter, limit=limit)
+        return jsonify({'history': history, 'count': len(history)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/kpis/start', methods=['POST'])
 def start_kpi_engine():
     """Start the KPI engine"""
@@ -229,6 +265,154 @@ def start_kpi_engine():
         return jsonify({'status': 'KPI engine started'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/analysis')
+def get_analysis():
+    """Get LLM analysis and oracleification insights"""
+    try:
+        from kpi_engine import kpi_store
+        
+        # Get latest reasoning
+        reasoning_history = list(kpi_store.get('reasoning_history', []))
+        latest_reasoning = reasoning_history[-1] if reasoning_history else None
+        
+        # Get oracleification analysis
+        if latest_reasoning:
+            oracleification = latest_reasoning.get('reasoning', {}).get('oracleification_analysis', {})
+            new_kpis = latest_reasoning.get('reasoning', {}).get('new_kpis', [])
+            trend_analysis = latest_reasoning.get('reasoning', {}).get('trend_analysis', '')
+            momentum_letters = latest_reasoning.get('reasoning', {}).get('momentum_letters', [])
+        else:
+            oracleification = {}
+            new_kpis = []
+            trend_analysis = ''
+            momentum_letters = []
+        
+        return jsonify({
+            'oracleification_analysis': oracleification,
+            'new_llm_kpis': new_kpis,
+            'trend_analysis': trend_analysis,
+            'momentum_letters': momentum_letters,
+            'reasoning_timestamp': latest_reasoning.get('timestamp') if latest_reasoning else None,
+            'char_attribution': kpi_store.get('char_attribution', {}),
+            'token_letter_stats': kpi_store.get('token_letter_stats', {})
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analysis/history')
+def get_analysis_history():
+    """Get LLM analysis history"""
+    try:
+        from kpi_engine import kpi_store
+        limit = int(request.args.get('limit', 50))
+        history = list(kpi_store.get('reasoning_history', []))[:limit]
+        return jsonify({'history': history, 'count': len(history)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/dashboard')
+def dashboard():
+    """Live metrics dashboard"""
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Language.fi KPI Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #0f0f0f; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: #1a1a1a; padding: 20px; border-radius: 8px; }
+        h1 { color: #00ff88; }
+        h2 { color: #00aaff; margin-top: 0; }
+        .metric { font-size: 24px; font-weight: bold; color: #00ff88; }
+        .label { color: #888; }
+        button { background: #00ff88; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #00cc6a; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Language.fi KPI Dashboard</h1>
+        <button onclick="fetchData()">Refresh Data</button>
+        <div class="grid" id="metrics"></div>
+        <div class="card" style="margin-top: 20px;">
+            <canvas id="priceChart"></canvas>
+        </div>
+    </div>
+    <script>
+        let priceChart;
+        
+        async function fetchData() {
+            const kpiRes = await fetch('/api/kpis');
+            const kpiData = await kpiRes.json();
+            
+            const analysisRes = await fetch('/api/analysis');
+            const analysisData = await analysisRes.json();
+            
+            updateMetrics(kpiData, analysisData);
+            updatePriceChart(kpiData);
+        }
+        
+        function updateMetrics(kpiData, analysisData) {
+            const metricsDiv = document.getElementById('metrics');
+            metricsDiv.innerHTML = '';
+            
+            const metrics = [
+                { label: 'Total Tokens Analyzed', value: kpiData.total_tokens_analyzed || 0 },
+                { label: 'Unique Letters Found', value: kpiData.unique_letters_found || 0 },
+                { label: 'History Count', value: kpiData.history_count || 0 },
+                { label: 'New LLM KPIs', value: analysisData.new_llm_kpis?.length || 0 },
+                { label: 'Momentum Letters', value: analysisData.momentum_letters?.join(', ') || 'N/A' },
+                { label: 'Last Updated', value: kpiData.last_updated || 'N/A' }
+            ];
+            
+            metrics.forEach(m => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `<div class="label">${m.label}</div><div class="metric">${m.value}</div>`;
+                metricsDiv.appendChild(card);
+            });
+        }
+        
+        function updatePriceChart(kpiData) {
+            const prices = kpiData.letter_prices || {};
+            const letters = Object.keys(prices);
+            const values = Object.values(prices);
+            
+            if (priceChart) {
+                priceChart.destroy();
+            }
+            
+            priceChart = new Chart(document.getElementById('priceChart'), {
+                type: 'bar',
+                data: {
+                    labels: letters,
+                    datasets: [{
+                        label: 'Letter Prices',
+                        data: values,
+                        backgroundColor: 'rgba(0, 255, 136, 0.6)',
+                        borderColor: 'rgba(0, 255, 136, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        fetchData();
+        setInterval(fetchData, 30000); // Refresh every 30 seconds
+    </script>
+</body>
+</html>
+    '''
 
 @app.route('/api/kpis/historical')
 def get_historical_kpis():
@@ -272,6 +456,57 @@ def get_kpi_evolution():
 def health():
     """Health check endpoint"""
     return jsonify({'status': 'healthy'})
+
+@app.route('/')
+def serve_market_ui():
+    """Serve the tokenization market UI"""
+    try:
+        with open('market_ui.html', 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return jsonify({'error': 'Market UI not found'}), 404
+
+@app.route('/api/market/data')
+def get_market_data():
+    """Get comprehensive market data for the tokenization market"""
+    try:
+        from kpi_engine import engine, kpi_store
+        
+        # Fetch fresh data
+        snapshot = engine.fetch_data()
+        if not snapshot:
+            return jsonify({'error': 'Failed to fetch market data'}), 500
+        
+        # Get current prices
+        letter_prices = kpi_store.get('letter_prices', {})
+        char_attribution = kpi_store.get('char_attribution', {})
+        
+        return jsonify({
+            'snapshot': snapshot,
+            'letter_prices': letter_prices,
+            'char_attribution': char_attribution,
+            'total_tokens_analyzed': kpi_store.get('total_tokens_analyzed', 0),
+            'data_sources': {
+                'coingecko': len(snapshot.get('coingecko_tokens', [])),
+                'coinmarketcap': len(snapshot.get('coinmarketcap_tokens', [])),
+                'gateio': len(snapshot.get('gateio_tokens', [])),
+                'etherscan': len(snapshot.get('etherscan_txs', [])),
+                'basescan': len(snapshot.get('basescan_txs', [])),
+                'birdeye': len(snapshot.get('birdeye_tokens', [])),
+                'helius': 1 if snapshot.get('helius_data') else 0,
+                'dexscreener': len(snapshot.get('dexscreener_pairs', [])),
+                'solana_rpc': 1 if snapshot.get('solana_rpc') else 0,
+                'ethereum_rpc': 1 if snapshot.get('ethereum_rpc') else 0,
+                'base_rpc': 1 if snapshot.get('base_rpc') else 0,
+                'jupiter': len(snapshot.get('jupiter_tokens', [])),
+                'uniswap': len(snapshot.get('uniswap_tokens', []))
+            },
+            'timestamp': snapshot.get('timestamp')
+        })
+    except ImportError:
+        return jsonify({'error': 'KPI engine not available'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Fetch initial oracle data
