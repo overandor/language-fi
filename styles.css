@@ -1602,6 +1602,204 @@ footer .disclaimer {
     text-align: center;
 }
 
+/* Explorer Hub Page */
+.explorer-hero {
+    background: var(--bg);
+    padding: 8rem 2rem 6rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.explorer-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(76, 29, 149, 0.2), transparent 60%);
+    pointer-events: none;
+}
+
+.explorer-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 700;
+    color: var(--soft-white);
+    margin-bottom: 1.5rem;
+    line-height: 1.05;
+    background: linear-gradient(135deg, var(--electric-blue) 0%, var(--neon-green) 50%, var(--electric-blue) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: textShift 8s ease-in-out infinite;
+}
+
+.explorer-subtitle {
+    font-size: 1.25rem;
+    color: var(--muted-text);
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.explorer-grid {
+    background: var(--surface);
+    padding: 6rem 2rem;
+}
+
+.explorer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-top: 4rem;
+}
+
+.explorer-card {
+    background: linear-gradient(135deg, var(--elevated-surface), var(--surface));
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    display: block;
+}
+
+.explorer-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--electric-blue), var(--neon-green));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.explorer-card:hover::before {
+    opacity: 1;
+}
+
+.explorer-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 60px rgba(56, 189, 248, 0.2), 0 0 40px var(--glow-blue);
+    border-color: var(--electric-blue);
+}
+
+.explorer-icon {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 4rem;
+    font-weight: 700;
+    color: var(--neon-green);
+    margin-bottom: 1.5rem;
+    text-shadow: 0 0 30px var(--glow-green);
+}
+
+.explorer-card h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--soft-white);
+    margin-bottom: 1rem;
+}
+
+.explorer-card p {
+    font-size: 1rem;
+    color: var(--muted-text);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.explorer-stats {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.explorer-stat {
+    flex: 1;
+}
+
+.explorer-stat-label {
+    font-size: 0.75rem;
+    color: var(--muted-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.explorer-stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--electric-blue);
+}
+
+.explorer-cta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.875rem;
+    color: var(--neon-green);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: color 0.3s ease;
+}
+
+.explorer-card:hover .explorer-cta {
+    color: var(--electric-blue);
+}
+
+.explorer-stats-summary {
+    background: var(--bg);
+    padding: 6rem 2rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.summary-label {
+    font-size: 0.875rem;
+    color: var(--muted-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
+
+.summary-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--electric-blue);
+}
+
+.back-to-home {
+    background: var(--surface);
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+nav .active {
+    color: var(--electric-blue);
+    font-weight: 600;
+}
+
 /* Tokenization stack styles */
 .tokenization-stack {
     display: flex;
