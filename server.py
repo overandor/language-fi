@@ -4,12 +4,12 @@ Language.fi Backend Server
 Provides live data for letter prices, usage statistics, and protocol breakdown
 """
 
-from flask import Flask, jsonify, send_from_directory, request
+from flask import Flask, jsonify, send_from_directory, request, Response, os
 from flask_cors import CORS
+import json
 import random
 import time
-from datetime import datetime
-import os
+from datetime import datetime, timezone
 import requests
 
 app = Flask(__name__)
@@ -1411,6 +1411,196 @@ def generate_sentence_leaderboard():
         entry['rank'] = i + 1
     
     return leaderboard
+
+@app.route('/api/signals')
+def get_signals():
+    """Get trading signals with confidence scores, direction, and reasoning based on live data"""
+    try:
+        from kpi_engine import kpi_store
+        
+        letter_prices = kpi_store.get('letter_prices', {})
+        kpi_evolution = kpi_store.get('kpi_evolution', {})
+        momentum_letters = kpi_store.get('momentum_letters', [])
+        
+        signals = []
+        
+        for letter, price in letter_prices.items():
+            evolution_data = kpi_evolution.get(letter, {})
+            velocity = evolution_data.get('velocity', 0)
+            acceleration = evolution_data.get('acceleration', 0)
+            trend = evolution_data.get('trend', 'neutral')
+            
+            # Calculate confidence score based on live metrics
+            confidence = 0.5
+            reasons = []
+            
+            # Velocity factor (real price change rate)
+            if velocity > 0.1:
+                confidence += 0.15
+                reasons.append('positive velocity')
+            elif velocity < -0.1:
+                confidence -= 0.15
+                reasons.append('negative velocity')
+            
+            # Acceleration factor (rate of velocity change)
+            if acceleration > 0.05:
+                confidence += 0.1
+                reasons.append('accelerating upward')
+            elif acceleration < -0.05:
+                confidence -= 0.1
+                reasons.append('accelerating downward')
+            
+            # Momentum factor (from live LLM analysis)
+            if letter in momentum_letters:
+                confidence += 0.2
+                reasons.append('momentum letter')
+            
+            # Trend factor (from evolution tracking)
+            if trend == 'up':
+                confidence += 0.1
+                reasons.append('upward trend')
+            elif trend == 'down':
+                confidence -= 0.1
+                reasons.append('downward trend')
+            
+            # Clamp confidence to 0-1
+            confidence = max(0, min(1, confidence))
+            
+            # Determine direction based on confidence
+            if confidence > 0.6:
+                direction = 'long'
+            elif confidence < 0.4:
+                direction = 'short'
+            else:
+                direction = 'neutral'
+            
+            if not reasons:
+                reasons.append('insufficient data')
+            
+            signals.append({
+                'letter': letter,
+                'price': price,
+                'signal': direction,
+                'confidence': round(confidence, 2),
+                'reason': '; '.join(reasons),
+                'metrics': {
+                    'velocity': round(velocity, 4),
+                    'acceleration': round(acceleration, 4),
+                    'trend': trend
+                }
+            })
+        
+        # Sort by confidence
+        signals.sort(key=lambda x: abs(x['confidence'] - 0.5), reverse=True)
+        
+        return jsonify({
+            'signals': signals[:10],  # Top 10 signals
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/stream')
+def stream():
+    """Server-Sent Events endpoint for live updates every 5-10 seconds"""
+    def event_stream():
+        while True:
+            try:
+                from kpi_engine import kpi_store
+                
+                # Get live data
+                letter_prices = kpi_store.get('letter_prices', {})
+                kpi_evolution = kpi_store.get('kpi_evolution', {})
+                momentum_letters = kpi_store.get('momentum_letters', [])
+                
+                # Calculate signals
+                signals = []
+                for letter, price in letter_prices.items():
+                    evolution_data = kpi_evolution.get(letter, {})
+                    velocity = evolution_data.get('velocity', 0)
+                    acceleration = evolution_data.get('acceleration', 0)
+                    trend = evolution_data.get('trend', 'neutral')
+                    
+                    confidence = 0.5
+                    reasons = []
+                    
+                    if velocity > 0.1:
+                        confidence += 0.15
+                        reasons.append('positive velocity')
+                    elif velocity < -0.1:
+                        confidence -= 0.15
+                        reasons.append('negative velocity')
+                    
+                    if acceleration > 0.05:
+                        confidence += 0.1
+                        reasons.append('accelerating upward')
+                    elif acceleration < -0.05:
+                        confidence -= 0.1
+                        reasons.append('accelerating downward')
+                    
+                    if letter in momentum_letters:
+                        confidence += 0.2
+                        reasons.append('momentum letter')
+                    
+                    if trend == 'up':
+                        confidence += 0.1
+                        reasons.append('upward trend')
+                    elif trend == 'down':
+                        confidence -= 0.1
+                        reasons.append('downward trend')
+                    
+                    confidence = max(0, min(1, confidence))
+                    
+                    if confidence > 0.6:
+                        direction = 'long'
+                    elif confidence < 0.4:
+                        direction = 'short'
+                    else:
+                        direction = 'neutral'
+                    
+                    if not reasons:
+                        reasons.append('insufficient data')
+                    
+                    signals.append({
+                        'letter': letter,
+                        'price': price,
+                        'signal': direction,
+                        'confidence': round(confidence, 2),
+                        'reason': '; '.join(reasons)
+                    })
+                
+                signals.sort(key=lambda x: abs(x['confidence'] - 0.5), reverse=True)
+                
+                # Send SSE event
+                data = {
+                    'type': 'update',
+                    'timestamp': datetime.now(timezone.utc).isoformat(),
+                    'letter_prices': letter_prices,
+                    'top_signals': signals[:5],
+                    'momentum_letters': momentum_letters,
+                    'kpi_evolution': kpi_evolution
+                }
+                
+                yield f"data: {json.dumps(data)}\n\n"
+                
+                # Wait 5-10 seconds before next update
+                time.sleep(7)
+                
+            except Exception as e:
+                error_data = {
+                    'type': 'error',
+                    'timestamp': datetime.now(timezone.utc).isoformat(),
+                    'error': str(e)
+                }
+                yield f"data: {json.dumps(error_data)}\n\n"
+                time.sleep(7)
+    
+    return Response(event_stream(), mimetype='text/event-stream')
+
+@app.route('/health')
+def health():
+    """Health check endpoint"""
+    return jsonify({'status': 'healthy'})
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 3000))

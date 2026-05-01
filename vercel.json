@@ -3,20 +3,16 @@
   "builds": [
     {
       "src": "server.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "15mb"
+      }
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/server.py",
-      "headers": {
-        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0"
-      }
-    },
-    {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/server.py"
     }
   ]
 }
