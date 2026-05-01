@@ -12,15 +12,10 @@ import time
 from datetime import datetime, timezone
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from functools import wraps
-from collections import defaultdict
 
 # Flask app for API
 app = Flask(__name__)
 CORS(app)
-
-# API Keys
-COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '')
 
 # Cache
 cache = {}
@@ -38,10 +33,6 @@ live_data_cache = {
 def fetch_coingecko_tokens():
     """Fetch token data from CoinGecko API"""
     try:
-        if not COINGECKO_API_KEY:
-            print("CoinGecko API key not configured, using fallback data")
-            return None
-        
         url = 'https://api.coingecko.com/api/v3/coins/markets'
         headers = {
             'Accept': 'application/json'
@@ -54,9 +45,6 @@ def fetch_coingecko_tokens():
             'page': '1',
             'sparkline': 'false'
         }
-        
-        if COINGECKO_API_KEY:
-            params['x_cg_demo_api_key'] = COINGECKO_API_KEY
         
         response = requests.get(url, headers=headers, params=params, timeout=30)
         response.raise_for_status()
@@ -212,7 +200,6 @@ def health_check():
         }), 500
 
 @app.route('/api/metrics')
-@rate_limit
 def get_system_metrics():
     """Get system metrics for monitoring"""
     try:
@@ -249,10 +236,6 @@ def get_system_metrics():
                 'price_history_count': price_history_count,
                 'llm_analysis_count': llm_analysis_count,
                 'db_size_bytes': db_size
-            },
-            'rate_limit': {
-                'requests_per_minute': RATE_LIMIT_REQUESTS,
-                'active_clients': len(rate_limit_store)
             }
         })
     except Exception as e:
