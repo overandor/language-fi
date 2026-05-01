@@ -8,10 +8,12 @@ import os
 import requests
 import time
 import json
+import sqlite3
 from datetime import datetime, timezone
 from typing import Dict, List, Any
 from collections import deque
 import threading
+import hashlib
 
 # Configuration
 COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '')
@@ -29,6 +31,195 @@ NYT_API_KEY = os.getenv('NYT_API_KEY', '')
 
 # Data sources
 API_BASE = os.getenv('API_BASE', 'https://language-fi.vercel.app')
+
+# Database
+DB_PATH = os.getenv('DB_PATH', 'kpi_history.db')
+
+def init_database():
+    """Initialize SQLite database for KPI history persistence"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    # KPI history table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS kpi_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            snapshot_id TEXT NOT NULL,
+            kpi_data TEXT NOT NULL,
+            letter_prices TEXT NOT NULL,
+            char_attribution TEXT NOT NULL,
+            token_letter_stats TEXT NOT NULL,
+            total_tokens INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Price history table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS price_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            letter TEXT NOT NULL,
+            price REAL NOT NULL,
+            volume INTEGER NOT NULL,
+            frequency REAL NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # LLM analysis history table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS llm_analysis_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            analysis_data TEXT NOT NULL,
+            new_kpis TEXT NOT NULL,
+            oracleification_analysis TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Evolution history table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS evolution_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            evolution_data TEXT NOT NULL,
+            price_evolution TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+
+def save_kpi_snapshot(snapshot_id: str, timestamp: str, kpis: Dict, prices: Dict, attribution: Dict, stats: Dict, total_tokens: int):
+    """Save KPI snapshot to database"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        INSERT INTO kpi_history (snapshot_id, timestamp, kpi_data, letter_prices, char_attribution, token_letter_stats, total_tokens)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        snapshot_id,
+        timestamp,
+        json.dumps(kpis),
+        json.dumps(prices),
+        json.dumps(attribution),
+        json.dumps(stats),
+        total_tokens
+    ))
+    
+    conn.commit()
+    conn.close()
+
+def save_price_history(timestamp: str, letter: str, price: float, volume: int, frequency: float):
+    """Save price history to database"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        INSERT INTO price_history (timestamp, letter, price, volume, frequency)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (timestamp, letter, price, volume, frequency))
+    
+    conn.commit()
+    conn.close()
+
+def save_llm_analysis(timestamp: str, analysis: Dict, new_kpis: List, oracleification: Dict):
+    """Save LLM analysis to database"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        INSERT INTO llm_analysis_history (timestamp, analysis_data, new_kpis, oracleification_analysis)
+        VALUES (?, ?, ?, ?)
+    ''', (
+        timestamp,
+        json.dumps(analysis),
+        json.dumps(new_kpis),
+        json.dumps(oracleification)
+    ))
+    
+    conn.commit()
+    conn.close()
+
+def save_evolution_history(timestamp: str, evolution: Dict, price_evolution: Dict):
+    """Save evolution history to database"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        INSERT INTO evolution_history (timestamp, evolution_data, price_evolution)
+        VALUES (?, ?, ?)
+    ''', (timestamp, json.dumps(evolution), json.dumps(price_evolution)))
+    
+    conn.commit()
+    conn.close()
+
+def get_kpi_history(limit: int = 100) -> List[Dict]:
+    """Get KPI history from database"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT snapshot_id, timestamp, kpi_data, letter_prices, char_attribution, total_tokens
+        FROM kpi_history
+        ORDER BY created_at DESC
+        LIMIT ?
+    ''', (limit,))
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return [
+        {
+            'snapshot_id': row[0],
+            'timestamp': row[1],
+            'kpi_data': json.loads(row[2]),
+            'letter_prices': json.loads(row[3]),
+            'char_attribution': json.loads(row[4]),
+            'total_tokens': row[5]
+        }
+        for row in rows
+    ]
+
+def get_price_history(letter: str = None, limit: int = 100) -> List[Dict]:
+    """Get price history from database"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    if letter:
+        cursor.execute('''
+            SELECT timestamp, letter, price, volume, frequency
+            FROM price_history
+            WHERE letter = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+        ''', (letter.upper(), limit))
+    else:
+        cursor.execute('''
+            SELECT timestamp, letter, price, volume, frequency
+            FROM price_history
+            ORDER BY created_at DESC
+            LIMIT ?
+        ''', (limit,))
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return [
+        {
+            'timestamp': row[0],
+            'letter': row[1],
+            'price': row[2],
+            'volume': row[3],
+            'frequency': row[4]
+        }
+        for row in rows
+    ]
 
 # KPI storage (in-memory for now, move to database later)
 kpi_store = {
@@ -60,12 +251,14 @@ ADVANCED_KPIS = [
 ]
 
 class KPIEngine:
-    """24/7 KPI computation engine"""
+    """24/7 KPI computation engine with database persistence"""
     
     def __init__(self):
         self.running = False
         self.thread = None
         self.snapshot_history = deque(maxlen=100)
+        # Initialize database on startup
+        init_database()
     
     def fetch_data(self) -> Dict[str, Any]:
         """Fetch data from all sources (CoinGecko + no API keys)"""
@@ -997,9 +1190,11 @@ Output JSON only:
         }
     
     def store_snapshot(self, snapshot: Dict, kpis: Dict, llm_output: Dict):
-        """Store snapshot and KPIs in history"""
+        """Store snapshot and KPIs in history and database"""
         timestamp = datetime.now(timezone.utc).isoformat()
+        snapshot_id = snapshot.get('snapshot_id', f"snap_{int(time.time())}")
         
+        # Save to in-memory store
         record = {
             'snapshot': snapshot,
             'base_kpis': kpis,
@@ -1022,6 +1217,29 @@ Output JSON only:
                 if new_kpi not in kpi_store['new_kpis']:
                     kpi_store['new_kpis'].append(new_kpi)
         
+        # Save to database
+        try:
+            save_kpi_snapshot(
+                snapshot_id,
+                timestamp,
+                kpis,
+                kpi_store.get('letter_prices', {}),
+                kpi_store.get('char_attribution', {}),
+                kpi_store.get('token_letter_stats', {}),
+                kpi_store.get('total_tokens_analyzed', 0)
+            )
+            
+            # Save price history for each letter
+            prices = kpi_store.get('letter_prices', {})
+            for letter, price in prices.items():
+                volume = kpis.get(f'{letter}_volume', 0)
+                frequency = kpis.get(f'{letter}_frequency', 0)
+                save_price_history(timestamp, letter, price, volume, frequency)
+            
+            print("Saved snapshot to database")
+        except Exception as e:
+            print(f"Error saving to database: {e}")
+        
         return evolution
     
     def update_registry(self, llm_output: Dict):
@@ -1032,7 +1250,7 @@ Output JSON only:
         kpi_store['letter_kpis']['llm_ranked'] = top_letters
     
     def run_once(self):
-        """Run one iteration of the KPI engine"""
+        """Run one iteration of the KPI engine with database persistence"""
         print(f"[{datetime.now(timezone.utc).isoformat()}] KPI Engine: Fetching data...")
         
         # Fetch data
@@ -1067,6 +1285,29 @@ Output JSON only:
                 'timestamp': datetime.now(timezone.utc).isoformat()
             })
             print(f"Reasoning complete: {reasoning_output.get('trend_analysis', 'No analysis')[:100]}")
+            
+            # Save LLM analysis to database
+            try:
+                save_llm_analysis(
+                    datetime.now(timezone.utc).isoformat(),
+                    reasoning_output,
+                    reasoning_output.get('new_kpis', []),
+                    reasoning_output.get('oracleification_analysis', {})
+                )
+                print("Saved LLM analysis to database")
+            except Exception as e:
+                print(f"Error saving LLM analysis to database: {e}")
+            
+            # Save evolution to database
+            try:
+                save_evolution_history(
+                    datetime.now(timezone.utc).isoformat(),
+                    evolution,
+                    evolution.get('price_evolution', {})
+                )
+                print("Saved evolution to database")
+            except Exception as e:
+                print(f"Error saving evolution to database: {e}")
         
         # Update registry
         self.update_registry(llm_output)

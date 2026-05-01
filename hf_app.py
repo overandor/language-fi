@@ -198,6 +198,76 @@ def get_live_stats():
         'last_updated': live_data_cache['last_updated']
     })
 
+@app.route('/api/kpis')
+def get_kpis():
+    """Get current KPI data"""
+    try:
+        from kpi_engine import kpi_store
+        return jsonify({
+            'letter_kpis': kpi_store.get('letter_kpis', {}),
+            'new_kpis': kpi_store.get('new_kpis', []),
+            'llm_insights': kpi_store.get('llm_insights', []),
+            'history_count': len(kpi_store.get('history', [])),
+            'last_updated': kpi_store.get('history', [{}])[-1].get('timestamp') if kpi_store.get('history') else None
+        })
+    except ImportError:
+        return jsonify({
+            'letter_kpis': {},
+            'new_kpis': [],
+            'llm_insights': [],
+            'history_count': 0,
+            'last_updated': None,
+            'status': 'KPI engine not available'
+        })
+
+@app.route('/api/kpis/start', methods=['POST'])
+def start_kpi_engine():
+    """Start the KPI engine"""
+    try:
+        from kpi_engine import engine
+        engine.start(interval=60)
+        return jsonify({'status': 'KPI engine started'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/kpis/historical')
+def get_historical_kpis():
+    """Get historical KPI data"""
+    try:
+        from kpi_engine import kpi_store
+        return jsonify({
+            'historical_kpis': dict(kpi_store.get('historical_kpis', {})),
+            'kpi_evolution': kpi_store.get('kpi_evolution', {}),
+            'reasoning_history': list(kpi_store.get('reasoning_history', []))
+        })
+    except ImportError:
+        return jsonify({
+            'historical_kpis': {},
+            'kpi_evolution': {},
+            'reasoning_history': [],
+            'status': 'KPI engine not available'
+        })
+
+@app.route('/api/kpis/evolution')
+def get_kpi_evolution():
+    """Get KPI evolution metrics"""
+    try:
+        from kpi_engine import kpi_store
+        return jsonify({
+            'kpi_evolution': kpi_store.get('kpi_evolution', {}),
+            'top_changing_kpis': sorted(
+                kpi_store.get('kpi_evolution', {}).items(),
+                key=lambda x: abs(x[1].get('velocity', 0)),
+                reverse=True
+            )[:10]
+        })
+    except ImportError:
+        return jsonify({
+            'kpi_evolution': {},
+            'top_changing_kpis': [],
+            'status': 'KPI engine not available'
+        })
+
 @app.route('/health')
 def health():
     """Health check endpoint"""
