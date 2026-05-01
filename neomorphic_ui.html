@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language.fi — Neomorphic Glassmorphism</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #e0e5ec 0%, #f5f7fa 50%, #e8eef5 100%);
+            min-height: 100vh;
+            color: #2d3748;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        /* Neomorphic Card */
+        .neomorphic-card {
+            background: #e0e5ec;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 
+                8px 8px 16px #b8bec7,
+                -8px -8px 16px #ffffff;
+            transition: all 0.3s ease;
+        }
+
+        .neomorphic-card:hover {
+            box-shadow: 
+                12px 12px 24px #b8bec7,
+                -12px -12px 24px #ffffff;
+        }
+
+        /* Glassmorphism Card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 
+                0 8px 32px rgba(31, 38, 135, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        /* Thin shadow button */
+        .neomorphic-button {
+            background: #e0e5ec;
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3748;
+            cursor: pointer;
+            box-shadow: 
+                4px 4px 8px #b8bec7,
+                -4px -4px 8px #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .neomorphic-button:hover {
+            box-shadow: 
+                6px 6px 12px #b8bec7,
+                -6px -6px 12px #ffffff;
+        }
+
+        .neomorphic-button:active {
+            box-shadow: 
+                inset 2px 2px 4px #b8bec7,
+                inset -2px -2px 4px #ffffff;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #e0e5ec;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 
+                6px 6px 12px #b8bec7,
+                -6px -6px 12px #ffffff;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Data Table */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #e0e5ec;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 
+                6px 6px 12px #b8bec7,
+                -6px -6px 12px #ffffff;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #e8eef5 0%, #f5f7fa 100%);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #2d3748;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            color: #4a5568;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Live indicator */
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #e0e5ec;
+            border-radius: 20px;
+            box-shadow: 
+                2px 2px 4px #b8bec7,
+                -2px -2px 4px #ffffff;
+            font-size: 0.85rem;
+            color: #2d3748;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #48bb78;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e0e5ec;
+            border-top-color: #4a5568;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Language.fi</h1>
+            <p>Neomorphic Glassmorphism Dashboard</p>
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span>Live Data</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="total-market-cap">$0</div>
+                <div class="stat-label">Total Market Cap</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="daily-volume">$0</div>
+                <div class="stat-label">24h Volume</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="active-signals">0</div>
+                <div class="stat-label">Active Signals</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="last-update">--:--</div>
+                <div class="stat-label">Last Update</div>
+            </div>
+        </div>
+
+        <div class="neomorphic-card">
+            <h2 style="margin-bottom: 1.5rem; color: #2d3748;">Top Trading Signals</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Letter</th>
+                        <th>Price</th>
+                        <th>Signal</th>
+                        <th>Confidence</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody id="signals-table">
+                    <tr>
+                        <td colspan="5" class="loading">
+                            <div class="loading-spinner"></div>
+                            Loading signals...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="glass-card">
+            <h2 style="margin-bottom: 1.5rem; color: #2d3748;">CoinGecko Market Data</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Coin</th>
+                        <th>Price</th>
+                        <th>24h Change</th>
+                        <th>Market Cap</th>
+                        <th>Volume</th>
+                    </tr>
+                </thead>
+                <tbody id="coingecko-table">
+                    <tr>
+                        <td colspan="5" class="loading">
+                            <div class="loading-spinner"></div>
+                            Loading CoinGecko data...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="neomorphic-card">
+            <h2 style="margin-bottom: 1.5rem; color: #2d3748;">LLM Research Insights</h2>
+            <div id="llm-insights" class="loading">
+                <div class="loading-spinner"></div>
+                Analyzing market patterns...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch data every 3 minutes
+        async function fetchAllData() {
+            try {
+                // Fetch signals
+                const signalsResponse = await fetch('/api/signals');
+                const signalsData = await signalsResponse.json();
+                updateSignalsTable(signalsData.signals || []);
+
+                // Fetch CoinGecko data
+                const coingeckoResponse = await fetch('/api/coingecko/markets');
+                const coingeckoData = await coingeckoResponse.json();
+                updateCoinGeckoTable(coingeckoData || []);
+
+                // Fetch LLM insights
+                const llmResponse = await fetch('/api/llm/insights');
+                const llmData = await llmResponse.json();
+                updateLLMInsights(llmData);
+
+                // Update stats
+                updateStats(signalsData, coingeckoData);
+
+                // Update timestamp
+                document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        function updateSignalsTable(signals) {
+            const tbody = document.getElementById('signals-table');
+            tbody.innerHTML = signals.map(signal => `
+                <tr>
+                    <td style="font-weight: 600;">${signal.letter}</td>
+                    <td>$${signal.price?.toFixed(4) || '0.0000'}</td>
+                    <td>
+                        <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600;
+                            ${signal.signal === 'long' ? 'background: #c6f6d5; color: #22543d;' : 
+                              signal.signal === 'short' ? 'background: #fed7d7; color: #742a2a;' : 
+                              'background: #e2e8f0; color: #4a5568;'}">
+                            ${signal.signal.toUpperCase()}
+                        </span>
+                    </td>
+                    <td>${(signal.confidence * 100).toFixed(0)}%</td>
+                    <td style="font-size: 0.9rem; color: #718096;">${signal.reason}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateCoinGeckoTable(markets) {
+            const tbody = document.getElementById('coingecko-table');
+            tbody.innerHTML = markets.slice(0, 10).map(coin => `
+                <tr>
+                    <td style="font-weight: 600;">${coin.name} (${coin.symbol.toUpperCase()})</td>
+                    <td>$${coin.current_price?.toLocaleString() || '0'}</td>
+                    <td style="${coin.price_change_percentage_24h >= 0 ? 'color: #22543d;' : 'color: #742a2a;'}">
+                        ${coin.price_change_percentage_24h?.toFixed(2) || 0}%
+                    </td>
+                    <td>$${coin.market_cap?.toLocaleString() || '0'}</td>
+                    <td>$${coin.total_volume?.toLocaleString() || '0'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateLLMInsights(insights) {
+            const container = document.getElementById('llm-insights');
+            container.innerHTML = `
+                <div style="line-height: 1.8;">
+                    ${insights.analysis || 'No insights available'}
+                </div>
+            `;
+        }
+
+        function updateStats(signalsData, coingeckoData) {
+            document.getElementById('active-signals').textContent = signalsData.signals?.length || 0;
+            
+            if (coingeckoData && coingeckoData.length > 0) {
+                const totalMarketCap = coingeckoData.reduce((sum, coin) => sum + (coin.market_cap || 0), 0);
+                const totalVolume = coingeckoData.reduce((sum, coin) => sum + (coin.total_volume || 0), 0);
+                
+                document.getElementById('total-market-cap').textContent = `$${(totalMarketCap / 1e9).toFixed(2)}B`;
+                document.getElementById('daily-volume').textContent = `$${(totalVolume / 1e9).toFixed(2)}B`;
+            }
+        }
+
+        // Initial fetch
+        fetchAllData();
+
+        // Refresh every 3 minutes
+        setInterval(fetchAllData, 180000);
+    </script>
+</body>
+</html>

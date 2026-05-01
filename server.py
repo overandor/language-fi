@@ -20,7 +20,7 @@ CORS(app)
 GATE_API_KEY = os.getenv('GATE_API_KEY', '')
 GATE_API_SECRET = os.getenv('GATE_API_SECRET', '')
 COINMARKETCAP_API_KEY = os.getenv('COINMARKETCAP_API_KEY', '')
-COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '')
+COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', 'CG-DD8rr7U4hQsjAxokXt7ERtaG')
 
 # Cache for data
 cache = {}
@@ -1608,6 +1608,104 @@ def stream():
 def health():
     """Health check endpoint"""
     return jsonify({'status': 'healthy'})
+
+@app.route('/api/coingecko/markets')
+def get_coingecko_markets():
+    """Get CoinGecko market data with API key"""
+    try:
+        url = 'https://api.coingecko.com/api/v3/coins/markets'
+        headers = {
+            'Accept': 'application/json'
+        }
+        if COINGECKO_API_KEY:
+            headers['x-cg-demo-api-key'] = COINGECKO_API_KEY
+        
+        params = {
+            'vs_currency': 'usd',
+            'order': 'market_cap_desc',
+            'per_page': '50',
+            'page': '1',
+            'sparkline': 'false'
+        }
+        
+        response = requests.get(url, headers=headers, params=params, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/llm/insights')
+def get_llm_insights():
+    """Get LLM-based exploratory data analysis insights"""
+    try:
+        # Fetch CoinGecko data for analysis
+        coingecko_response = requests.get('https://api.coingecko.com/api/v3/coins/markets', 
+                                          headers={'x-cg-demo-api-key': COINGECKO_API_KEY} if COINGECKO_API_KEY else {},
+                                          params={'vs_currency': 'usd', 'per_page': '20'},
+                                          timeout=30)
+        coingecko_data = coingecko_response.json() if coingecko_response.status_code == 200 else []
+        
+        # Perform exploratory data analysis
+        insights = perform_exploratory_analysis(coingecko_data)
+        
+        return jsonify(insights)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def perform_exploratory_analysis(data):
+    """Perform exploratory data analysis to determine which stats to include"""
+    if not data:
+        return {'analysis': 'No data available for analysis'}
+    
+    analysis = []
+    
+    # Analyze market distribution
+    total_market_cap = sum(coin.get('market_cap', 0) for coin in data)
+    top_3_market_cap = sum(coin.get('market_cap', 0) for coin in data[:3])
+    concentration = (top_3_market_cap / total_market_cap * 100) if total_market_cap > 0 else 0
+    
+    analysis.append(f"Market concentration: Top 3 coins represent {concentration:.1f}% of total market cap")
+    
+    # Analyze price movements
+    positive_changes = [coin for coin in data if coin.get('price_change_percentage_24h', 0) > 0]
+    negative_changes = [coin for coin in data if coin.get('price_change_percentage_24h', 0) < 0]
+    
+    if positive_changes:
+        avg_positive = sum(c.get('price_change_percentage_24h', 0) for c in positive_changes) / len(positive_changes)
+        analysis.append(f"Average positive movement: {avg_positive:.2f}% across {len(positive_changes)} coins")
+    
+    if negative_changes:
+        avg_negative = sum(c.get('price_change_percentage_24h', 0) for c in negative_changes) / len(negative_changes)
+        analysis.append(f"Average negative movement: {avg_negative:.2f}% across {len(negative_changes)} coins")
+    
+    # Analyze volume patterns
+    high_volume_coins = [coin for coin in data if coin.get('total_volume', 0) > 1e9]
+    analysis.append(f"High volume coins (> $1B): {len(high_volume_coins)}")
+    
+    # Determine which stats are most relevant
+    relevant_stats = []
+    if concentration > 50:
+        relevant_stats.append("Market cap concentration is high - track top coins closely")
+    if len(positive_changes) > len(negative_changes):
+        relevant_stats.append("Bullish sentiment - monitor positive momentum")
+    else:
+        relevant_stats.append("Bearish sentiment - watch for reversal signals")
+    
+    return {
+        'analysis': '\n\n'.join(analysis),
+        'relevant_stats': relevant_stats,
+        'sampled_at': datetime.now(timezone.utc).isoformat()
+    }
+
+@app.route('/')
+def serve_neomorphic_ui():
+    """Serve the neomorphic glassmorphism UI"""
+    try:
+        return send_from_directory('.', 'neomorphic_ui.html')
+    except FileNotFoundError:
+        return jsonify({'error': 'Neomorphic UI not found'}), 404
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 3000))
