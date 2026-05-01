@@ -467,9 +467,10 @@ def get_primitives():
     primitives = generate_all_primitives()
     cache['primitives'] = {'data': primitives, 'timestamp': time.time()}
     response = jsonify(primitives)
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
+    response.headers['Vercel-CDN-Cache-Control'] = 'no-cache'
     return response
 
 @app.route('/api/primitives/<symbol>')

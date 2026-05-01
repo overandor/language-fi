@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const API_URL = window.location.hostname === 'localhost' 
                 ? 'http://localhost:4000' 
                 : 'https://language-fi.vercel.app';
-            const response = await fetch(`${API_URL}/api/primitives`);
+            const response = await fetch(`${API_URL}/api/primitives?ts=${Date.now()}`);
             const payload = await response.json();
             const data = payload.primitives || payload;
             // Filter only letters and normalize
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const API_URL = window.location.hostname === 'localhost' 
                 ? 'http://localhost:4000' 
                 : 'https://language-fi.vercel.app';
-            const response = await fetch(`${API_URL}/api/primitives`);
+            const response = await fetch(`${API_URL}/api/primitives?ts=${Date.now()}`);
             const payload = await response.json();
             const data = payload.primitives || payload;
             // Filter only letters and normalize
