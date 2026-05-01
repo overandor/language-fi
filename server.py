@@ -27,8 +27,6 @@ CACHE_DURATION = 300  # 5 minutes
 
 # Live data cache
 live_data_cache = {
-    'coinmarketcap_tokens': None,
-    'gateio_tokens': None,
     'coingecko_tokens': None,
     'newspaper_articles': None,
     'medium_articles': None,
@@ -259,16 +257,6 @@ def update_live_oracle_data():
     """Update oracle data from all sources"""
     global live_data_cache
     
-    # Fetch CoinMarketCap tokens
-    cmc_tokens = fetch_coinmarketcap_tokens()
-    if cmc_tokens:
-        live_data_cache['coinmarketcap_tokens'] = cmc_tokens
-    
-    # Fetch Gate.io tokens
-    gate_tokens = fetch_gateio_tokens()
-    if gate_tokens:
-        live_data_cache['gateio_tokens'] = gate_tokens
-    
     # Fetch CoinGecko tokens
     cg_tokens = fetch_coingecko_tokens()
     if cg_tokens:
@@ -291,51 +279,39 @@ def update_live_oracle_data():
 def get_live_character_counts():
     """Get character counts from all data sources"""
     char_counts = {
-        'coinmarketcap': {},
-        'gateio': {},
         'coingecko': {},
         'newspapers': {},
         'medium': {},
         'chains': {},
         'total': {}
     }
-
-    # CoinMarketCap
-    if live_data_cache.get('coinmarketcap_tokens'):
-        cmc_counts = count_characters_in_tokens(live_data_cache['coinmarketcap_tokens'], 'coinmarketcap')
-        char_counts['coinmarketcap'] = cmc_counts
-
-    # Gate.io
-    if live_data_cache.get('gateio_tokens'):
-        gate_counts = count_characters_in_tokens(live_data_cache['gateio_tokens'], 'gateio')
-        char_counts['gateio'] = gate_counts
-
+    
     # CoinGecko
     if live_data_cache.get('coingecko_tokens'):
         cg_counts = count_characters_in_tokens(live_data_cache['coingecko_tokens'], 'coingecko')
         char_counts['coingecko'] = cg_counts
-
+    
     # Newspaper articles
     if live_data_cache.get('newspaper_articles'):
         news_counts = count_characters_in_articles(live_data_cache['newspaper_articles'])
         char_counts['newspapers'] = news_counts
-
+    
     # Medium articles
     if live_data_cache.get('medium_articles'):
         medium_counts = count_characters_in_articles(live_data_cache['medium_articles'])
         char_counts['medium'] = medium_counts
-
+    
     # Chain data
     if live_data_cache.get('chain_data'):
         chain_counts = count_chain_characters(live_data_cache['chain_data'])
         char_counts['chains'] = chain_counts
-
+    
     # Combine all counts
-    all_sources = ['coinmarketcap', 'gateio', 'coingecko', 'newspapers', 'medium']
+    all_sources = ['coingecko', 'newspapers', 'medium']
     for source in all_sources:
         for char, count in char_counts[source].items():
             char_counts['total'][char] = char_counts['total'].get(char, 0) + count
-
+    
     return char_counts
 
 # Cache for data
@@ -552,7 +528,7 @@ def update_oracle():
         update_live_oracle_data()
         return jsonify({
             'success': True,
-            'message': 'Oracle data updated successfully',
+            'message': 'Oracle updated from CoinGecko, Newspapers, Medium, and Chains',
             'last_updated': live_data_cache['last_updated']
         })
     except Exception as e:
@@ -575,16 +551,12 @@ def get_live_oracle_stats():
         return jsonify({
             'last_updated': live_data_cache['last_updated'],
             'sources': {
-                'coinmarketcap_tokens_count': len(live_data_cache.get('coinmarketcap_tokens', []) or []),
-                'gateio_tokens_count': len(live_data_cache.get('gateio_tokens', []) or []),
                 'coingecko_tokens_count': len(live_data_cache.get('coingecko_tokens', []) or []),
                 'newspaper_articles_count': len(live_data_cache.get('newspaper_articles', []) or []),
                 'medium_articles_count': len(live_data_cache.get('medium_articles', []) or []),
                 'chains_count': len(live_data_cache.get('chain_data', {}) or {})
             },
             'character_counts': {
-                'coinmarketcap': char_counts.get('coinmarketcap', {}),
-                'gateio': char_counts.get('gateio', {}),
                 'coingecko': char_counts.get('coingecko', {}),
                 'newspapers': char_counts.get('newspapers', {}),
                 'medium': char_counts.get('medium', {}),
@@ -592,7 +564,7 @@ def get_live_oracle_stats():
                 'total': char_counts.get('total', {})
             },
             'total_characters': sum(char_counts.get('total', {}).values()),
-            'data_source': 'Multi-source Oracle (CoinMarketCap + Gate.io + CoinGecko + Newspapers + Medium + Chains)'
+            'data_source': 'Multi-source Oracle (CoinGecko + Newspapers + Medium + Chains)'
         })
     except Exception as e:
         return jsonify({
@@ -783,7 +755,7 @@ def generate_primitive_detail(symbol):
     solana_nft_collections = random.randint(20000, 80000)
     solana_domains = random.randint(5000, 20000)
     languagefi_registry = random.randint(30000, 150000)
-    gateio_listings = random.randint(500, 3000)
+    coingecko_listings = random.randint(500, 3000)
     
     # Calculate weighted usage
     weighted_usage = (
@@ -791,7 +763,7 @@ def generate_primitive_detail(symbol):
         solana_nft_collections * 0.20 +
         solana_domains * 0.15 +
         languagefi_registry * 0.25 +
-        gateio_listings * 0.15
+        coingecko_listings * 0.15
     )
     
     # Oracle sources with weights
@@ -816,10 +788,10 @@ def generate_primitive_detail(symbol):
             'weight': 0.25,
             'source_id': 'langfi_registry_v1'
         },
-        'gateio_token_listings': {
-            'occurrences': gateio_listings,
+        'coingecko_token_listings': {
+            'occurrences': coingecko_listings,
             'weight': 0.15,
-            'source_id': 'gateio_listings_v1'
+            'source_id': 'coingecko_listings_v1'
         }
     }
     

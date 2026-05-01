@@ -267,26 +267,33 @@ def generate_primitive_data():
     }
     
     # Letters A-Z
+    letter_primitives = []
     for i, letter in enumerate('ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
         count = total_counts.get(letter, 0)
         base_price = base_prices.get(letter, 0.05)
         change_24h = random.uniform(-15, 25)
         current_price = base_price * (1 + change_24h / 100)
         weekly_change = random.uniform(-10, 20)
-        rank = i + 1
         
-        primitives.append({
+        letter_primitives.append({
             'symbol': letter,
             'type': 'letter',
             'price_lgu': round(current_price, 3),
             'change_24h': round(change_24h, 1),
             'weekly_change': round(weekly_change, 3),
             'usage_count': count,
-            'rank': rank,
+            'rank': None,  # Will be calculated after sorting
             'volatility': random.choice(['Low', 'Medium', 'High']),
             'staking_weight': round(random.uniform(0.8, 1.2), 2),
             'data_source': 'live_coingecko' if count > 0 else 'simulated'
         })
+    
+    # Sort letters by usage count and assign ranks
+    letter_primitives.sort(key=lambda x: x['usage_count'], reverse=True)
+    for i, primitive in enumerate(letter_primitives):
+        primitive['rank'] = i + 1
+    
+    primitives.extend(letter_primitives)
     
     # SPACE
     space_count = total_counts.get(' ', 0)
@@ -311,26 +318,33 @@ def generate_primitive_data():
         '5': 0.038, '6': 0.035, '7': 0.033, '8': 0.040, '9': 0.034
     }
     
-    for i, number in enumerate('0123456789'):
+    number_primitives = []
+    for number in '0123456789':
         count = total_counts.get(number, 0)
         base_price = number_base_prices.get(number, 0.04)
         change_24h = random.uniform(-10, 20)
         current_price = base_price * (1 + change_24h / 100)
         weekly_change = random.uniform(-8, 15)
-        rank = 27 + i
         
-        primitives.append({
+        number_primitives.append({
             'symbol': number,
             'type': 'number',
             'price_lgu': round(current_price, 3),
             'change_24h': round(change_24h, 1),
             'weekly_change': round(weekly_change, 3),
             'usage_count': count,
-            'rank': rank,
+            'rank': None,  # Will be calculated after sorting
             'volatility': random.choice(['Low', 'Medium', 'High']),
             'staking_weight': round(random.uniform(0.7, 1.1), 2),
             'data_source': 'live_coingecko' if count > 0 else 'simulated'
         })
+    
+    # Sort numbers by usage count and assign ranks
+    number_primitives.sort(key=lambda x: x['usage_count'], reverse=True)
+    for i, primitive in enumerate(number_primitives):
+        primitive['rank'] = i + 27  # Letters are 1-26
+    
+    primitives.extend(number_primitives)
     
     # Symbols
     symbol_base_prices = {
@@ -338,26 +352,33 @@ def generate_primitive_data():
         '_': 0.013, '@': 0.020, '#': 0.017
     }
     
-    for i, symbol in enumerate('.!?-_@#'):
+    symbol_primitives = []
+    for symbol in '.!?-_@#':
         count = total_counts.get(symbol, 0)
         base_price = symbol_base_prices.get(symbol, 0.016)
         change_24h = random.uniform(-8, 18)
         current_price = base_price * (1 + change_24h / 100)
         weekly_change = random.uniform(-6, 12)
-        rank = 37 + i
         
-        primitives.append({
+        symbol_primitives.append({
             'symbol': symbol,
             'type': 'symbol',
             'price_lgu': round(current_price, 3),
             'change_24h': round(change_24h, 1),
             'weekly_change': round(weekly_change, 3),
             'usage_count': count,
-            'rank': rank,
+            'rank': None,  # Will be calculated after sorting
             'volatility': random.choice(['Low', 'Medium']),
             'staking_weight': round(random.uniform(0.6, 1.0), 2),
             'data_source': 'live_coingecko' if count > 0 else 'simulated'
         })
+    
+    # Sort symbols by usage count and assign ranks
+    symbol_primitives.sort(key=lambda x: x['usage_count'], reverse=True)
+    for i, primitive in enumerate(symbol_primitives):
+        primitive['rank'] = i + 37  # Letters 1-26, Numbers 27-36
+    
+    primitives.extend(symbol_primitives)
     
     # Sort by rank
     primitives.sort(key=lambda x: x['rank'])
