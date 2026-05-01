@@ -12,6 +12,8 @@ import time
 from datetime import datetime, timezone
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from functools import wraps
+from collections import defaultdict
 
 # Flask app for API
 app = Flask(__name__)
@@ -190,13 +192,71 @@ def update_oracle():
             'message': str(e)
         }), 500
 
-@app.route('/api/oracle/live-stats')
-def get_live_stats():
-    """Get live oracle statistics"""
-    return jsonify({
-        'coingecko_tokens_count': len(live_data_cache['coingecko_tokens']) if live_data_cache['coingecko_tokens'] else 0,
-        'last_updated': live_data_cache['last_updated']
-    })
+@app.route('/health')
+def health_check():
+    """Health check endpoint"""
+    try:
+        from kpi_engine import kpi_store, engine
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'kpi_engine_running': engine.running,
+            'history_count': len(kpi_store.get('history', [])),
+            'database_connected': os.path.exists(os.getenv('DB_PATH', 'kpi_history.db'))
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 500
+
+@app.route('/api/metrics')
+@rate_limit
+def get_system_metrics():
+    """Get system metrics for monitoring"""
+    try:
+        from kpi_engine import kpi_store
+        import sqlite3
+        
+        db_path = os.getenv('DB_PATH', 'kpi_history.db')
+        db_size = os.path.getsize(db_path) if os.path.exists(db_path) else 0
+        
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT COUNT(*) FROM kpi_history')
+        kpi_history_count = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM price_history')
+        price_history_count = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM llm_analysis_history')
+        llm_analysis_count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return jsonify({
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'memory': {
+                'history_count': len(kpi_store.get('history', [])),
+                'new_kpis_count': len(kpi_store.get('new_kpis', [])),
+                'llm_insights_count': len(kpi_store.get('llm_insights', [])),
+                'reasoning_history_count': len(kpi_store.get('reasoning_history', []))
+            },
+            'database': {
+                'kpi_history_count': kpi_history_count,
+                'price_history_count': price_history_count,
+                'llm_analysis_count': llm_analysis_count,
+                'db_size_bytes': db_size
+            },
+            'rate_limit': {
+                'requests_per_minute': RATE_LIMIT_REQUESTS,
+                'active_clients': len(rate_limit_store)
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/kpis')
 def get_kpis():
@@ -454,6 +514,57 @@ def get_kpi_evolution():
 def health():
     """Health check endpoint"""
     return jsonify({'status': 'healthy'})
+
+@app.route('/')
+def serve_market_ui():
+    """Serve the tokenization market UI"""
+    try:
+        with open('market_ui.html', 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return jsonify({'error': 'Market UI not found'}), 404
+
+@app.route('/api/market/data')
+def get_market_data():
+    """Get comprehensive market data for the tokenization market"""
+    try:
+        from kpi_engine import engine, kpi_store
+        
+        # Fetch fresh data
+        snapshot = engine.fetch_data()
+        if not snapshot:
+            return jsonify({'error': 'Failed to fetch market data'}), 500
+        
+        # Get current prices
+        letter_prices = kpi_store.get('letter_prices', {})
+        char_attribution = kpi_store.get('char_attribution', {})
+        
+        return jsonify({
+            'snapshot': snapshot,
+            'letter_prices': letter_prices,
+            'char_attribution': char_attribution,
+            'total_tokens_analyzed': kpi_store.get('total_tokens_analyzed', 0),
+            'data_sources': {
+                'coingecko': len(snapshot.get('coingecko_tokens', [])),
+                'coinmarketcap': len(snapshot.get('coinmarketcap_tokens', [])),
+                'gateio': len(snapshot.get('gateio_tokens', [])),
+                'etherscan': len(snapshot.get('etherscan_txs', [])),
+                'basescan': len(snapshot.get('basescan_txs', [])),
+                'birdeye': len(snapshot.get('birdeye_tokens', [])),
+                'helius': 1 if snapshot.get('helius_data') else 0,
+                'dexscreener': len(snapshot.get('dexscreener_pairs', [])),
+                'solana_rpc': 1 if snapshot.get('solana_rpc') else 0,
+                'ethereum_rpc': 1 if snapshot.get('ethereum_rpc') else 0,
+                'base_rpc': 1 if snapshot.get('base_rpc') else 0,
+                'jupiter': len(snapshot.get('jupiter_tokens', [])),
+                'uniswap': len(snapshot.get('uniswap_tokens', []))
+            },
+            'timestamp': snapshot.get('timestamp')
+        })
+    except ImportError:
+        return jsonify({'error': 'KPI engine not available'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Fetch initial oracle data

@@ -221,16 +221,158 @@ def get_price_history(letter: str = None, limit: int = 100) -> List[Dict]:
         for row in rows
     ]
 
-# KPI storage (in-memory for now, move to database later)
-kpi_store = {
-    'letter_kpis': {},
-    'history': deque(maxlen=1000),  # Keep last 1000 snapshots
-    'new_kpis': [],
-    'llm_insights': [],
-    'historical_kpis': {},  # Historical tracking per letter/KPI
-    'kpi_evolution': {},  # KPI evolution metrics
-    'reasoning_history': deque(maxlen=500)  # LLM reasoning history
+def validate_llm_output(llm_output: Dict) -> Dict:
+    """Validate LLM output to prevent hallucinations and ensure data integrity"""
+    validated = llm_output.copy()
+    warnings = []
+    
+    # Validate new_kpis structure
+    if 'new_kpis' in llm_output:
+        valid_kpis = []
+        for kpi in llm_output['new_kpis']:
+            if isinstance(kpi, dict):
+                # Check required fields
+                if 'name' in kpi and 'formula' in kpi:
+                    # Validate name is a string and not empty
+                    if isinstance(kpi['name'], str) and len(kpi['name'].strip()) > 0:
+                        # Validate formula is a string and not empty
+                        if isinstance(kpi['formula'], str) and len(kpi['formula'].strip()) > 0:
+                            valid_kpis.append(kpi)
+                        else:
+                            warnings.append(f"Invalid formula for KPI: {kpi.get('name', 'unknown')}")
+                    else:
+                        warnings.append(f"Invalid name for KPI")
+                else:
+                    warnings.append("KPI missing required fields (name, formula)")
+            else:
+                warnings.append("KPI is not a dictionary")
+        validated['new_kpis'] = valid_kpis
+    
+    # Validate oracleification_analysis structure
+    if 'oracleification_analysis' in llm_output:
+        analysis = llm_output['oracleification_analysis']
+        if isinstance(analysis, dict):
+            # Validate most_oracleified_letters is a list of strings
+            if 'most_oracleified_letters' in analysis:
+                letters = analysis['most_oracleified_letters']
+                if isinstance(letters, list):
+                    valid_letters = [l for l in letters if isinstance(l, str) and len(l) == 1 and l.isalpha()]
+                    if len(valid_letters) != len(letters):
+                        warnings.append(f"Filtered invalid letters: {len(letters) - len(valid_letters)}")
+                    validated['oracleification_analysis']['most_oracleified_letters'] = valid_letters
+                else:
+                    warnings.append("most_oracleified_letters is not a list")
+                    validated['oracleification_analysis']['most_oracleified_letters'] = []
+            
+            # Validate source_diversity_scores are numeric
+            if 'source_diversity_scores' in analysis:
+                scores = analysis['source_diversity_scores']
+                if isinstance(scores, dict):
+                    valid_scores = {}
+                    for k, v in scores.items():
+                        if isinstance(v, (int, float)) and 0 <= v <= 1:
+                            valid_scores[k] = v
+                        else:
+                            warnings.append(f"Invalid score for {k}: {v}")
+                    validated['oracleification_analysis']['source_diversity_scores'] = valid_scores
+        else:
+            warnings.append("oracleification_analysis is not a dictionary")
+            validated['oracleification_analysis'] = {}
+    
+    # Validate momentum_letters
+    if 'momentum_letters' in llm_output:
+        letters = llm_output['momentum_letters']
+        if isinstance(letters, list):
+            valid_letters = [l for l in letters if isinstance(l, str) and len(l) == 1 and l.isalpha()]
+            if len(valid_letters) != len(letters):
+                warnings.append(f"Filtered invalid momentum letters: {len(letters) - len(valid_letters)}")
+            validated['momentum_letters'] = valid_letters
+        else:
+            warnings.append("momentum_letters is not a list")
+            validated['momentum_letters'] = []
+    
+    # Validate trend_analysis is a string
+    if 'trend_analysis' in llm_output:
+        if not isinstance(llm_output['trend_analysis'], str):
+            warnings.append("trend_analysis is not a string")
+            validated['trend_analysis'] = ""
+    
+    # Add validation metadata
+    validated['validation'] = {
+        'warnings': warnings,
+        'original_kpi_count': len(llm_output.get('new_kpis', [])),
+        'validated_kpi_count': len(validated.get('new_kpis', [])),
+        'validation_timestamp': datetime.now(timezone.utc).isoformat()
+    }
+    
+    if warnings:
+        print(f"LLM validation warnings: {warnings}")
+    
+    return validated
+
+# Market feedback loop storage
+market_feedback_store = {
+    'price_adjustments': deque(maxlen=100),
+    'user_signals': deque(maxlen=1000),
+    'market_volatility': deque(maxlen=100)
 }
+
+def record_market_signal(letter: str, signal_type: str, strength: float, source: str = 'system'):
+    """Record a market signal for price adjustment feedback"""
+    market_feedback_store['user_signals'].append({
+        'letter': letter,
+        'signal_type': signal_type,
+        'strength': strength,
+        'source': source,
+        'timestamp': datetime.now(timezone.utc).isoformat()
+    })
+
+def calculate_market_feedback_adjustment(letter: str, current_price: float) -> float:
+    """Calculate price adjustment based on market feedback signals"""
+    # Get recent signals for this letter
+    recent_signals = [
+        s for s in market_feedback_store['user_signals']
+        if s['letter'] == letter and
+        (datetime.now(timezone.utc) - datetime.fromisoformat(s['timestamp'].replace('Z', '+00:00'))).total_seconds() < 3600
+    ]
+    
+    if not recent_signals:
+        return 0.0
+    
+    # Calculate weighted signal strength
+    buy_signals = [s['strength'] for s in recent_signals if s['signal_type'] == 'buy']
+    sell_signals = [s['strength'] for s in recent_signals if s['signal_type'] == 'sell']
+    
+    buy_strength = sum(buy_signals) if buy_signals else 0
+    sell_strength = sum(sell_signals) if sell_signals else 0
+    
+    net_strength = buy_strength - sell_strength
+    
+    # Cap adjustment at ±20%
+    adjustment = max(min(net_strength / 10, 0.2), -0.2)
+    
+    return adjustment
+
+def apply_market_feedback_to_prices(prices: Dict[str, float]) -> Dict[str, float]:
+    """Apply market feedback adjustments to prices"""
+    adjusted_prices = {}
+    
+    for letter, price in prices.items():
+        adjustment = calculate_market_feedback_adjustment(letter, price)
+        adjusted_price = price * (1 + adjustment)
+        adjusted_prices[letter] = round(adjusted_price, 4)
+        
+        # Record adjustment for tracking
+        if abs(adjustment) > 0.01:  # Only record significant adjustments
+            market_feedback_store['price_adjustments'].append({
+                'letter': letter,
+                'original_price': price,
+                'adjusted_price': adjusted_price,
+                'adjustment': adjustment,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+    
+    return adjusted_prices
 
 # Base KPIs (deterministic)
 BASE_KPIS = [
@@ -1151,11 +1293,16 @@ Output JSON only:
         """LLM reasoning loop to analyze KPI evolution and propose improvements"""
         try:
             if GROQ_API_KEY:
-                return self._llm_reasoning_groq(evolution, current_kpis)
+                raw_output = self._llm_reasoning_groq(evolution, current_kpis)
             elif OPENROUTER_API_KEY:
-                return self._llm_reasoning_openrouter(evolution, current_kpis)
+                raw_output = self._llm_reasoning_openrouter(evolution, current_kpis)
             else:
                 return self._fallback_reasoning(evolution, current_kpis)
+            
+            # Validate LLM output to prevent hallucinations
+            validated_output = validate_llm_output(raw_output)
+            
+            return validated_output
         except Exception as e:
             print(f"Error in LLM reasoning loop: {e}")
             return self._fallback_reasoning(evolution, current_kpis)
