@@ -1,11 +1,19 @@
 {
   "version": 2,
-  "buildCommand": "pip install -r requirements.txt",
-  "outputDirectory": ".",
+  "builds": [
+    {
+      "src": "server.py",
+      "use": "@vercel/python"
+    }
+  ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/api/(.*)",
       "dest": "/server.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ],
   "headers": [
