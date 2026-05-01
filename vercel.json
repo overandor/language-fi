@@ -1,17 +1,9 @@
 {
   "name": "language-fi",
   "version": 2,
-  "builds": [
-    {
-      "src": "server.py",
-      "use": "@vercel/python"
-    }
-  ],
+  "buildCommand": "pip install -r requirements.txt",
+  "outputDirectory": ".",
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/server.py"
-    },
     {
       "src": "/(.*)",
       "dest": "/server.py"
