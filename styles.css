@@ -1800,6 +1800,37 @@ nav .active {
     font-weight: 600;
 }
 
+/* Live indicator */
+.live-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--neon-green);
+    margin-bottom: 1.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--neon-green);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.loading {
+    text-align: center;
+    color: var(--muted-text);
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 2rem;
+}
+
 /* Tokenization stack styles */
 .tokenization-stack {
     display: flex;

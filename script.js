@@ -34,6 +34,65 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Fetch live letter data from API
+    async function fetchLetterData() {
+        try {
+            const response = await fetch('/api/letters');
+            const data = await response.json();
+            renderLetterTable(data);
+        } catch (error) {
+            console.error('Error fetching letter data:', error);
+            // Fallback to mock data if API fails
+            renderLetterTable(getMockLetterData());
+        }
+    }
+
+    function renderLetterTable(letters) {
+        const tbody = document.getElementById('letters-table-body');
+        if (!tbody) return;
+        
+        tbody.innerHTML = letters.map(letter => {
+            const changeClass = letter.change_24h >= 0 ? 'change-positive' : 'change-negative';
+            const trendClass = letter.change_24h >= 0 ? 'trend-up' : 'trend-down';
+            const changeSign = letter.change_24h >= 0 ? '+' : '';
+            
+            return `
+                <tr>
+                    <td class="letter-cell">${letter.letter}</td>
+                    <td class="price-cell">${letter.price}</td>
+                    <td class="${changeClass}">${changeSign}${letter.change_24h}%</td>
+                    <td>${letter.weekly_usage}</td>
+                    <td>${letter.rank}</td>
+                    <td>${letter.long_pct}</td>
+                    <td>${letter.short_pct}</td>
+                    <td>${letter.top_protocol}</td>
+                    <td class="${trendClass}">${letter.trend}</td>
+                    <td><a href="letter.html?l=${letter.letter}" class="btn-link">View</a></td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function getMockLetterData() {
+        // Fallback mock data if API is not available
+        return [
+            {letter: 'E', price: 0.142, change_24h: 4.8, weekly_usage: '2.84M', rank: '#2', long_pct: '61%', short_pct: '39%', top_protocol: 'Solana', trend: '↑'},
+            {letter: 'T', price: 0.185, change_24h: 6.2, weekly_usage: '3.21M', rank: '#1', long_pct: '58%', short_pct: '42%', top_protocol: 'Ethereum', trend: '↑'},
+            {letter: 'A', price: 0.142, change_24h: 4.8, weekly_usage: '2.84M', rank: '#2', long_pct: '61%', short_pct: '39%', top_protocol: 'Solana', trend: '↑'},
+            {letter: 'O', price: 0.085, change_24h: 1.8, weekly_usage: '1.12M', rank: '#9', long_pct: '52%', short_pct: '48%', top_protocol: 'Solana', trend: '↑'},
+            {letter: 'N', price: 0.072, change_24h: 3.4, weekly_usage: '1.45M', rank: '#6', long_pct: '55%', short_pct: '45%', top_protocol: 'Base', trend: '↑'},
+            {letter: 'I', price: 0.095, change_24h: -0.9, weekly_usage: '1.08M', rank: '#10', long_pct: '47%', short_pct: '53%', top_protocol: 'Solana', trend: '↓'},
+            {letter: 'R', price: 0.068, change_24h: 2.1, weekly_usage: '1.28M', rank: '#8', long_pct: '51%', short_pct: '49%', top_protocol: 'Ethereum', trend: '↑'},
+            {letter: 'S', price: 0.105, change_24h: 5.6, weekly_usage: '1.52M', rank: '#5', long_pct: '63%', short_pct: '37%', top_protocol: 'Solana', trend: '↑'}
+        ];
+    }
+
+    // Fetch letter data on load
+    fetchLetterData();
+    
+    // Refresh data every 30 seconds
+    setInterval(fetchLetterData, 30000);
+
     // Animate floating letters on scroll
     const floatingLetters = document.querySelectorAll('.floating-letter');
     window.addEventListener('scroll', function() {
