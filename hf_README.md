@@ -12,18 +12,18 @@ license: mit
 
 # Language.fi Oracle API
 
-Live API server for letter and number primitive pricing using multi-source oracle data.
+Prototype API server for letter and number primitive pricing using multi-source oracle data simulation.
 
 ## Features
 
 - **43 Primitives**: Letters (A-Z), Numbers (0-9), SPACE, and Symbols (., !, ?, -, _, @, #)
-- **Multi-Source Oracle Data**:
+- **Multi-Source Oracle Data Simulation**:
   - CoinGecko token listings (10,000+ cryptocurrencies)
   - Sampled permitted public metadata from major financial news sources (NYT, WSJ, FT, Bloomberg, Reuters, CNBC, Forbes, TechCrunch, Guardian, BBC)
   - Sampled Web3/crypto content samples (similar to Medium-style articles)
   - Chain-specific data (Ethereum, Solana, Bitcoin, Binance, Polygon)
-- **Real Character Counting**: Character frequency analysis from all sources
-- **Live Pricing**: Prices calculated from actual character usage
+- **Character Counting**: Character frequency analysis from all sources
+- **Simulated Pricing**: Prices calculated from character usage with simulated market movements
 - **Chain-Specific Popularity**: Letter popularity tracking per blockchain
 
 ## Oracle Sources

@@ -19,7 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     block: 'start'
                 });
                 // Close mobile menu if open
-                navLinks.classList.remove('active');
+                if (navLinks) {
+                    navLinks.classList.remove('active');
+                }
             }
         });
     });
@@ -34,6 +36,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Helper function to format numbers
+    function formatNumber(num) {
+        if (num >= 1000000) return `${(num / 1000000).toFixed(2)}M`;
+        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+        return num.toString();
+    }
+
     // Fetch live letter data from API
     async function fetchLetterData() {
         try {
@@ -41,9 +50,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const API_URL = window.location.hostname === 'localhost' 
                 ? 'http://localhost:4000' 
                 : 'https://language-fi.vercel.app';
-            const response = await fetch(`${API_URL}/api/letters`);
-            const data = await response.json();
-            renderLetterTable(data);
+            const response = await fetch(`${API_URL}/api/primitives`);
+            const payload = await response.json();
+            const data = payload.primitives || payload;
+            // Filter only letters and normalize
+            const letters = data.filter(item => item.type === 'letter').map(item => ({
+                letter: item.symbol,
+                price: item.price_lgu,
+                change_24h: item.change_24h,
+                weekly_usage: formatNumber(item.usage_count),
+                rank: item.rank,
+                long_pct: '—',
+                short_pct: '—',
+                top_protocol: '—',
+                trend: item.change_24h >= 0 ? '↑' : '↓'
+            }));
+            renderLetterTable(letters);
         } catch (error) {
             console.error('Error fetching letter data:', error);
             // Fallback to mock data if API fails
@@ -108,10 +130,23 @@ document.addEventListener('DOMContentLoaded', function() {
             const API_URL = window.location.hostname === 'localhost' 
                 ? 'http://localhost:4000' 
                 : 'https://language-fi.vercel.app';
-            const response = await fetch(`${API_URL}/api/letters`);
-            const data = await response.json();
-            renderRegistryTable(data);
-            updateRegistryStats(data);
+            const response = await fetch(`${API_URL}/api/primitives`);
+            const payload = await response.json();
+            const data = payload.primitives || payload;
+            // Filter only letters and normalize
+            const letters = data.filter(item => item.type === 'letter').map(item => ({
+                letter: item.symbol,
+                price: item.price_lgu,
+                change_24h: item.change_24h,
+                weekly_usage: formatNumber(item.usage_count),
+                rank: item.rank,
+                long_pct: '—',
+                short_pct: '—',
+                top_protocol: '—',
+                trend: item.change_24h >= 0 ? '↑' : '↓'
+            }));
+            renderRegistryTable(letters);
+            updateRegistryStats(letters);
         } catch (error) {
             console.error('Error fetching registry data:', error);
             // Fallback to mock data if API fails
@@ -170,10 +205,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return sum + Math.floor(longPct * 10);
         }, 0);
         
-        document.getElementById('total-market-cap').textContent = `$${(totalMarketCap).toFixed(1)}M`;
-        document.getElementById('daily-volume').textContent = `$${(dailyVolume).toFixed(0)}K`;
-        document.getElementById('weekly-usage').textContent = `${(weeklyUsage).toFixed(1)}M`;
-        document.getElementById('active-positions').textContent = activePositions.toLocaleString();
+        const setElementText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        };
+        
+        setElementText('total-market-cap', `$${(totalMarketCap).toFixed(1)}M`);
+        setElementText('daily-volume', `$${(dailyVolume).toFixed(0)}K`);
+        setElementText('weekly-usage', `${(weeklyUsage).toFixed(1)}M`);
+        setElementText('active-positions', activePositions.toLocaleString());
     }
 
     // Animate floating letters on scroll

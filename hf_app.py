@@ -409,7 +409,7 @@ def get_primitives():
     cache['primitives'] = {'data': primitives, 'timestamp': time.time()}
     return jsonify(primitives)
 
-@app.route('/api/primitives/<symbol>')
+@app.route('/api/primitives/<path:symbol>')
 def get_primitive(symbol):
     """Get single primitive"""
     primitives = generate_primitive_data()
