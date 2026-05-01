@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Language.fi — Language is Liquidity"
+version = "1.0.0"
+id = "artifacts/language-fi"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21659
+
+[services.development]
+run = "pnpm --filter @workspace/language-fi run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/language-fi", "run", "build" ]
+publicDir = "artifacts/language-fi/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21659"
+BASE_PATH = "/"
