@@ -25,11 +25,11 @@ cp hf_app.py app.py
 cp hf_requirements.txt requirements.txt
 cp hf_README.md README.md
 
-# Upload files
-echo "Uploading files to Hugging Face..."
-huggingface-cli upload $SPACE_ID app.py
-huggingface-cli upload $SPACE_ID requirements.txt
-huggingface-cli upload $SPACE_ID README.md
+# Upload files to Space (not model repository)
+echo "Uploading files to Hugging Face Space..."
+huggingface-cli upload luguog/language-fi-oracle-api app.py app.py --repo-type space
+huggingface-cli upload luguog/language-fi-oracle-api requirements.txt requirements.txt --repo-type space
+huggingface-cli upload luguog/language-fi-oracle-api README.md README.md --repo-type space
 
 echo "Deployment complete!"
 echo "Space URL: https://huggingface.co/spaces/$SPACE_ID"
