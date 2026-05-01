@@ -23,7 +23,6 @@ GATE_API_SECRET = os.getenv('GATE_API_SECRET', '')
 COINMARKETCAP_API_KEY = os.getenv('COINMARKETCAP_API_KEY', '')
 COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '')
 
-# Cache for data
 cache = {}
 CACHE_DURATION = 300  # 5 minutes
 
