@@ -456,10 +456,9 @@ def get_sentence_leaderboard():
     cache['leaderboard'] = {'data': leaderboard, 'timestamp': time.time()}
     return jsonify(leaderboard)
 
-@app.route('/api/primitives')
 @app.route('/api/primitives/v2')
-def get_primitives():
-    """Get all primitives (letters, numbers, spaces, symbols)"""
+def get_primitives_v2():
+    """Get all primitives (letters, numbers, spaces, symbols) - v2 endpoint to bypass cache"""
     # Skip cache for now to ensure ranking logic works
     # if 'primitives' in cache and time.time() - cache['primitives']['timestamp'] < CACHE_DURATION:
     #     return jsonify(cache['primitives']['data'])
@@ -476,6 +475,11 @@ def get_primitives():
     # Add timestamp to force cache invalidation
     response.headers['X-Deploy-Timestamp'] = str(int(time.time()))
     return response
+
+@app.route('/api/primitives')
+def get_primitives():
+    """Get all primitives (letters, numbers, spaces, symbols)"""
+    return get_primitives_v2()
 
 @app.route('/api/primitives/<symbol>')
 def get_primitive(symbol):
