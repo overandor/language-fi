@@ -466,7 +466,11 @@ def get_primitives():
     # Generate all primitives
     primitives = generate_all_primitives()
     cache['primitives'] = {'data': primitives, 'timestamp': time.time()}
-    return jsonify(primitives)
+    response = jsonify(primitives)
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/api/primitives/<symbol>')
 def get_primitive(symbol):
