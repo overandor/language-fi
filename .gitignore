@@ -41,3 +41,7 @@ yarn-error.log*
 # Temporary files
 *.tmp
 *.temp
+.vercel
+
+# Node.js installation
+node-v*/
