@@ -706,7 +706,12 @@ def generate_all_primitives():
     for i, primitive in enumerate(symbol_primitives):
         primitive['rank'] = i + 37  # Letters 1-26, Numbers 27-36
     
-    # Remove SPACE from symbol_primitives since we already added it to primitives
+    # Add SPACE to primitives (it's already ranked in symbol_primitives)
+    space_primitive = next((p for p in symbol_primitives if p['symbol'] == 'SPACE'), None)
+    if space_primitive:
+        primitives.append(space_primitive)
+    
+    # Remove SPACE from symbol_primitives to avoid duplicate
     symbol_primitives = [p for p in symbol_primitives if p['symbol'] != 'SPACE']
     
     primitives.extend(symbol_primitives)
@@ -714,9 +719,19 @@ def generate_all_primitives():
     # Sort by rank
     primitives.sort(key=lambda x: x['rank'])
     
+    # Debug: count ranks
+    rank_counts = {}
+    for p in primitives:
+        rank = p.get('rank', 0)
+        rank_counts[rank] = rank_counts.get(rank, 0) + 1
+    
+    print(f"DEBUG: Rank distribution: {rank_counts}")
+    
     return {
         'updated_at': datetime.utcnow().isoformat() + 'Z',
-        'primitives': primitives
+        'primitives': primitives,
+        'debug_rank_counts': rank_counts,
+        'version': 'v2.1-fixed-ranking'
     }
 
 def generate_primitive_base_live(symbol, primitive_type, live_count, base_price):
