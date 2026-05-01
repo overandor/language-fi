@@ -4,8 +4,8 @@ emoji: 🔤
 colorFrom: yellow
 colorTo: purple
 sdk: gradio
-sdk_version: 4.0.0
-app_file: hf_app.py
+sdk_version: 6.14.0
+app_file: app.py
 pinned: false
 license: mit
 ---
