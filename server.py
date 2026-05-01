@@ -655,25 +655,54 @@ def tokenize_oracle_stats():
         }), 500
 
 def generate_all_primitives():
-    """Generate all primitives (letters, numbers, spaces, symbols)"""
+    """Generate all primitives with proper ranking"""
     primitives = []
     
     # Letters A-Z
+    letter_primitives = []
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     for letter in alphabet:
-        primitives.append(generate_primitive_base(letter, 'letter'))
+        letter_primitives.append(generate_primitive_base(letter, 'letter'))
+    
+    # Sort letters by usage count and assign ranks
+    letter_primitives.sort(key=lambda x: x['usage_count'], reverse=True)
+    for i, primitive in enumerate(letter_primitives):
+        primitive['rank'] = i + 1
+    
+    primitives.extend(letter_primitives)
     
     # Numbers 0-9
+    number_primitives = []
     for num in '0123456789':
-        primitives.append(generate_primitive_base(num, 'number'))
+        number_primitives.append(generate_primitive_base(num, 'number'))
+    
+    # Sort numbers by usage count and assign ranks
+    number_primitives.sort(key=lambda x: x['usage_count'], reverse=True)
+    for i, primitive in enumerate(number_primitives):
+        primitive['rank'] = i + 27  # Letters are 1-26
+    
+    primitives.extend(number_primitives)
     
     # SPACE
-    primitives.append(generate_primitive_base('SPACE', 'separator'))
+    space_primitive = generate_primitive_base('SPACE', 'separator')
+    space_primitive['rank'] = 1
+    primitives.append(space_primitive)
     
     # Symbols
+    symbol_primitives = []
     symbols = ['.', '!', '?', '-', '_', '@', '#']
     for symbol in symbols:
-        primitives.append(generate_primitive_base(symbol, 'symbol'))
+        symbol_primitives.append(generate_primitive_base(symbol, 'symbol'))
+    
+    # Sort symbols by usage count and assign ranks
+    symbol_primitives.sort(key=lambda x: x['usage_count'], reverse=True)
+    for i, primitive in enumerate(symbol_primitives):
+        primitive['rank'] = i + 37  # Letters 1-26, Numbers 27-36
+    
+    primitives.extend(symbol_primitives)
+    
+    # Sort by rank
+    primitives.sort(key=lambda x: x['rank'])
     
     return {
         'updated_at': datetime.utcnow().isoformat() + 'Z',
