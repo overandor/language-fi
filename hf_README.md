@@ -3,9 +3,7 @@ title: Language.fi Oracle API
 emoji: 🔤
 colorFrom: yellow
 colorTo: purple
-sdk: gradio
-sdk_version: 4.0.0
-app_file: hf_app.py
+sdk: docker
 pinned: false
 license: mit
 ---
