@@ -120,10 +120,16 @@ model OracleRun {
   primitiveCount    Int      // number of primitives priced
   errorCount        Int
   notes             String?  // any issues or warnings
+  formulaVersion    String?  // pricing formula version (e.g., "v1.0")
+  previousRunHash   String?  // hash of previous run for chain of trust
+  runHash           String?  // hash of this run for verification
+  inputSnapshot     String?  // JSON of input data for reproducibility
+  signature         String?  // cryptographic signature (future)
   createdAt         DateTime @default(now())
   
   @@index([status])
   @@index([startedAt])
+  @@index([runHash])
 }
 
 // Sentences for quoting/staking

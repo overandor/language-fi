@@ -36,6 +36,38 @@ export interface OracleRunMetadata {
 }
 
 /**
+ * Calculate hash of input data for reproducibility
+ */
+function calculateInputHash(counts: Record<string, number>, sourceWeights: Record<string, number>): string {
+  const data = JSON.stringify({ counts, sourceWeights });
+  return createHash('sha256').update(data).digest('hex');
+}
+
+/**
+ * Calculate oracle run hash for verification
+ */
+function calculateRunHash(
+  inputHash: string,
+  timestamp: string,
+  formulaVersion: string,
+  previousRunHash: string | null
+): string {
+  const data = JSON.stringify({ inputHash, timestamp, formulaVersion, previousRunHash });
+  return createHash('sha256').update(data).digest('hex');
+}
+
+/**
+ * Get previous oracle run hash for chain of trust
+ */
+async function getPreviousRunHash(): Promise<string | null> {
+  const previousRun = await prisma.oracleRun.findFirst({
+    orderBy: { startedAt: 'desc' },
+    where: { status: 'completed' },
+  });
+  return previousRun?.runHash || null;
+}
+
+/**
  * Apply Web2 signal to base price (5% weight, never dominates)
  */
 function applyWeb2(basePrice: number, web2Signal: Web2Signal | null): number {
@@ -66,18 +98,24 @@ export interface OracleRunResult {
 /**
  * Run oracle pricing calculation
  * Depends ONLY on data in PrimitiveCount table
+ * REPRODUCIBLE: same input always produces same output with verifiable hash
  */
-export async function runOracle(): Promise<OracleRunResult> {
+export async function runOracle(): Promise<OracleRunResult & { metadata?: OracleRunMetadata }> {
   const startedAt = new Date();
   let errorCount = 0;
   const notes: string[] = [];
 
   try {
+    // Get previous run hash for chain of trust
+    const previousRunHash = await getPreviousRunHash();
+    
     // Create oracle run record
     const oracleRun = await prisma.oracleRun.create({
       data: {
         status: "running",
         startedAt,
+        formulaVersion: FORMULA_VERSION,
+        previousRunHash,
         sourceCount: 0,
         observationCount: 0,
         primitiveCount: 0,
@@ -151,6 +189,23 @@ export async function runOracle(): Promise<OracleRunResult> {
     for (const count of counts) {
       grouped[count.primitiveId] = (grouped[count.primitiveId] || 0) + count.occurrenceCount;
     }
+
+    // Calculate source weights (simplified for now)
+    const sourceWeights: Record<string, number> = {};
+    for (const source of sources) {
+      sourceWeights[source.name] = 0.4; // Default weight, will be refined
+    }
+
+    // Calculate input hash for reproducibility
+    const inputHash = calculateInputHash(grouped, sourceWeights);
+
+    // Create input snapshot
+    const inputSnapshot: InputSnapshot = {
+      sourceDataHash: inputHash,
+      primitiveCounts: grouped,
+      sourceWeights,
+      timestamp: startedAt.toISOString(),
+    };
 
     // Calculate total usage
     const total = Object.values(grouped).reduce((a, b) => a + b, 0);
@@ -231,7 +286,10 @@ export async function runOracle(): Promise<OracleRunResult> {
       });
     }
 
-    // Update oracle run record
+    // Calculate run hash for verification
+    const runHash = calculateRunHash(inputHash, startedAt.toISOString(), FORMULA_VERSION, previousRunHash);
+
+    // Update oracle run record with reproducibility data
     await prisma.oracleRun.update({
       where: { id: oracleRun.id },
       data: {
@@ -241,11 +299,25 @@ export async function runOracle(): Promise<OracleRunResult> {
         observationCount: counts.length,
         primitiveCount: results.length,
         errorCount,
+        runHash,
+        inputSnapshot: JSON.stringify(inputSnapshot),
         notes: notes.join("; ") || "Success",
       },
     });
 
     console.log(`Oracle run completed: ${results.length} primitives priced`);
+    console.log(`Run hash: ${runHash}`);
+    console.log(`Input hash: ${inputHash}`);
+
+    const metadata: OracleRunMetadata = {
+      runId: oracleRun.id,
+      timestamp: startedAt.toISOString(),
+      formulaVersion: FORMULA_VERSION,
+      inputSnapshot,
+      runHash,
+      previousRunHash,
+      signature: null, // TODO: Implement signing with oracle private key
+    };
 
     return {
       status: "completed",
@@ -254,6 +326,7 @@ export async function runOracle(): Promise<OracleRunResult> {
       primitiveCount: results.length,
       errorCount,
       notes: notes.join("; ") || "Success",
+      metadata,
     };
   } catch (error) {
     errorCount++;
