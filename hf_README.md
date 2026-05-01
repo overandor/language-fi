@@ -1,7 +1,7 @@
 ---
 title: Language.fi Oracle API
 emoji: 🔤
-colorFrom: orange
+colorFrom: yellow
 colorTo: purple
 sdk: gradio
 sdk_version: 4.0.0
