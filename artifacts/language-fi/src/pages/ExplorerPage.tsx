@@ -13,7 +13,10 @@ export default function ExplorerPage() {
         { label: "Protocols", value: "8" },
       ],
       cta: "Explore Letters →",
-      href: "/#letters",
+      onClick: () => {
+        navigate("/");
+        setTimeout(() => document.getElementById("letters")?.scrollIntoView({ behavior: "smooth" }), 120);
+      },
     },
     {
       icon: "W",
@@ -24,7 +27,10 @@ export default function ExplorerPage() {
         { label: "Update Rate", value: "Live" },
       ],
       cta: "Calculate Value →",
-      href: "/#words",
+      onClick: () => {
+        navigate("/");
+        setTimeout(() => document.getElementById("words")?.scrollIntoView({ behavior: "smooth" }), 120);
+      },
     },
     {
       icon: "S",
@@ -85,8 +91,8 @@ export default function ExplorerPage() {
           <div
             key={card.title}
             className="explorer-card"
-            onClick={card.onClick ?? (card.href ? () => { window.location.href = card.href!; } : undefined)}
-            style={{ cursor: (card.onClick || card.href) ? "pointer" : "default" }}
+            onClick={card.onClick}
+            style={{ cursor: card.onClick ? "pointer" : "default" }}
           >
             <div className="explorer-icon">{card.icon}</div>
             <h2>{card.title}</h2>

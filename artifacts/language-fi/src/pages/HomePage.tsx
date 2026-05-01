@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 
+function parseUsage(s: string): number {
+  const trimmed = s.trim();
+  if (trimmed.endsWith("M")) return parseFloat(trimmed) * 1_000_000;
+  if (trimmed.endsWith("K")) return parseFloat(trimmed) * 1_000;
+  return parseFloat(trimmed) || 0;
+}
+
 interface LetterData {
   letter: string;
   price: number;
@@ -82,7 +89,7 @@ function LetterTableSection({ letters, loading }: { letters: LetterData[]; loadi
   const [filter, setFilter] = useState("all");
 
   const filtered = (() => {
-    if (filter === "top-volume") return [...letters].sort((a, b) => parseFloat(b.weekly_usage) - parseFloat(a.weekly_usage));
+    if (filter === "top-volume") return [...letters].sort((a, b) => parseUsage(b.weekly_usage) - parseUsage(a.weekly_usage));
     if (filter === "highest-price") return [...letters].sort((a, b) => b.price - a.price);
     if (filter === "volatile") return letters.filter((l) => l.volatility === "High");
     if (filter === "long-bias") return letters.filter((l) => parseInt(l.long_pct) > 60);
@@ -165,18 +172,9 @@ function LetterTableSection({ letters, loading }: { letters: LetterData[]; loadi
 }
 
 function RegistryTableSection({ letters, loading }: { letters: LetterData[]; loading: boolean }) {
-  const totalMarketCap = letters.reduce((sum, l) => {
-    const n = parseFloat(l.weekly_usage.replace("M", "").replace("K", ""));
-    return sum + n * l.price * 52;
-  }, 0);
-  const dailyVolume = letters.reduce((sum, l) => {
-    const n = parseFloat(l.weekly_usage.replace("M", "").replace("K", ""));
-    return sum + n * l.price;
-  }, 0);
-  const weeklyUsage = letters.reduce((sum, l) => {
-    const n = parseFloat(l.weekly_usage.replace("M", "").replace("K", ""));
-    return sum + n;
-  }, 0);
+  const totalMarketCap = letters.reduce((sum, l) => sum + parseUsage(l.weekly_usage) * l.price * 52, 0);
+  const dailyVolume = letters.reduce((sum, l) => sum + parseUsage(l.weekly_usage) * l.price, 0);
+  const weeklyUsage = letters.reduce((sum, l) => sum + parseUsage(l.weekly_usage), 0);
 
   return (
     <section className="registry" id="sentences">
@@ -209,7 +207,7 @@ function RegistryTableSection({ letters, loading }: { letters: LetterData[]; loa
             {loading ? (
               <tr><td colSpan={11} className="loading">Loading registry data...</td></tr>
             ) : letters.map((l) => {
-              const n = parseFloat(l.weekly_usage.replace("M", "").replace("K", ""));
+              const n = parseUsage(l.weekly_usage);
               return (
                 <tr key={l.letter}>
                   <td className="letter-cell">{l.letter}</td>
