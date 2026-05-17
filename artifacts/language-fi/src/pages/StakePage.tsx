@@ -179,7 +179,7 @@ export default function StakePage() {
 
       {/* ── Stake Tab ── */}
       {tab === "stake" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "2rem", alignItems: "start" }}>
+        <div className="stake-layout">
           <div>
             <div className="stake-form" style={{ marginBottom: stakeResult ? "2rem" : 0 }}>
               <form onSubmit={handleStake}>
@@ -272,7 +272,7 @@ export default function StakePage() {
           </div>
 
           {/* Space Card + Stillness schedule */}
-          <div style={{ minWidth: "220px" }}>
+          <div className="stake-sidebar" style={{ minWidth: "220px" }}>
             {spacePrice && (
               <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
                 <h3 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "0.95rem", marginBottom: "1rem", color: "var(--soft-white)" }}>SPACE Character</h3>

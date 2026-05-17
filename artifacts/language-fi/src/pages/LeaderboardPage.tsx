@@ -35,11 +35,11 @@ export default function LeaderboardPage() {
           <table className="registry-table">
             <thead>
               <tr>
-                <th>Rank</th>
+                <th className="sticky-col">#</th>
                 <th>Sentence</th>
-                <th>Formula Value (LGU)</th>
-                <th>Staked Since</th>
-                <th>Stillness Days</th>
+                <th>Value (LGU)</th>
+                <th>Since</th>
+                <th>Stillness</th>
                 <th>Owner</th>
               </tr>
             </thead>
@@ -48,20 +48,20 @@ export default function LeaderboardPage() {
                 <tr><td colSpan={6} className="loading">Loading leaderboard...</td></tr>
               ) : entries.map((e) => (
                 <tr key={e.rank}>
-                  <td>
+                  <td className="sticky-col">
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, color: e.rank <= 3 ? "var(--neon-green)" : "var(--muted-text)" }}>
                       #{e.rank}
                     </span>
                   </td>
-                  <td style={{ fontFamily: "'IBM Plex Mono', monospace", maxWidth: 300 }}>{e.sentence}</td>
+                  <td style={{ fontFamily: "'IBM Plex Mono', monospace", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.sentence}</td>
                   <td className="price-cell">{e.formula_value_lgu.toFixed(3)}</td>
-                  <td style={{ color: "var(--muted-text)", fontSize: "0.875rem" }}>{e.staked_since}</td>
+                  <td style={{ color: "var(--muted-text)", fontSize: "0.875rem", whiteSpace: "nowrap" }}>{e.staked_since}</td>
                   <td>
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace", color: "var(--electric-blue)" }}>
                       {e.stillness_days}d
                     </span>
                   </td>
-                  <td style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "0.8rem", color: "var(--muted-text)" }}>
+                  <td style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "0.8rem", color: "var(--muted-text)", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {e.owner}
                   </td>
                 </tr>

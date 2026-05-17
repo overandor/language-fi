@@ -1047,30 +1047,82 @@ footer > p { color: var(--muted-text); font-size: 0.875rem; margin-bottom: 1rem;
 .mobile-menu-btn {
   display: none;
   background: none;
-  border: none;
+  border: 1px solid var(--border);
   color: var(--soft-white);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   cursor: pointer;
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  line-height: 1;
+  transition: border-color 0.2s ease;
 }
+
+.mobile-menu-btn:hover { border-color: var(--electric-blue); }
 
 @media (max-width: 768px) {
   .mobile-menu-btn { display: block; }
+
+  /* Nav dropdown */
+  nav { padding: 0.75rem 1.25rem; }
   .nav-links {
     display: none;
     position: absolute;
     top: 100%;
-    left: 0; right: 0;
-    background: var(--bg);
+    left: 0;
+    right: 0;
+    background: rgba(5, 5, 10, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     flex-direction: column;
-    padding: 1rem 2rem;
+    padding: 0.5rem 1.25rem 1.25rem;
     border-bottom: 1px solid var(--border);
-    gap: 1rem;
+    gap: 0;
+    z-index: 999;
   }
   .nav-links.open { display: flex; }
+  .nav-links li { border-bottom: 1px solid rgba(148, 163, 184, 0.08); }
+  .nav-links li:last-child { border-bottom: none; padding-top: 0.75rem; }
+  .nav-links a, .nav-links span { display: block; padding: 0.875rem 0; font-size: 0.95rem; }
+  .nav-cta { width: 100%; text-align: center; display: block; }
+
+  /* Hide floating price overlays on mobile — they crowd the hero text */
+  .hero-visual { display: none; }
+
+  /* Section spacing */
   section { padding: 4rem 1rem; }
-  .what-is { padding: 2rem; }
+  .what-is { padding: 2rem 1.25rem; }
   .hero { padding: 6rem 1rem 3rem; }
   .manifesto { padding: 5rem 1rem; }
+
+  /* Calculator */
+  .calculator-container { padding: 1.5rem; }
+
+  /* Leaderboard */
+  .leaderboard-header { padding: 5rem 1rem 2rem; }
+  .leaderboard-table-wrap { padding: 0 1rem 3rem; }
+
+  /* Stake */
+  .stake-container { padding: 5rem 1rem 3rem; }
+  .stake-form { padding: 1.5rem; }
+
+  /* Other pages */
+  .primitives-page { padding: 5rem 1rem 3rem; }
+  .letter-detail { padding: 5rem 1rem 3rem; }
+
+  /* Explorer page cards */
+  .explorer-grid { grid-template-columns: 1fr; }
+}
+
+/* Sticky first column in scrollable tables */
+.sticky-col {
+  position: sticky;
+  left: 0;
+  background: var(--bg);
+  z-index: 1;
+}
+
+.registry-table tr:hover .sticky-col {
+  background: rgba(5, 5, 10, 0.98);
 }
 
 /* Status badge */
@@ -1101,3 +1153,20 @@ footer > p { color: var(--muted-text); font-size: 0.875rem; margin-bottom: 1rem;
 
 /* Stake header */
 .stake-header { margin-bottom: 1.5rem; }
+
+/* Stake tab two-column layout */
+.stake-layout {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .stake-layout {
+    grid-template-columns: 1fr;
+  }
+  .stake-sidebar {
+    display: none;
+  }
+}
