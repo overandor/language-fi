@@ -3,7 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff6b35">
+
     <title>Language.fi — Neomorphic Dashboard</title>
+    <meta name="description" content="Real-time linguistic primitive oracle dashboard with live market data from CoinGecko. Track letter and number pricing, usage metrics, and attribution samples.">
+    <meta name="keywords" content="linguistic oracle, language primitives, neomorphic dashboard, CoinGecko, letter pricing, number pricing, market data">
+    <meta name="author" content="Language.fi">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://language-fi.vercel.app/">
+    <meta property="og:title" content="Language.fi — Neomorphic Linguistic Oracle Dashboard">
+    <meta property="og:description" content="Real-time linguistic primitive oracle dashboard with live market data from CoinGecko. Track letter and number pricing, usage metrics, and attribution samples.">
+    <meta property="og:image" content="https://language-fi.vercel.app/og-image.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://language-fi.vercel.app/">
+    <meta property="twitter:title" content="Language.fi — Neomorphic Linguistic Oracle Dashboard">
+    <meta property="twitter:description" content="Real-time linguistic primitive oracle dashboard with live market data from CoinGecko. Track letter and number pricing, usage metrics, and attribution samples.">
+    <meta property="twitter:image" content="https://language-fi.vercel.app/og-image.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://language-fi.vercel.app/">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script src="analytics.js"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        if (typeof LanguageFiAnalytics !== 'undefined') {
+            LanguageFiAnalytics.initAnalytics();
+            LanguageFiAnalytics.trackPageView(document.title, window.location.href);
+        }
+    </script>
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Language.fi — Neomorphic Linguistic Oracle Dashboard",
+        "description": "Real-time linguistic primitive oracle dashboard with live market data from CoinGecko. Track letter and number pricing, usage metrics, and attribution samples.",
+        "url": "https://language-fi.vercel.app/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "Language.fi"
+        }
+    }
+    </script>
     <style>
         * {
             margin: 0;
@@ -318,6 +379,8 @@
             line-height: 1.6;
         }
     </style>
+    <!-- Performance Monitoring -->
+    <script src="performance.js"></script>
 </head>
 <body>
     <div class="container">

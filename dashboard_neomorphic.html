@@ -3,7 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff6b35">
+
     <title>Dashboard — Language.fi</title>
+    <meta name="description" content="Real-time market data dashboard for linguistic primitives. Track live letter and number pricing from CoinGecko.">
+    <meta name="keywords" content="dashboard, market data, real-time pricing, CoinGecko, letter pricing">
+    <meta name="author" content="Language.fi">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://language-fi.vercel.app/dashboard_neomorphic.html">
+    <meta property="og:title" content="Dashboard — Language.fi Market Data">
+    <meta property="og:description" content="Real-time market data dashboard for linguistic primitives. Track live letter and number pricing from CoinGecko.">
+    <meta property="og:image" content="https://language-fi.vercel.app/og-image.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://language-fi.vercel.app/dashboard_neomorphic.html">
+    <meta property="twitter:title" content="Dashboard — Language.fi Market Data">
+    <meta property="twitter:description" content="Real-time market data dashboard for linguistic primitives. Track live letter and number pricing from CoinGecko.">
+    <meta property="twitter:image" content="https://language-fi.vercel.app/og-image.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://language-fi.vercel.app/dashboard_neomorphic.html">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script src="analytics.js"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        if (typeof LanguageFiAnalytics !== 'undefined') {
+            LanguageFiAnalytics.initAnalytics();
+            LanguageFiAnalytics.trackPageView(document.title, window.location.href);
+        }
+    </script>
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Dashboard — Language.fi Market Data",
+        "description": "Real-time market data dashboard for linguistic primitives. Track live letter and number pricing from CoinGecko.",
+        "url": "https://language-fi.vercel.app/dashboard_neomorphic.html",
+        "author": {
+            "@type": "Organization",
+            "name": "Language.fi"
+        }
+    }
+    </script>
     <style>
         * {
             margin: 0;
@@ -206,6 +260,8 @@
         .positive { color: #48bb78; }
         .negative { color: #fc8181; }
     </style>
+    <!-- Performance Monitoring -->
+    <script src="performance.js"></script>
 </head>
 <body>
     <div class="container">
@@ -276,12 +332,44 @@
     </div>
 
     <script>
+const API_URL = 'https://luguog-language-fi-oracle-api.hf.space';
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000;
+
+async function fetchWithRetry(url, retries = MAX_RETRIES) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            
+            const response = await fetch(url, {
+                signal: controller.signal,
+                headers: {
+                    'Accept': 'application/json',
+                }
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            if (i === retries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        }
+    }
+}
+
+
         const API_URL = 'https://luguog-language-fi-oracle-api.hf.space';
 
         async function loadDashboard() {
             try {
                 // Fetch primitives from existing backend
-                const primitivesRes = await fetch(`${API_URL}/api/primitives`);
+                const primitivesRes = await fetchWithRetry(`${API_URL}/api/primitives`);
                 const primitivesData = await primitivesRes.json();
                 
                 const primitives = primitivesData.primitives || primitivesData;
@@ -328,7 +416,7 @@
             
             for (const letter of topLetters) {
                 try {
-                    const res = await fetch(`${API_URL}/api/real/letter/${letter.symbol}/tokens`);
+                    const res = await fetchWithRetry(`${API_URL}/api/real/letter/${letter.symbol}/tokens`);
                     const data = await res.json();
                     
                     html += `

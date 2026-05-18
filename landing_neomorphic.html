@@ -3,7 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Language.fi — Neomorphic Dashboard</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff6b35">
+
+    <title>Language.fi — Neomorphic Linguistic Oracle Dashboard</title>
+    <meta name="description" content="Real-time linguistic primitive oracle dashboard with live market data from CoinGecko. Track letter and number pricing, usage metrics, and attribution samples.">
+    <meta name="keywords" content="linguistic oracle, language primitives, neomorphic dashboard, CoinGecko, letter pricing, number pricing, market data">
+    <meta name="author" content="Language.fi">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://language-fi.vercel.app/">
+    <meta property="og:title" content="Language.fi — Neomorphic Linguistic Oracle Dashboard">
+    <meta property="og:description" content="Real-time linguistic primitive oracle dashboard with live market data from CoinGecko. Track letter and number pricing, usage metrics, and attribution samples.">
+    <meta property="og:image" content="https://language-fi.vercel.app/og-image.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://language-fi.vercel.app/">
+    <meta property="twitter:title" content="Language.fi — Neomorphic Linguistic Oracle Dashboard">
+    <meta property="twitter:description" content="Real-time linguistic primitive oracle dashboard with live market data from CoinGecko.">
+    <meta property="twitter:image" content="https://language-fi.vercel.app/og-image.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://language-fi.vercel.app/">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script src="analytics.js"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        if (typeof LanguageFiAnalytics !== 'undefined') {
+            LanguageFiAnalytics.initAnalytics();
+            LanguageFiAnalytics.trackPageView(document.title, window.location.href);
+        }
+    </script>
+
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Language.fi — Neomorphic Linguistic Oracle Dashboard",
+        "description": "Real-time linguistic primitive oracle dashboard with live market data from CoinGecko. Track letter and number pricing, usage metrics, and attribution samples.",
+        "url": "https://language-fi.vercel.app/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "Language.fi"
+        }
+    }
+    </script>
+    
     <style>
         * {
             margin: 0;
@@ -318,6 +381,8 @@
             line-height: 1.6;
         }
     </style>
+    <!-- Performance Monitoring -->
+    <script src="performance.js"></script>
 </head>
 <body>
     <div class="container">
@@ -412,47 +477,113 @@
 
     <script>
         const API_URL = 'https://luguog-language-fi-oracle-api.hf.space';
+        const MAX_RETRIES = 3;
+        const RETRY_DELAY = 2000;
+
+        async function fetchWithRetry(url, retries = MAX_RETRIES) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+                    
+                    const response = await fetch(url, {
+                        signal: controller.signal,
+                        headers: {
+                            'Accept': 'application/json',
+                        }
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    return await response.json();
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                }
+            }
+        }
 
         async function loadRealData() {
+            const letterGrid = document.getElementById('letterGrid');
+            const totalTokens = document.getElementById('totalTokens');
+            const totalMarketCap = document.getElementById('totalMarketCap');
+            const totalLetters = document.getElementById('totalLetters');
+            const lastUpdate = document.getElementById('lastUpdate');
+
             try {
-                // Fetch primitives from existing backend
-                const primitivesRes = await fetch(`${API_URL}/api/primitives`);
-                const primitivesData = await primitivesRes.json();
-                
+                letterGrid.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading real letter prices...</p>
+                    </div>
+                `;
+
+                const primitivesData = await fetchWithRetry(`${API_URL}/api/primitives`);
                 const primitives = primitivesData.primitives || primitivesData;
                 
-                // Calculate stats from primitives
-                const totalLetters = primitives.filter(p => p.type === 'letter').length;
-                const totalMarketCap = primitives.reduce((sum, p) => sum + (p.price_lgu * p.usage_count || 0), 0);
+                if (!Array.isArray(primitives) || primitives.length === 0) {
+                    throw new Error('Invalid data format received from API');
+                }
+
+                const letters = primitives.filter(p => p.type === 'letter');
+                const totalMarketCapValue = primitives.reduce((sum, p) => sum + (p.price_lgu * p.usage_count || 0), 0);
                 
-                document.getElementById('totalTokens').textContent = '250'; // CoinGecko tokens
-                document.getElementById('totalMarketCap').textContent = `$${(totalMarketCap / 1e6).toFixed(2)}M`;
-                document.getElementById('totalLetters').textContent = totalLetters;
+                totalTokens.textContent = '250';
+                totalMarketCap.textContent = `$${(totalMarketCapValue / 1e6).toFixed(2)}M`;
+                totalLetters.textContent = letters.length;
+                lastUpdate.textContent = new Date().toLocaleTimeString();
                 
-                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
-                
-                renderLetterGrid(primitives.filter(p => p.type === 'letter'));
+                renderLetterGrid(letters);
             } catch (error) {
                 console.error('Error loading real data:', error);
-                document.getElementById('letterGrid').innerHTML = '<p style="text-align: center; color: #e53e3e;">Failed to load real data from Hugging Face space</p>';
+                
+                letterGrid.innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <p style="color: #fc8181; margin-bottom: 1rem;">Failed to load real data</p>
+                        <p style="color: #a0aec0; font-size: 0.9rem;">${error.message}</p>
+                        <button onclick="loadRealData()" class="neomorphic-button" style="margin-top: 1rem;">Retry</button>
+                    </div>
+                `;
+                
+                totalTokens.textContent = '--';
+                totalMarketCap.textContent = '--';
+                totalLetters.textContent = '--';
+                lastUpdate.textContent = 'Error';
             }
         }
 
         function renderLetterGrid(primitives) {
             const grid = document.getElementById('letterGrid');
+            
+            if (!primitives || primitives.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: #a0aec0;">No letter data available</p>';
+                return;
+            }
+            
             grid.innerHTML = primitives.map(p => `
                 <a href="oracle_${p.symbol}.html" class="letter-card">
                     <div class="letter">${p.symbol}</div>
-                    <div class="price">${p.price_lgu.toFixed(6)} LGU</div>
+                    <div class="price">${(p.price_lgu || 0).toFixed(6)} LGU</div>
                 </a>
             `).join('');
         }
 
         // Load data on page load
-        loadRealData();
+        document.addEventListener('DOMContentLoaded', loadRealData);
 
         // Refresh every 5 minutes
         setInterval(loadRealData, 300000);
+
+        // Handle visibility change to refresh when tab becomes active
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                loadRealData();
+            }
+        });
     </script>
 </body>
 </html>
