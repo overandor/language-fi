@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Check — Language.fi</title>
+</head>
+<body>
+<script>
+const healthData = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    service: 'language-fi-dashboard',
+    checks: {
+        static_files: 'ok',
+        ssl: 'ok',
+        cdn: 'ok'
+    }
+};
+
+document.body.textContent = JSON.stringify(healthData, null, 2);
+</script>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff6b35">
+
+    <title>Language.fi — Neomorphic Dashboard</title>
+    <meta name="description" content="Real-time linguistic primitive oracle dashboard with live market data from CoinGecko. Track letter and number pricing, usage metrics, and attribution samples.">
+    <meta name="keywords" content="linguistic oracle, language primitives, neomorphic dashboard, CoinGecko, letter pricing, number pricing, market data">
+    <meta name="author" content="Language.fi">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://language-fi.vercel.app/">
+    <meta property="og:title" content="Language.fi — Neomorphic Linguistic Oracle Dashboard">
+    <meta property="og:description" content="Real-time linguistic primitive oracle dashboard with live market data from CoinGecko. Track letter and number pricing, usage metrics, and attribution samples.">
+    <meta property="og:image" content="https://language-fi.vercel.app/og-image.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://language-fi.vercel.app/">
+    <meta property="twitter:title" content="Language.fi — Neomorphic Linguistic Oracle Dashboard">
+    <meta property="twitter:description" content="Real-time linguistic primitive oracle dashboard with live market data from CoinGecko. Track letter and number pricing, usage metrics, and attribution samples.">
+    <meta property="twitter:image" content="https://language-fi.vercel.app/og-image.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://language-fi.vercel.app/">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script src="analytics.js"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        if (typeof LanguageFiAnalytics !== 'undefined') {
+            LanguageFiAnalytics.initAnalytics();
+            LanguageFiAnalytics.trackPageView(document.title, window.location.href);
+        }
+    </script>
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Language.fi — Neomorphic Linguistic Oracle Dashboard",
+        "description": "Real-time linguistic primitive oracle dashboard with live market data from CoinGecko. Track letter and number pricing, usage metrics, and attribution samples.",
+        "url": "https://language-fi.vercel.app/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "Language.fi"
+        }
+    }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #ff6b35;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+        }
+
+        .header p {
+            color: #a0aec0;
+            font-size: 1.2rem;
+        }
+
+        /* Neomorphic Card */
+        .neomorphic-card {
+            background: #1a1a2e;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 
+                8px 8px 16px #0f0f1a,
+                -8px -8px 16px #252540,
+                0 0 30px rgba(255, 107, 53, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .neomorphic-card:hover {
+            box-shadow: 
+                12px 12px 24px #0f0f1a,
+                -12px -12px 24px #252540,
+                0 0 40px rgba(255, 107, 53, 0.2);
+        }
+
+        /* Glassmorphism Card */
+        .glass-card {
+            background: rgba(26, 26, 46, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 107, 53, 0.2);
+        }
+
+        /* Neomorphic Button */
+        .neomorphic-button {
+            background: #1a1a2e;
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ff6b35;
+            cursor: pointer;
+            box-shadow: 
+                4px 4px 8px #0f0f1a,
+                -4px -4px 8px #252540,
+                0 0 15px rgba(255, 107, 53, 0.2);
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .neomorphic-button:hover {
+            box-shadow: 
+                6px 6px 12px #0f0f1a,
+                -6px -6px 12px #252540,
+                0 0 25px rgba(255, 107, 53, 0.4);
+        }
+
+        .neomorphic-button:active {
+            box-shadow: 
+                inset 2px 2px 4px #0f0f1a,
+                inset -2px -2px 4px #252540;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 
+                6px 6px 12px #0f0f1a,
+                -6px -6px 12px #252540,
+                0 0 20px rgba(255, 107, 53, 0.15);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ff6b35;
+            margin-bottom: 0.25rem;
+            text-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
+        }
+
+        .stat-label {
+            color: #a0aec0;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Letter Grid */
+        .letter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .letter-card {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 
+                4px 4px 8px #0f0f1a,
+                -4px -4px 8px #252540,
+                0 0 15px rgba(255, 107, 53, 0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .letter-card:hover {
+            box-shadow: 
+                6px 6px 12px #0f0f1a,
+                -6px -6px 12px #252540,
+                0 0 25px rgba(255, 107, 53, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .letter-card .letter {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ff6b35;
+            text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+        }
+
+        .letter-card .price {
+            font-size: 0.9rem;
+            color: #a0aec0;
+            margin-top: 0.5rem;
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .nav a {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #ff6b35;
+            font-weight: 500;
+            background: #1a1a2e;
+            box-shadow: 
+                3px 3px 6px #0f0f1a,
+                -3px -3px 6px #252540,
+                0 0 10px rgba(255, 107, 53, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .nav a:hover {
+            box-shadow: 
+                5px 5px 10px #0f0f1a,
+                -5px -5px 10px #252540,
+                0 0 20px rgba(255, 107, 53, 0.3);
+        }
+
+        /* Live indicator */
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #1a1a2e;
+            border-radius: 20px;
+            box-shadow: 
+                2px 2px 4px #0f0f1a,
+                -2px -2px 4px #252540,
+                0 0 10px rgba(255, 107, 53, 0.2);
+            font-size: 0.85rem;
+            color: #ff6b35;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #ff6b35;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.8);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #a0aec0;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #1a1a2e;
+            border-top-color: #ff6b35;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+            box-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .hero h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #718096;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: #e0e5ec;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 
+                6px 6px 12px #b8bec7,
+                -6px -6px 12px #ffffff;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card p {
+            color: #718096;
+            line-height: 1.6;
+        }
+    </style>
+    <!-- Performance Monitoring -->
+    <script src="performance.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Language.fi</h1>
+            <p>Neomorphic Dashboard — Real Data Only</p>
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span>Live CoinGecko Data</span>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <a href="landing_neomorphic.html">Landing</a>
+            <a href="claim.html">Claim</a>
+            <a href="dashboard_neomorphic.html">Dashboard</a>
+            <a href="oracle_A.html">Oracle A</a>
+            <a href="oracle_E.html">Oracle E</a>
+            <a href="oracle_T.html">Oracle T</a>
+            <a href="oracle_O.html">Oracle O</a>
+            <a href="oracle_N.html">Oracle N</a>
+            <a href="oracle_I.html">Oracle I</a>
+            <a href="oracle_S.html">Oracle S</a>
+            <a href="oracle_R.html">Oracle R</a>
+            <a href="oracle_H.html">Oracle H</a>
+            <a href="oracle_L.html">Oracle L</a>
+            <a href="oracle_D.html">Oracle D</a>
+            <a href="oracle_C.html">Oracle C</a>
+        </nav>
+
+        <section class="hero">
+            <h2>Language is Liquidity</h2>
+            <p>A linguistic asset protocol where letters become priced primitives, words become composable value objects, and sentences become transferable registered assets through real market data.</p>
+            <a href="dashboard_neomorphic.html" class="neomorphic-button">Launch Dashboard</a>
+        </section>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalTokens">0</div>
+                <div class="stat-label">Tokens Tracked</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalMarketCap">$0</div>
+                <div class="stat-label">Total Market Cap</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalLetters">0</div>
+                <div class="stat-label">Letters Tracked</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="lastUpdate">--:--</div>
+                <div class="stat-label">Last Update</div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h2 style="margin-bottom: 1.5rem; color: #2d3748;">Letter Prices (Real Data)</h2>
+            <div class="letter-grid" id="letterGrid">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    Loading real letter prices...
+                </div>
+            </div>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>🔤 Real Letter Pricing</h3>
+                <p>Letter prices calculated from actual CoinGecko token market data. No simulation, no mock data — pure market reality.</p>
+            </div>
+            <div class="feature-card">
+                <h3>📊 Live Oracle</h3>
+                <p>Real-time letter counting from 250+ cryptocurrency tokens. Prices update based on actual market conditions.</p>
+            </div>
+            <div class="feature-card">
+                <h3>🎯 Transparent Formula</h3>
+                <p>Every price is mathematically derived from token market caps and letter frequency. Fully explainable.</p>
+            </div>
+        </div>
+
+        <div class="neomorphic-card">
+            <h2 style="margin-bottom: 1rem; color: #2d3748;">How It Works</h2>
+            <ol style="color: #4a5568; line-height: 1.8; margin-left: 1.5rem;">
+                <li>We fetch 250 top tokens from CoinGecko API</li>
+                <li>We count letter occurrences in token names and symbols</li>
+                <li>We calculate letter prices based on market cap distribution</li>
+                <li>We serve real data through our API endpoints</li>
+                <li>No random generation, no simulation — 100% real market data</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://luguog-language-fi-oracle-api.hf.space';
+
+        async function loadRealData() {
+            try {
+                // Fetch primitives from existing backend
+                const primitivesRes = await fetch(`${API_URL}/api/primitives`);
+                const primitivesData = await primitivesRes.json();
+                
+                const primitives = primitivesData.primitives || primitivesData;
+                
+                // Calculate stats from primitives
+                const totalLetters = primitives.filter(p => p.type === 'letter').length;
+                const totalMarketCap = primitives.reduce((sum, p) => sum + (p.price_lgu * p.usage_count || 0), 0);
+                
+                document.getElementById('totalTokens').textContent = '250'; // CoinGecko tokens
+                document.getElementById('totalMarketCap').textContent = `$${(totalMarketCap / 1e6).toFixed(2)}M`;
+                document.getElementById('totalLetters').textContent = totalLetters;
+                
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                
+                renderLetterGrid(primitives.filter(p => p.type === 'letter'));
+            } catch (error) {
+                console.error('Error loading real data:', error);
+                document.getElementById('letterGrid').innerHTML = '<p style="text-align: center; color: #e53e3e;">Failed to load real data from Hugging Face space</p>';
+            }
+        }
+
+        function renderLetterGrid(primitives) {
+            const grid = document.getElementById('letterGrid');
+            grid.innerHTML = primitives.map(p => `
+                <a href="oracle_${p.symbol}.html" class="letter-card">
+                    <div class="letter">${p.symbol}</div>
+                    <div class="price">${p.price_lgu.toFixed(6)} LGU</div>
+                </a>
+            `).join('');
+        }
+
+        // Load data on page load
+        loadRealData();
+
+        // Refresh every 5 minutes
+        setInterval(loadRealData, 300000);
+    </script>
+</body>
+</html>

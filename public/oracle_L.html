@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff6b35">
+
+    <title>Oracle L — Language.fi</title>
+    <meta name="description" content="Letter L oracle with real-time pricing and attribution samples. Track L primitive market data and usage metrics.">
+    <meta name="keywords" content="oracle L, letter L, linguistic primitive, letter pricing, attribution">
+    <meta name="author" content="Language.fi">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://language-fi.vercel.app/oracle_L.html">
+    <meta property="og:title" content="Oracle L — Language.fi Letter Primitive">
+    <meta property="og:description" content="Letter L oracle with real-time pricing and attribution samples. Track L primitive market data and usage metrics.">
+    <meta property="og:image" content="https://language-fi.vercel.app/og-image.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://language-fi.vercel.app/oracle_L.html">
+    <meta property="twitter:title" content="Oracle L — Language.fi Letter Primitive">
+    <meta property="twitter:description" content="Letter L oracle with real-time pricing and attribution samples. Track L primitive market data and usage metrics.">
+    <meta property="twitter:image" content="https://language-fi.vercel.app/og-image.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://language-fi.vercel.app/oracle_L.html">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script src="analytics.js"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        if (typeof LanguageFiAnalytics !== 'undefined') {
+            LanguageFiAnalytics.initAnalytics();
+            LanguageFiAnalytics.trackPageView(document.title, window.location.href);
+        }
+    </script>
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Oracle L — Language.fi Letter Primitive",
+        "description": "Letter L oracle with real-time pricing and attribution samples. Track L primitive market data and usage metrics.",
+        "url": "https://language-fi.vercel.app/oracle_L.html",
+        "author": {
+            "@type": "Organization",
+            "name": "Language.fi"
+        }
+    }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .letter-display {
+            font-size: 8rem;
+            font-weight: 700;
+            color: #ff6b35;
+            text-shadow: 8px 8px 16px #0f0f1a, -8px -8px 16px #252540, 0 0 30px rgba(255, 107, 53, 0.5);
+            margin-bottom: 1rem;
+        }
+
+        .neomorphic-card {
+            background: #1a1a2e;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 8px 8px 16px #0f0f1a, -8px -8px 16px #252540, 0 0 30px rgba(255, 107, 53, 0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 6px 6px 12px #0f0f1a, -6px -6px 12px #252540, 0 0 20px rgba(255, 107, 53, 0.15);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ff6b35;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: #a0aec0;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #1a1a2e;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 6px 6px 12px #0f0f1a, -6px -6px 12px #252540, 0 0 20px rgba(255, 107, 53, 0.15);
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #252540 0%, #1a1a2e 100%);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #e0e0e0;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 107, 53, 0.1);
+            color: #e0e0e0;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .nav a {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #e0e0e0;
+            font-weight: 500;
+            background: #1a1a2e;
+            box-shadow: 3px 3px 6px #0f0f1a, -3px -3px 6px #252540, 0 0 10px rgba(255, 107, 53, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .nav a:hover {
+            box-shadow: 
+                5px 5px 10px #b8bec7,
+                -5px -5px 10px #ffffff;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #1a1a2e;
+            border-radius: 20px;
+            box-shadow: 2px 2px 4px #0f0f1a, -2px -2px 4px #252540, 0 0 10px rgba(255, 107, 53, 0.2);
+            font-size: 0.85rem;
+            color: #e0e0e0;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #ff6b35;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #a0aec0;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e0e5ec;
+            border-top-color: #e0e0e0;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .positive { color: #48bb78; }
+        .negative { color: #fc8181; }
+    </style>
+    <!-- Performance Monitoring -->
+    <script src="performance.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="letter-display">L</div>
+            <p style="color: #a0aec0; font-size: 1.2rem;">Letter Oracle — Real Market Data</p>
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span>Live CoinGecko Data</span>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <a href="landing_neomorphic.html">Landing</a>
+            <a href="claim.html">Claim</a>
+            <a href="dashboard_neomorphic.html">Dashboard</a>
+        </nav>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="price">0</div>
+                <div class="stat-label">Price (LGU)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="count">0</div>
+                <div class="stat-label">Usage Count</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="rank">0</div>
+                <div class="stat-label">Rank</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="marketCap">$0</div>
+                <div class="stat-label">Market Cap</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="tokenCount">0</div>
+                <div class="stat-label">Tokens</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avg24hChange">0%</div>
+                <div class="stat-label">Avg 24h Change</div>
+            </div>
+        </div>
+
+        <div class="neomorphic-card">
+            <h2 style="margin-bottom: 1.5rem; color: #e0e0e0;">Tokens Containing L</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Name</th>
+                        <th>Price (USD)</th>
+                        <th>Market Cap</th>
+                        <th>24h Change</th>
+                    </tr>
+                </thead>
+                <tbody id="tokensTable">
+                    <tr>
+                        <td colspan="5" class="loading">
+                            <div class="loading-spinner"></div>
+                            Loading real token data...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="neomorphic-card">
+            <h2 style="margin-bottom: 1rem; color: #e0e0e0;">Price Calculation Method</h2>
+            <p style="color: #e0e0e0; line-height: 1.8; margin-bottom: 1rem;">
+                This letter's price is calculated from real CoinGecko market data:
+            </p>
+            <ol style="color: #e0e0e0; line-height: 1.8; margin-left: 1.5rem;">
+                <li>We fetch 250 top tokens from CoinGecko API</li>
+                <li>We count occurrences of "L" in token symbols and names</li>
+                <li>We calculate the total market cap of tokens containing "L"</li>
+                <li>The price is derived from the market cap distribution across all letters</li>
+                <li>No simulation, no mock data — 100% real market data</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+const API_URL = 'https://luguog-language-fi-oracle-api.hf.space';
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000;
+
+async function fetchWithRetry(url, retries = MAX_RETRIES) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            
+            const response = await fetch(url, {
+                signal: controller.signal,
+                headers: {
+                    'Accept': 'application/json',
+                }
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            if (i === retries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        }
+    }
+}
+
+
+        const API_URL = 'https://luguog-language-fi-oracle-api.hf.space';
+        const LETTER = 'L';
+
+        async function loadOracleData() {
+            try {
+                const res = await fetchWithRetry(`${API_URL}/api/primitives/${LETTER}`);
+                const data = await res.json();
+                
+                document.getElementById('price').textContent = data.price_lgu.toFixed(6);
+                document.getElementById('count').textContent = data.volume?.toLocaleString() || data.usage_count?.toLocaleString() || '0';
+                document.getElementById('rank').textContent = '#' + data.rank;
+                document.getElementById('marketCap').textContent = '$' + ((data.price_lgu * (data.volume || data.usage_count || 0)) / 1e6).toFixed(2) + 'M';
+                document.getElementById('tokenCount').textContent = data.source_diversity || '-';
+                
+                const weeklyChange = data.frequency || 0;
+                document.getElementById('avg24hChange').textContent = (weeklyChange * 100).toFixed(2) + '%';
+                document.getElementById('avg24hChange').className = 'stat-value ' + (weeklyChange >= 0 ? 'positive' : 'negative');
+
+                if (data.attribution && data.attribution.samples) {
+                    renderTokensTable(data.attribution.samples.map(s => ({
+                        symbol: s.pair || s,
+                        name: data.attribution.topics ? Object.keys(data.attribution.topics)[0] : 'Trading Pair',
+                        price: '-',
+                        market_cap: '-',
+                        '24h_change': '-'
+                    })));
+                } else {
+                    renderTokensTable([]);
+                }
+            } catch (error) {
+                console.error('Error loading oracle data:', error);
+                document.getElementById('tokensTable').innerHTML = '<tr><td colspan="5" style="text-align: center; color: #e53e3e;">Failed to load real data from Hugging Face space</td></tr>';
+            }
+        }
+
+        function renderTokensTable(tokens) {
+            const tbody = document.getElementById('tokensTable');
+            if (!tokens || tokens.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #a0aec0;">Token data not available in current API response</td></tr>';
+                return;
+            }
+            tbody.innerHTML = tokens.map(t => {
+                const changeClass = t['24h_change'] >= 0 ? 'positive' : 'negative';
+                return `
+                    <tr>
+                        <td style="font-weight: 600;">${t.symbol}</td>
+                        <td>${t.name}</td>
+                        <td>$${t.price?.toFixed(2) || '0'}</td>
+                        <td>$${(t.market_cap / 1e9).toFixed(2) || '0'}B</td>
+                        <td class="${changeClass}">${t['24h_change']?.toFixed(2) || '0'}%</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        loadOracleData();
+        setInterval(loadOracleData, 120000);
+    </script>
+</body>
+</html>

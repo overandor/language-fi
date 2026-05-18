@@ -1,0 +1,42 @@
+{
+  "name": "Language.fi — Neomorphic Linguistic Oracle Dashboard",
+  "short_name": "Language.fi",
+  "description": "Real-time linguistic primitive oracle dashboard with live market data from CoinGecko.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#ff6b35",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View real-time market data",
+      "url": "/dashboard_neomorphic.html",
+      "icons": [{ "src": "/favicon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Oracle A",
+      "short_name": "Oracle A",
+      "description": "Letter A oracle page",
+      "url": "/oracle_A.html",
+      "icons": [{ "src": "/favicon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

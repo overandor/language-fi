@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://language-fi.vercel.app/sitemap.xml
+
+# Disallow sensitive files
+Disallow: /update_oracle_theme.py
+Disallow: /add_seo_meta.py
+Disallow: /add_error_handling.py
+Disallow: /add_structured_data.py

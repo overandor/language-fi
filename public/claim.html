@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff6b35">
+
+    <title>Claim — Language.fi</title>
+    <meta name="description" content="Claim your linguistic primitive oracle artifacts on Language.fi. Mint proof-of-value tokens for letter and number primitives.">
+    <meta name="keywords" content="claim, mint, oracle artifacts, linguistic primitives, proof-of-value">
+    <meta name="author" content="Language.fi">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://language-fi.vercel.app/claim.html">
+    <meta property="og:title" content="Claim — Language.fi Oracle">
+    <meta property="og:description" content="Claim your linguistic primitive oracle artifacts on Language.fi. Mint proof-of-value tokens for letter and number primitives.">
+    <meta property="og:image" content="https://language-fi.vercel.app/og-image.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://language-fi.vercel.app/claim.html">
+    <meta property="twitter:title" content="Claim — Language.fi Oracle">
+    <meta property="twitter:description" content="Claim your linguistic primitive oracle artifacts on Language.fi. Mint proof-of-value tokens for letter and number primitives.">
+    <meta property="twitter:image" content="https://language-fi.vercel.app/og-image.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://language-fi.vercel.app/claim.html">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script src="analytics.js"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        if (typeof LanguageFiAnalytics !== 'undefined') {
+            LanguageFiAnalytics.initAnalytics();
+            LanguageFiAnalytics.trackPageView(document.title, window.location.href);
+        }
+    </script>
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Claim — Language.fi Oracle",
+        "description": "Claim your linguistic primitive oracle artifacts on Language.fi. Mint proof-of-value tokens for letter and number primitives.",
+        "url": "https://language-fi.vercel.app/claim.html",
+        "author": {
+            "@type": "Organization",
+            "name": "Language.fi"
+        }
+    }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #ff6b35;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+        }
+
+        .header p {
+            color: #a0aec0;
+            font-size: 1.1rem;
+        }
+
+        .neomorphic-card {
+            background: #1a1a2e;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 
+                8px 8px 16px #0f0f1a,
+                -8px -8px 16px #252540,
+                0 0 30px rgba(255, 107, 53, 0.1);
+        }
+
+        .neomorphic-button {
+            background: #1a1a2e;
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ff6b35;
+            cursor: pointer;
+            box-shadow: 
+                4px 4px 8px #0f0f1a,
+                -4px -4px 8px #252540,
+                0 0 15px rgba(255, 107, 53, 0.2);
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .neomorphic-button:hover {
+            box-shadow: 
+                6px 6px 12px #0f0f1a,
+                -6px -6px 12px #252540,
+                0 0 25px rgba(255, 107, 53, 0.4);
+        }
+
+        .neomorphic-button:active {
+            box-shadow: 
+                inset 2px 2px 4px #0f0f1a,
+                inset -2px -2px 4px #252540;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #ff6b35;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            background: #1a1a2e;
+            box-shadow: 
+                inset 2px 2px 4px #0f0f1a,
+                inset -2px -2px 4px #252540;
+            font-size: 1rem;
+            color: #e0e0e0;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            box-shadow: 
+                inset 3px 3px 6px #0f0f1a,
+                inset -3px -3px 6px #252540,
+                0 0 15px rgba(255, 107, 53, 0.3);
+        }
+
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .nav a {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #ff6b35;
+            font-weight: 500;
+            background: #1a1a2e;
+            box-shadow: 
+                3px 3px 6px #0f0f1a,
+                -3px -3px 6px #252540,
+                0 0 10px rgba(255, 107, 53, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .nav a:hover {
+            box-shadow: 
+                5px 5px 10px #0f0f1a,
+                -5px -5px 10px #252540,
+                0 0 20px rgba(255, 107, 53, 0.3);
+        }
+
+        .status-message {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .status-message.success {
+            display: block;
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-message.error {
+            display: block;
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .letter-breakdown {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #e8eef5;
+            border-radius: 12px;
+        }
+
+        .letter-breakdown h4 {
+            margin-bottom: 0.5rem;
+            color: #2d3748;
+        }
+
+        .letter-cost {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #cbd5e0;
+        }
+
+        .letter-cost:last-child {
+            border-bottom: none;
+        }
+
+        .total-cost {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 2px solid #a0aec0;
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+    <!-- Performance Monitoring -->
+    <script src="performance.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Claim Linguistic Assets</h1>
+            <p>Register words and sentences as transferable assets</p>
+        </div>
+
+        <nav class="nav">
+            <a href="landing_neomorphic.html">Landing</a>
+            <a href="claim.html" style="background: #d1d9e6;">Claim</a>
+            <a href="dashboard_neomorphic.html">Dashboard</a>
+        </nav>
+
+        <div class="neomorphic-card">
+            <h2 style="margin-bottom: 1.5rem; color: #2d3748;">Register New Asset</h2>
+            
+            <div class="form-group">
+                <label for="assetType">Asset Type</label>
+                <select id="assetType" style="width: 100%; padding: 1rem; border: none; border-radius: 12px; background: #e0e5ec; box-shadow: inset 2px 2px 4px #b8bec7, inset -2px -2px 4px #ffffff; font-size: 1rem; color: #2d3748;">
+                    <option value="word">Word</option>
+                    <option value="sentence">Sentence</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="assetContent">Content</label>
+                <textarea id="assetContent" rows="3" placeholder="Enter your word or sentence..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="walletAddress">Wallet Address</label>
+                <input type="text" id="walletAddress" placeholder="0x...">
+            </div>
+
+            <div class="letter-breakdown" id="letterBreakdown" style="display: none;">
+                <h4>Letter Cost Breakdown</h4>
+                <div id="letterCosts"></div>
+                <div class="total-cost">
+                    <span>Total Cost:</span>
+                    <span id="totalCost">0 LGU</span>
+                </div>
+            </div>
+
+            <button class="neomorphic-button" onclick="calculateCost()">Calculate Cost</button>
+            <button class="neomorphic-button" onclick="claimAsset()" style="margin-top: 1rem;">Claim Asset</button>
+            
+            <div id="statusMessage" class="status-message"></div>
+        </div>
+
+        <div class="neomorphic-card">
+            <h2 style="margin-bottom: 1rem; color: #2d3748;">How Claiming Works</h2>
+            <ol style="color: #4a5568; line-height: 1.8; margin-left: 1.5rem;">
+                <li>Enter your word or sentence</li>
+                <li>System calculates cost based on real letter prices from CoinGecko data</li>
+                <li>Each letter's price is determined by its frequency in token markets</li>
+                <li>Pay the total cost to register your asset</li>
+                <li>Asset becomes a transferable registry entry</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://luguog-language-fi-oracle-api.hf.space';
+        let letterPrices = {};
+
+        async function loadLetterPrices() {
+            try {
+                const res = await fetch(`${API_URL}/api/primitives`);
+                const data = await res.json();
+                
+                const primitives = data.primitives || data;
+                primitives.forEach(p => {
+                    letterPrices[p.symbol] = p.price_lgu;
+                });
+            } catch (error) {
+                console.error('Error loading letter prices:', error);
+            }
+        }
+
+        function calculateCost() {
+            const content = document.getElementById('assetContent').value.toUpperCase();
+            const breakdown = document.getElementById('letterBreakdown');
+            const costsDiv = document.getElementById('letterCosts');
+            
+            if (!content) {
+                showStatus('Please enter content first', 'error');
+                return;
+            }
+
+            const letterCounts = {};
+            for (const char of content) {
+                if (char.match(/[A-Z]/)) {
+                    letterCounts[char] = (letterCounts[char] || 0) + 1;
+                }
+            }
+
+            let totalCost = 0;
+            let html = '';
+
+            for (const [letter, count] of Object.entries(letterCounts).sort()) {
+                const price = letterPrices[letter] || 0;
+                const cost = price * count;
+                totalCost += cost;
+                html += `
+                    <div class="letter-cost">
+                        <span>${letter} × ${count}</span>
+                        <span>${cost.toFixed(6)} LGU</span>
+                    </div>
+                `;
+            }
+
+            costsDiv.innerHTML = html;
+            document.getElementById('totalCost').textContent = `${totalCost.toFixed(6)} LGU`;
+            breakdown.style.display = 'block';
+        }
+
+        function claimAsset() {
+            const content = document.getElementById('assetContent').value;
+            const wallet = document.getElementById('walletAddress').value;
+
+            if (!content || !wallet) {
+                showStatus('Please fill in all fields', 'error');
+                return;
+            }
+
+            // In a real implementation, this would call a smart contract
+            showStatus('Asset claimed successfully! (Demo - smart contract integration pending)', 'success');
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+        }
+
+        // Load letter prices on page load
+        loadLetterPrices();
+    </script>
+</body>
+</html>
