@@ -1,15 +1,13 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "hf_app.py",
-      "use": "@vercel/python"
-    }
-  ],
   "routes": [
     {
+      "src": "/",
+      "dest": "/landing_neomorphic.html"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/hf_app.py"
+      "dest": "/$1"
     }
   ],
   "headers": [
@@ -31,8 +29,5 @@
         }
       ]
     }
-  ],
-  "env": {
-    "PORT": "8080"
-  }
+  ]
 }
