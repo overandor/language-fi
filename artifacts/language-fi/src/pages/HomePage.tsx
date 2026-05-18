@@ -1,447 +1,419 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 
-function parseUsage(s: string): number {
-  const trimmed = s.trim();
-  if (trimmed.endsWith("M")) return parseFloat(trimmed) * 1_000_000;
-  if (trimmed.endsWith("K")) return parseFloat(trimmed) * 1_000;
-  return parseFloat(trimmed) || 0;
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+interface TickerItem {
+  symbol: string;
+  price_usd: number;
+  change_pct: number;
+  type: string;
+  corpus_count: number;
 }
 
-interface LetterData {
-  letter: string;
-  price: number;
-  change_24h: number;
-  weekly_usage: string;
-  rank: string;
-  long_pct: string;
-  short_pct: string;
-  top_protocol: string;
-  trend: string;
-  volatility: string;
+interface CorpusSource {
+  name: string;
+  category: string;
+  status: string;
+  chars_extracted: number;
+  last_fetched: string;
+  snippet: string;
 }
 
-function CalculatorSection() {
-  const [input, setInput] = useState("TOKEN");
-  const [breakdown, setBreakdown] = useState<{ symbol: string; price: number }[]>([]);
-  const [total, setTotal] = useState(0);
+interface CorpusSnapshot {
+  total_chars: number;
+  active_sources: number;
+  total_sources_queried: number;
+  last_full_refresh: string;
+  refresh_count: number;
+  letters: Array<{
+    letter: string;
+    count: number;
+    freq_pct: number;
+    english_baseline_pct: number;
+    demand_ratio: number;
+    price_usd: number;
+  }>;
+  sources: CorpusSource[];
+}
 
-  const basePrices: Record<string, number> = {
-    T: 0.185, O: 0.085, K: 0.045, E: 0.142, N: 0.072,
-    A: 0.142, I: 0.095, R: 0.068, S: 0.105, H: 0.062, L: 0.058,
-  };
-
+function useTickerData() {
+  const [items, setItems] = useState<TickerItem[]>([]);
+  const [corpusChars, setCorpusChars] = useState(0);
+  const [updatedAt, setUpdatedAt] = useState("");
+  const fetch_ = useCallback(async () => {
+    try {
+      const r = await fetch(`${BASE}/api/ticker`);
+      const d = await r.json();
+      setItems(d.items ?? []);
+      setCorpusChars(d.corpus_chars ?? 0);
+      setUpdatedAt(d.updated_at ?? "");
+    } catch {}
+  }, []);
   useEffect(() => {
-    const upper = input.toUpperCase();
-    let t = 0;
-    const chars = Array.from(upper).map((c) => {
-      const p = basePrices[c] ?? 0.03;
-      t += p;
-      return { symbol: c, price: p };
-    });
-    setBreakdown(chars);
-    setTotal(t);
-  }, [input]);
+    fetch_();
+    const id = setInterval(fetch_, 15000);
+    return () => clearInterval(id);
+  }, [fetch_]);
+  return { items, corpusChars, updatedAt };
+}
 
+function useCorpusSnapshot() {
+  const [data, setData] = useState<CorpusSnapshot | null>(null);
+  const fetch_ = useCallback(async () => {
+    try {
+      const r = await fetch(`${BASE}/api/corpus/snapshot`);
+      setData(await r.json());
+    } catch {}
+  }, []);
+  useEffect(() => { fetch_(); const id = setInterval(fetch_, 60000); return () => clearInterval(id); }, [fetch_]);
+  return data;
+}
+
+// Animated number that flashes on change
+function LiveNum({ value, decimals = 5, prefix = "$" }: { value: number; decimals?: number; prefix?: string }) {
+  const [flash, setFlash] = useState<"up" | "down" | null>(null);
+  const prev = useRef(value);
+  useEffect(() => {
+    if (prev.current !== value) {
+      setFlash(value > prev.current ? "up" : "down");
+      prev.current = value;
+      const t = setTimeout(() => setFlash(null), 600);
+      return () => clearTimeout(t);
+    }
+  }, [value]);
   return (
-    <section className="calculator" id="words">
-      <h2 className="section-title">Formula value engine.</h2>
-      <div className="calculator-container">
-        <input
-          type="text"
-          className="calculator-input"
-          value={input}
-          onChange={(e) => setInput(e.target.value.toUpperCase().slice(0, 20))}
-          placeholder="TYPE A WORD..."
-        />
-        <div className="letter-breakdown">
-          {breakdown.map((c, i) => (
-            <div key={i} className="letter-price">
-              <div className="letter">{c.symbol}</div>
-              <div className="price">${c.price.toFixed(3)}</div>
-            </div>
-          ))}
+    <span style={{
+      color: flash === "up" ? "var(--green)" : flash === "down" ? "var(--red)" : "inherit",
+      transition: "color 0.3s",
+      fontFamily: "'IBM Plex Mono', monospace",
+    }}>
+      {prefix}{value.toFixed(decimals)}
+    </span>
+  );
+}
+
+function LetterGrid({ items }: { items: TickerItem[] }) {
+  const [, navigate] = useLocation();
+  const letters = items.filter((i) => i.type === "letter");
+  return (
+    <div className="letter-grid-neo">
+      {letters.map((item) => (
+        <div
+          key={item.symbol}
+          className="letter-neo-card"
+          onClick={() => navigate(`/appraisal/${item.symbol}`)}
+        >
+          <div className="letter-neo-sym">{item.symbol}</div>
+          <div className="letter-neo-price">
+            <LiveNum value={item.price_usd} decimals={5} />
+          </div>
+          <div className={`letter-neo-chg ${item.change_pct >= 0 ? "pos" : "neg"}`}>
+            {item.change_pct >= 0 ? "▲" : "▼"} {Math.abs(item.change_pct).toFixed(2)}%
+          </div>
+          {item.corpus_count > 0 && (
+            <div className="letter-neo-count">{item.corpus_count.toLocaleString()}</div>
+          )}
         </div>
-        <div className="base-value">
-          <div className="base-value-label">Formula Value</div>
-          <div className="base-value-amount">${total.toFixed(3)} LGU</div>
+      ))}
+    </div>
+  );
+}
+
+function AppraisalBar({ letters }: { letters: CorpusSnapshot["letters"] }) {
+  if (!letters.length) return null;
+  const sorted = [...letters].sort((a, b) => b.demand_ratio - a.demand_ratio).slice(0, 10);
+  const maxRatio = Math.max(...sorted.map((l) => l.demand_ratio));
+  return (
+    <div className="appraisal-bar-wrap">
+      {sorted.map((l) => (
+        <div key={l.letter} className="appraisal-bar-row">
+          <span className="abar-letter">{l.letter}</span>
+          <div className="abar-track">
+            <div
+              className="abar-fill"
+              style={{ width: `${Math.min(100, (l.demand_ratio / Math.max(1, maxRatio)) * 100)}%` }}
+            />
+            <span className="abar-baseline" style={{ left: `${Math.min(100, (1 / Math.max(0.01, maxRatio)) * 100)}%` }} />
+          </div>
+          <span className={`abar-ratio ${l.demand_ratio > 1 ? "over" : "under"}`}>
+            {l.demand_ratio.toFixed(2)}×
+          </span>
+          <span className="abar-price">${l.price_usd.toFixed(5)}</span>
         </div>
-        <div className="base-value" style={{ marginTop: "1rem" }}>
-          <div className="base-value-label">Popularity Tax (~12%)</div>
-          <div className="base-value-amount">${(total * 0.12).toFixed(3)} LGU</div>
-        </div>
-        <div className="base-value" style={{ marginTop: "1rem", borderColor: "var(--neon-green)" }}>
-          <div className="base-value-label">Estimated Mint Cost</div>
-          <div className="base-value-amount" style={{ color: "var(--neon-green)" }}>
-            ${(total * 1.12).toFixed(3)} LGU
+      ))}
+      <div className="abar-legend">
+        <span className="legend-dot over" /> Demand ratio vs English baseline &nbsp;
+        <span style={{ color: "var(--muted-text)" }}>│</span>&nbsp; bar = {sorted[0]?.letter} demand&nbsp; | &nbsp;
+        <span style={{ color: "var(--dim-text)" }}>vertical = parity (1×)</span>
+      </div>
+    </div>
+  );
+}
+
+function SourceStatus({ sources }: { sources: CorpusSource[] }) {
+  return (
+    <div className="source-status-grid">
+      {sources.map((s) => (
+        <div key={s.name} className={`source-status-card ${s.status}`}>
+          <div className="ss-dot" />
+          <div className="ss-body">
+            <div className="ss-name">{s.name}</div>
+            <div className="ss-cat">{s.category}</div>
+            {s.chars_extracted > 0 && (
+              <div className="ss-chars">{s.chars_extracted.toLocaleString()} chars</div>
+            )}
+            {s.snippet && <div className="ss-snippet">"{s.snippet.slice(0, 80)}…"</div>}
           </div>
         </div>
-        <p className="calculator-note">
-          Formula value is not market value. Market price may differ based on demand, rarity, meaning, and ownership history.
-        </p>
-      </div>
-    </section>
+      ))}
+    </div>
   );
 }
 
-function LetterTableSection({ letters, loading }: { letters: LetterData[]; loading: boolean }) {
-  const [, navigate] = useLocation();
-  const [filter, setFilter] = useState("all");
-
-  const filtered = (() => {
-    if (filter === "top-volume") return [...letters].sort((a, b) => parseUsage(b.weekly_usage) - parseUsage(a.weekly_usage));
-    if (filter === "highest-price") return [...letters].sort((a, b) => b.price - a.price);
-    if (filter === "volatile") return letters.filter((l) => l.volatility === "High");
-    if (filter === "long-bias") return letters.filter((l) => parseInt(l.long_pct) > 60);
-    if (filter === "short-bias") return letters.filter((l) => parseInt(l.short_pct) > 50);
-    return letters;
-  })();
-
+function FormulaDisplay() {
   return (
-    <section className="alphabet-market" id="letters">
-      <h2 className="section-title">Letter Explorer.</h2>
-      <p className="section-subtitle">
-        A Bloomberg terminal for the alphabet. Live prices, usage, protocol breakdown, and market positions across all tracked ecosystems.
-      </p>
-      <div className="live-indicator">
-        <span className="live-dot" />
-        Live Data
+    <div className="formula-neo">
+      <div className="formula-neo-title">PRICE DERIVATION FORMULA</div>
+      <div className="formula-neo-eq">
+        <span className="feq-var">P<sub>letter</sub></span>
+        <span className="feq-op">=</span>
+        <span className="feq-floor">P<sub>floor</sub></span>
+        <span className="feq-op">+</span>
+        <span className="feq-demand">ΔDemand(ƒ<sub>corpus</sub> / ƒ<sub>english</sub>)</span>
+        <span className="feq-op">+</span>
+        <span className="feq-rarity">Rarity<sub>premium</sub></span>
       </div>
-      <div className="table-scroll">
-        <table className="registry-table letter-explorer-table">
-          <thead>
-            <tr>
-              <th>Letter</th>
-              <th>Price (LGU)</th>
-              <th>24h %</th>
-              <th>Weekly Usage</th>
-              <th>Rank</th>
-              <th>Long %</th>
-              <th>Short %</th>
-              <th>Top Protocol</th>
-              <th>Trend</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={10} className="loading">Loading live data...</td></tr>
-            ) : filtered.map((l) => (
-              <tr key={l.letter}>
-                <td className="letter-cell">{l.letter}</td>
-                <td className="price-cell">{l.price}</td>
-                <td className={l.change_24h >= 0 ? "change-positive" : "change-negative"}>
-                  {l.change_24h >= 0 ? "+" : ""}{l.change_24h}%
-                </td>
-                <td>{l.weekly_usage}</td>
-                <td>{l.rank}</td>
-                <td>{l.long_pct}</td>
-                <td>{l.short_pct}</td>
-                <td>{l.top_protocol}</td>
-                <td className={l.change_24h >= 0 ? "trend-up" : "trend-down"}>{l.trend}</td>
-                <td>
-                  <button className="btn-link" onClick={() => navigate(`/letter/${l.letter}`)}>
-                    View
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="formula-neo-vars">
+        <div className="fvar"><code>P_floor = $0.004</code> <span>minimum price floor</span></div>
+        <div className="fvar"><code>ΔDemand = max(0, (demand_ratio − 0.6) × 0.018)</code> <span>over-indexed in crypto text</span></div>
+        <div className="fvar"><code>Rarity = max(0, (1 − baseline/13) × 0.012)</code> <span>rare letter premium</span></div>
+        <div className="fvar"><code>demand_ratio = corpus_freq% / english_baseline%</code> <span>live from corpus</span></div>
       </div>
-      <div className="letter-explorer-filters">
-        {[
-          { key: "all", label: "All Letters" },
-          { key: "top-volume", label: "Top Volume" },
-          { key: "highest-price", label: "Highest Price" },
-          { key: "volatile", label: "Most Volatile" },
-          { key: "long-bias", label: "Long Bias" },
-          { key: "short-bias", label: "Short Bias" },
-        ].map(({ key, label }) => (
-          <button
-            key={key}
-            className={`filter-btn${filter === key ? " active" : ""}`}
-            onClick={() => setFilter(key)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function RegistryTableSection({ letters, loading }: { letters: LetterData[]; loading: boolean }) {
-  const totalMarketCap = letters.reduce((sum, l) => sum + parseUsage(l.weekly_usage) * l.price * 52, 0);
-  const dailyVolume = letters.reduce((sum, l) => sum + parseUsage(l.weekly_usage) * l.price, 0);
-  const weeklyUsage = letters.reduce((sum, l) => sum + parseUsage(l.weekly_usage), 0);
-
-  return (
-    <section className="registry" id="sentences">
-      <h2 className="section-title">Letter Registry.</h2>
-      <p className="section-subtitle">
-        Complete registry of all 26 letters with live prices, usage metrics, protocol breakdown, and market data.
-      </p>
-      <div className="live-indicator">
-        <span className="live-dot" />
-        Live Registry Data
-      </div>
-      <div className="table-scroll">
-        <table className="registry-table letter-registry-table">
-          <thead>
-            <tr>
-              <th>Letter</th>
-              <th>Price</th>
-              <th>24h %</th>
-              <th>Weekly Usage</th>
-              <th>Total Volume</th>
-              <th>Market Cap</th>
-              <th>Rank</th>
-              <th>Long %</th>
-              <th>Short %</th>
-              <th>Top Protocol</th>
-              <th>Trend</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={11} className="loading">Loading registry data...</td></tr>
-            ) : letters.map((l) => {
-              const n = parseUsage(l.weekly_usage);
-              return (
-                <tr key={l.letter}>
-                  <td className="letter-cell">{l.letter}</td>
-                  <td className="price-cell">{l.price}</td>
-                  <td className={l.change_24h >= 0 ? "change-positive" : "change-negative"}>
-                    {l.change_24h >= 0 ? "+" : ""}{l.change_24h}%
-                  </td>
-                  <td>{l.weekly_usage}</td>
-                  <td>${(n * l.price * 7).toFixed(2)}</td>
-                  <td>${(n * l.price * 52).toFixed(2)}</td>
-                  <td>{l.rank}</td>
-                  <td>{l.long_pct}</td>
-                  <td>{l.short_pct}</td>
-                  <td>{l.top_protocol}</td>
-                  <td className={l.change_24h >= 0 ? "trend-up" : "trend-down"}>{l.trend}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <div className="registry-stats">
-        <div className="registry-stat-card">
-          <div className="registry-stat-label">Total Market Cap</div>
-          <div className="registry-stat-value">${totalMarketCap.toFixed(1)}M</div>
-        </div>
-        <div className="registry-stat-card">
-          <div className="registry-stat-label">24h Volume</div>
-          <div className="registry-stat-value">${dailyVolume.toFixed(0)}K</div>
-        </div>
-        <div className="registry-stat-card">
-          <div className="registry-stat-label">Weekly Usage</div>
-          <div className="registry-stat-value">{weeklyUsage.toFixed(1)}M</div>
-        </div>
-        <div className="registry-stat-card">
-          <div className="registry-stat-label">Active Positions</div>
-          <div className="registry-stat-value">{(letters.reduce((s, l) => s + parseInt(l.long_pct) * 10, 0)).toLocaleString()}</div>
-        </div>
-      </div>
-    </section>
+    </div>
   );
 }
 
 export default function HomePage() {
   const [, navigate] = useLocation();
-  const [letters, setLetters] = useState<LetterData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const heroRef = useRef<HTMLElement>(null);
-
-  const fetchLetters = useCallback(async () => {
-    try {
-      const res = await fetch("/api/letters");
-      const data = await res.json();
-      setLetters(data);
-    } catch {
-      // use empty state
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { items, corpusChars, updatedAt } = useTickerData();
+  const corpus = useCorpusSnapshot();
+  const [marketData, setMarketData] = useState<{
+    market_cap_usd: number;
+    daily_volume_usd: number;
+    total_primitives: number;
+    active_staked_sentences: number;
+    corpus_sources_active: number;
+    last_corpus_refresh: string;
+  } | null>(null);
 
   useEffect(() => {
-    fetchLetters();
-    const interval = setInterval(fetchLetters, 30000);
-    return () => clearInterval(interval);
-  }, [fetchLetters]);
+    fetch(`${BASE}/api/market/overview`)
+      .then((r) => r.json())
+      .then(setMarketData)
+      .catch(() => {});
+  }, []);
 
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-  };
+  const letters = items.filter((i) => i.type === "letter");
+  const topGainer = [...letters].sort((a, b) => b.change_pct - a.change_pct)[0];
+  const totalUsd = letters.reduce((s, l) => s + l.price_usd, 0);
 
   return (
-    <>
-      <section className="hero" ref={heroRef}>
-        <div className="hero-visual">
-          <div className="floating-letter">A $0.18</div>
-          <div className="floating-letter">E $0.20</div>
-          <div className="floating-letter">T $0.30</div>
-          <div className="floating-letter">Slot #1042</div>
-          <div className="floating-letter">Hash 0x91a...f20</div>
-          <div className="floating-letter">Formula Value $0.63</div>
+    <div className="home-v2">
+
+      {/* ── HERO ── */}
+      <section className="hero-v2">
+        <div className="hero-v2-bg">
+          <div className="hero-grid-overlay" />
         </div>
-        <div className="hero-content">
-          <h1 className="hero-title">Language is liquidity.</h1>
-          <p className="hero-subtitle">
-            Language.fi transforms letters, words, names, and sentences into programmable financial assets through dynamic character pricing, prepaid minting slots, and a public linguistic registry.
+        <div className="hero-v2-content">
+          <div className="hero-v2-eyebrow">
+            <span className="eyebrow-dot" />
+            MEMBRA PROTOCOL — SOLANA DEVNET
+            <span className="eyebrow-sep" />
+            {corpusChars > 0
+              ? <span className="eyebrow-live">{corpusChars.toLocaleString()} CHARS APPRAISED</span>
+              : <span className="eyebrow-live">CORPUS LOADING…</span>}
+          </div>
+          <h1 className="hero-v2-title">
+            Language is<br />
+            <span className="title-amber">liquidity.</span>
+          </h1>
+          <p className="hero-v2-sub">
+            Every letter priced in real dollars, derived from live crypto news,<br />
+            Wikipedia, HackerNews & Reddit corpora. 44 primitives. Solana devnet SPL tokens.
           </p>
-          <div className="hero-ctas">
-            <button className="btn-primary" onClick={() => navigate("/explorer")}>Launch Explorer</button>
-            <button className="btn-secondary" onClick={() => scrollTo("protocol")}>Read Protocol</button>
+          <div className="hero-v2-ctas">
+            <button className="neo-btn-primary" onClick={() => navigate("/terminal")}>Open Terminal</button>
+            <button className="neo-btn-ghost" onClick={() => navigate("/alchemist")}>Price a Sentence</button>
+            <button className="neo-btn-ghost" onClick={() => navigate("/sources")}>View Sources</button>
           </div>
-        </div>
-      </section>
-
-      <section className="what-is" id="protocol">
-        <h2 className="section-title">A market layer for language itself.</h2>
-        <p>
-          Language.fi prices letters as volatile protocol primitives. Words inherit value from their characters. Sentences are minted into registered transferable assets with hash, owner, slot, mint cost, and transfer history.
-        </p>
-        <div className="core-cards">
-          {[
-            { icon: "A", title: "Letters", desc: "Dynamic priced primitives with demand, volatility, usage, and tax state.", chips: ["Volatile", "Priced"] },
-            { icon: "W", title: "Words", desc: "Composable value objects formed from priced character inputs.", chips: ["Inherited", "Formula"] },
-            { icon: "S", title: "Sentences", desc: "Unique registered assets with formula value, mint cost, and market value.", chips: ["Transferable", "Registry"] },
-          ].map(({ icon, title, desc, chips }) => (
-            <div key={title} className="core-card">
-              <div className="core-icon">{icon}</div>
-              <h3>{title}</h3>
-              <p>{desc}</p>
-              {chips.map((c) => <span key={c} className="data-chip">{c}</span>)}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="how-it-works">
-        <h2 className="section-title">From character to capital.</h2>
-        <div className="steps-container">
-          {[
-            { n: "01", title: "Observe Usage", desc: "The oracle samples registry activity, token names, blockchain hashes, and permitted real-world language data." },
-            { n: "02", title: "Price Letters", desc: "Each letter receives a live protocol price based on usage, demand, volatility, and congestion." },
-            { n: "03", title: "Buy Slot", desc: "Users purchase prepaid sentence capacity before finalizing the linguistic asset." },
-            { n: "04", title: "Mint Sentence", desc: "A sentence consumes, locks, or burns the value of its component letters." },
-            { n: "05", title: "Register Ownership", desc: "The registry records sentence hash, owner wallet, issuer signature, slot ID, letter cost, and transfer status." },
-            { n: "06", title: "Trade Asset", desc: "The sentence becomes a transferable registered asset with protocol value and market value." },
-          ].map(({ n, title, desc }) => (
-            <div key={n} className="step-card">
-              <div className="step-number">{n}</div>
-              <h3>{title}</h3>
-              <p>{desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="primitives" id="primitives">
-        <h2 className="section-title">Core asset types.</h2>
-        <div className="primitives-grid">
-          {[
-            { icon: "A", title: "Letters", desc: "Dynamic priced primitives with demand, volatility, usage, and tax state." },
-            { icon: "W", title: "Words", desc: "Composable value objects formed from priced character inputs." },
-            { icon: "S", title: "Sentences", desc: "Unique registered assets with formula value, mint cost, and market value." },
-            { icon: "◼", title: "Slots", desc: "Prepaid capacity that can later be filled with a sentence, creating a market for future linguistic minting rights." },
-            { icon: "◈", title: "Registry", desc: "Public ownership and transfer layer for all registered linguistic assets." },
-            { icon: "◉", title: "Oracle", desc: "Dynamic alphabet pricing engine that determines letter values from multiple source categories." },
-          ].map(({ icon, title, desc }) => (
-            <div key={title} className="primitive-card">
-              <div className="primitive-icon">{icon}</div>
-              <h3>{title}</h3>
-              <p>{desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="why-it-matters">
-        <h2 className="section-title">Why it matters.</h2>
-        <ul className="why-list">
-          <li>→ Language becomes financial infrastructure.</li>
-          <li>→ Names gain protocol-calculated base value.</li>
-          <li>→ Sentences get measurable creation cost.</li>
-          <li>→ Cultural trends and memes affect linguistic markets.</li>
-          <li>→ Uniqueness and capped supply can coexist in one monetary system.</li>
-        </ul>
-      </section>
-
-      <LetterTableSection letters={letters} loading={loading} />
-
-      <section className="tokenization" id="words">
-        <h2 className="section-title">Tokenization primitives.</h2>
-        <p className="section-subtitle">The asset stack: letters form words, words form names, sentences become registered assets.</p>
-        <div className="tokenization-stack">
-          {[
-            { label: "Letters", desc: "Priced protocol inputs with oracle-driven value" },
-            { label: "Words", desc: "Formula value from character composition" },
-            { label: "Names", desc: "Project and identity assets with cultural demand" },
-            { label: "Sentences", desc: "Unique registered assets with hash and ownership" },
-            { label: "Registry", desc: "Public ownership and transfer layer" },
-          ].map(({ label, desc }, i, arr) => (
-            <div key={label} style={{ width: "100%" }}>
-              <div className="stack-layer">
-                <div className="layer-label">{label}</div>
-                <div className="layer-description">{desc}</div>
+          {/* Live stats strip */}
+          <div className="hero-stats-strip">
+            {topGainer && (
+              <div className="hstat">
+                <span className="hstat-label">TOP MOVER</span>
+                <span className="hstat-val">{topGainer.symbol} <span style={{ color: "var(--green)" }}>▲{topGainer.change_pct.toFixed(1)}%</span></span>
               </div>
-              {i < arr.length - 1 && <div className="stack-arrow">↓</div>}
+            )}
+            <div className="hstat">
+              <span className="hstat-label">ALPHABET VALUE</span>
+              <span className="hstat-val">${totalUsd.toFixed(4)}</span>
             </div>
-          ))}
-        </div>
-      </section>
-
-      <CalculatorSection />
-
-      <RegistryTableSection letters={letters} loading={loading} />
-
-      <section className="oracle" id="oracle">
-        <h2 className="section-title">Explainable letter pricing.</h2>
-        <p className="section-subtitle">The oracle uses multiple source categories to determine letter prices with full transparency.</p>
-        <div className="oracle-sources">
-          {[
-            { title: "Registry Activity", desc: "Counts letters used in minted Language.fi assets." },
-            { title: "Token Name Data", desc: "Counts letters from sampled token names and market-native naming behavior." },
-            { title: "Blockchain Hash Data", desc: "Uses sampled hashes and addresses as a cryptographic frequency baseline." },
-            { title: "Text Sample Data", desc: "Uses permitted or licensed text samples, public metadata, RSS feeds, or derived frequency counts." },
-            { title: "Seasonal and Meme Trends", desc: "Captures temporary demand spikes from cultural naming patterns." },
-          ].map(({ title, desc }) => (
-            <div key={title} className="oracle-source-card">
-              <h3>{title}</h3>
-              <p>{desc}</p>
+            <div className="hstat">
+              <span className="hstat-label">LIVE SOURCES</span>
+              <span className="hstat-val">{corpus?.active_sources ?? "…"} / {corpus?.total_sources_queried ?? 5}</span>
             </div>
-          ))}
-        </div>
-        <div className="formula-display">
-          <div className="formula-title">Pricing Formula</div>
-          <div className="formula-content">
-            Letter Price = Base Price + Registry Demand + Token Name Demand + Hash Baseline + Text Sample Demand + Seasonal Modifier + Popularity Tax - Decay Adjustment
+            <div className="hstat">
+              <span className="hstat-label">CORPUS</span>
+              <span className="hstat-val">{corpusChars > 0 ? `${(corpusChars / 1000).toFixed(0)}K chars` : "seeding…"}</span>
+            </div>
+            <div className="hstat">
+              <span className="hstat-label">NETWORK</span>
+              <span className="hstat-val" style={{ color: "var(--purple)" }}>◎ DEVNET</span>
+            </div>
           </div>
         </div>
-        <div className="compliance-note">
-          <strong>Important:</strong> Language.fi stores derived counts and statistics from third-party text sources, not full copyrighted articles.
+      </section>
+
+      {/* ── LIVE LETTER GRID ── */}
+      <section className="section-v2">
+        <div className="section-v2-header">
+          <h2 className="section-v2-title">Live Letter Prices</h2>
+          <div className="section-v2-meta">
+            <span className="live-pill">● LIVE</span>
+            {updatedAt && <span style={{ color: "var(--dim-text)", fontSize: 11 }}> updated {new Date(updatedAt).toLocaleTimeString()}</span>}
+          </div>
+        </div>
+        <p className="section-v2-sub">
+          Dollar prices derived from live text appraisal. Each price updates every 20 minutes when the corpus refreshes from public sources.
+        </p>
+        {items.length > 0
+          ? <LetterGrid items={items} />
+          : <div className="loading-neo">Fetching live corpus…</div>}
+      </section>
+
+      {/* ── APPRAISAL ENGINE ── */}
+      <section className="section-v2">
+        <div className="section-v2-header">
+          <h2 className="section-v2-title">Appraisal Engine</h2>
+          <span className="section-v2-badge">CORPUS-DERIVED</span>
+        </div>
+        <p className="section-v2-sub">
+          Letter prices are not random. They are calculated from the observed frequency of each letter across four live public text corpora,
+          compared against standard English baseline frequency. Over-indexed letters command a demand premium.
+        </p>
+        <FormulaDisplay />
+        {corpus && (
+          <div style={{ marginTop: "2rem" }}>
+            <div className="section-v2-header" style={{ marginBottom: "1rem" }}>
+              <h3 style={{ fontSize: "0.9rem", fontFamily: "'IBM Plex Mono',monospace", color: "var(--primary)", letterSpacing: "0.08em" }}>
+                DEMAND RATIO — TOP 10 OVER-INDEXED LETTERS
+              </h3>
+              <span style={{ fontSize: 11, color: "var(--dim-text)" }}>
+                corpus: {corpus.total_chars.toLocaleString()} chars · refresh #{corpus.refresh_count}
+              </span>
+            </div>
+            <AppraisalBar letters={corpus.letters} />
+          </div>
+        )}
+      </section>
+
+      {/* ── LIVE DATA SOURCES ── */}
+      {corpus && corpus.sources.length > 0 && (
+        <section className="section-v2">
+          <div className="section-v2-header">
+            <h2 className="section-v2-title">Live Text Sources</h2>
+            <span className="section-v2-badge">{corpus.active_sources}/{corpus.total_sources_queried} ACTIVE</span>
+          </div>
+          <p className="section-v2-sub">
+            These four public APIs are fetched every 20 minutes. Raw text is extracted, letter counts are tallied, and prices are re-derived from the updated corpus.
+          </p>
+          <SourceStatus sources={corpus.sources} />
+          <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
+            <button className="neo-btn-ghost" style={{ fontSize: 12 }} onClick={() => navigate("/sources")}>
+              View all 30 declared sources →
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* ── PROTOCOL STATS ── */}
+      <section className="section-v2">
+        <div className="section-v2-header">
+          <h2 className="section-v2-title">Protocol Stats</h2>
+        </div>
+        <div className="stats-neo-grid">
+          {[
+            { label: "Market Cap", value: marketData ? `$${(marketData.market_cap_usd / 1e6).toFixed(1)}M` : "—" },
+            { label: "24h Volume", value: marketData ? `$${(marketData.daily_volume_usd / 1000).toFixed(0)}K` : "—" },
+            { label: "Primitives", value: marketData?.total_primitives ?? 44 },
+            { label: "Staked Sentences", value: marketData?.active_staked_sentences?.toLocaleString() ?? "—" },
+            { label: "Live Sources", value: marketData ? `${marketData.corpus_sources_active}/5` : "—" },
+            { label: "Corpus Chars", value: corpusChars > 0 ? `${(corpusChars / 1000).toFixed(0)}K` : "—" },
+          ].map(({ label, value }) => (
+            <div key={label} className="stat-neo-card">
+              <div className="snc-value">{value}</div>
+              <div className="snc-label">{label}</div>
+            </div>
+          ))}
         </div>
       </section>
 
-      <div className="manifesto">
-        <h2 className="manifesto-quote">Bitcoin made numbers scarce. NFTs made images scarce. Language.fi makes language programmable.</h2>
-        <p className="manifesto-sub">Every letter has a price. Every sentence has a cost. Every phrase can become a registered asset.</p>
-      </div>
+      {/* ── SOLANA DEVNET ANCHORING ── */}
+      <section className="section-v2 solana-section">
+        <div className="section-v2-header">
+          <h2 className="section-v2-title">Solana Devnet Anchoring</h2>
+          <span className="section-v2-badge" style={{ background: "rgba(153,69,255,0.15)", color: "#9945FF", border: "1px solid rgba(153,69,255,0.3)" }}>◎ DEVNET</span>
+        </div>
+        <p className="section-v2-sub">
+          Each letter primitive is anchored to a deterministic SPL token mint address on Solana devnet.
+          Prices from the corpus appraisal flow directly into on-chain token valuations.
+        </p>
+        <div className="solana-cards-grid">
+          {["E", "T", "A", "S", "O", "I"].map((letter) => {
+            const item = items.find((i) => i.symbol === letter);
+            return (
+              <div key={letter} className="solana-neo-card">
+                <div className="sol-letter">{letter}</div>
+                <div className="sol-price">
+                  {item ? <LiveNum value={item.price_usd} decimals={5} /> : "—"}
+                </div>
+                <div className="sol-network">◎ DEVNET SPL</div>
+                <button
+                  className="sol-explore-btn"
+                  onClick={() => navigate(`/primitives/${letter}`)}
+                >
+                  Explore →
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
+          <button className="neo-btn-ghost" onClick={() => navigate("/primitives")}>
+            View all 44 primitives →
+          </button>
+        </div>
+      </section>
 
-      <div className="final-cta">
-        <h2>Start minting meaning.</h2>
-        <div className="final-cta-buttons">
-          <button className="btn-primary" onClick={() => navigate("/explorer")}>Launch App</button>
-          <button className="btn-secondary" onClick={() => scrollTo("oracle")}>View Docs</button>
+      {/* ── MANIFESTO ── */}
+      <div className="manifesto-v2">
+        <div className="manifesto-v2-inner">
+          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: "var(--primary)", letterSpacing: "0.14em", marginBottom: "1rem" }}>◈ MEMBRA PROTOCOL</div>
+          <h2 className="manifesto-v2-quote">
+            Bitcoin made numbers scarce.<br />
+            NFTs made images scarce.<br />
+            <span style={{ color: "var(--primary)" }}>MEMBRA makes language programmable.</span>
+          </h2>
+          <p className="manifesto-v2-sub">Every letter has a dollar price. Every sentence has a cost. Every phrase can become a registered Solana asset.</p>
+          <div className="manifesto-v2-ctas">
+            <button className="neo-btn-primary" onClick={() => navigate("/terminal")}>Open Terminal</button>
+            <button className="neo-btn-ghost" onClick={() => navigate("/docs")}>Read the Docs</button>
+          </div>
         </div>
       </div>
-    </>
+
+    </div>
   );
 }
