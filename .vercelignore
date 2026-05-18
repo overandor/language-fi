@@ -1,0 +1,17 @@
+*.py
+*.sh
+*.md
+*.txt
+.env*
+Dockerfile*
+docker-compose*
+requirements*.txt
+.gitignore
+.pre-commit-config.yaml
+package.json
+turbo.json
+apps/
+docs/
+scripts/
+public/
+add_*.py
