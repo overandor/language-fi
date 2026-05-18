@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPI Dashboard — Language.fi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #e0e5ec 0%, #f5f7fa 50%, #e8eef5 100%);
+            min-height: 100vh;
+            color: #2d3748;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .neomorphic-card {
+            background: #e0e5ec;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 
+                8px 8px 16px #b8bec7,
+                -8px -8px 16px #ffffff;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #e0e5ec;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 
+                6px 6px 12px #b8bec7,
+                -6px -6px 12px #ffffff;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #e0e5ec;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 
+                6px 6px 12px #b8bec7,
+                -6px -6px 12px #ffffff;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #e8eef5 0%, #f5f7fa 100%);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #2d3748;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            color: #4a5568;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #e0e5ec;
+            border-radius: 20px;
+            box-shadow: 
+                2px 2px 4px #b8bec7,
+                -2px -2px 4px #ffffff;
+            font-size: 0.85rem;
+            color: #2d3748;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #48bb78;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e0e5ec;
+            border-top-color: #4a5568;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .neomorphic-button {
+            background: #e0e5ec;
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3748;
+            cursor: pointer;
+            box-shadow: 
+                4px 4px 8px #b8bec7,
+                -4px -4px 8px #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .neomorphic-button:hover {
+            box-shadow: 
+                6px 6px 12px #b8bec7,
+                -6px -6px 12px #ffffff;
+        }
+
+        .neomorphic-button:active {
+            box-shadow: 
+                inset 2px 2px 4px #b8bec7,
+                inset -2px -2px 4px #ffffff;
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            background: #e0e5ec;
+            box-shadow: 
+                3px 3px 6px #b8bec7,
+                -3px -3px 6px #ffffff;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .tab:hover {
+            box-shadow: 
+                5px 5px 10px #b8bec7,
+                -5px -5px 10px #ffffff;
+        }
+
+        .tab.active {
+            background: #d1d9e6;
+        }
+
+        .kpi-bar {
+            height: 8px;
+            background: #cbd5e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .kpi-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4299e1, #48bb78);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .source-tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            background: #e8eef5;
+            color: #4a5568;
+            font-size: 0.85rem;
+            margin: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>KPI Oracle Dashboard</h1>
+            <p>Real-time letter and number KPIs from public endpoints (No API Keys)</p>
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span>Live Public Data</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalLetters">0</div>
+                <div class="stat-label">Letters Tracked</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalNumbers">0</div>
+                <div class="stat-label">Numbers Tracked</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalSamples">0</div>
+                <div class="stat-label">Sources Sampled</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="lastUpdate">--:--</div>
+                <div class="stat-label">Last Update</div>
+            </div>
+        </div>
+
+        <div class="neomorphic-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="color: #2d3748;">Data Sources</h2>
+                <button class="neomorphic-button" onclick="refreshData()">Refresh Data</button>
+            </div>
+            <div id="sources" style="margin-bottom: 1rem;">
+                <span style="color: #718096;">Loading sources...</span>
+            </div>
+        </div>
+
+        <div class="tab-container">
+            <div class="tab active" onclick="switchTab('letters')">Letters (A-Z)</div>
+            <div class="tab" onclick="switchTab('numbers')">Numbers (0-9)</div>
+        </div>
+
+        <div class="neomorphic-card">
+            <h2 style="margin-bottom: 1.5rem; color: #2d3748;" id="tableTitle">Letter KPIs</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Character</th>
+                        <th>Rank</th>
+                        <th>Volume</th>
+                        <th>Price (LGU)</th>
+                        <th>Source Diversity</th>
+                        <th>Topic Diversity</th>
+                        <th>KPI Score</th>
+                    </tr>
+                </thead>
+                <tbody id="kpiTable">
+                    <tr>
+                        <td colspan="7" class="loading">
+                            <div class="loading-spinner"></div>
+                            Loading KPI data...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="neomorphic-card">
+            <h2 style="margin-bottom: 1rem; color: #2d3748;">How KPIs Are Calculated</h2>
+            <ol style="color: #4a5568; line-height: 1.8; margin-left: 1.5rem;">
+                <li>Real-time data from Dexscreener (30+ pairs) and Gate.io (2,230+ tickers)</li>
+                <li>Count letter occurrences in cryptocurrency trading pair symbols</li>
+                <li>Calculate frequency per total characters analyzed</li>
+                <li>Measure source diversity (unique exchanges containing the character)</li>
+                <li>Track topic diversity (unique trading topics)</li>
+                <li>Advanced metrics: Compression Alpha, Entropy Resistance, Oracle Flux Density</li>
+                <li>Liquidity Shadow and Semantic Pressure Ratio calculations</li>
+                <li>All data is REAL - no simulation, no mock data, live cryptocurrency market data</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://luguog-language-fi-oracle-api.hf.space';
+        let currentTab = 'letters';
+        let allData = null;
+
+        async function loadKPIData() {
+            try {
+                const res = await fetch(`${API_URL}/api/kpis`);
+                const data = await res.json();
+                allData = data;
+                
+                // Extract KPIs from the response
+                const kpiData = data.kpis || {};
+                const totalLetters = 26; // A-Z
+                const totalNumbers = 10; // 0-9
+                
+                document.getElementById('totalLetters').textContent = totalLetters;
+                document.getElementById('totalNumbers').textContent = totalNumbers;
+                document.getElementById('totalSamples').textContent = data.total_characters_analyzed?.toLocaleString() || '0';
+                
+                document.getElementById('lastUpdate').textContent = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+                
+                // Show real sources
+                const sourcesDiv = document.getElementById('sources');
+                const sourceCounts = data.source_counts || {};
+                const sources = Object.entries(sourceCounts)
+                    .filter(([_, count]) => count > 0)
+                    .map(([source, count]) => `<span class="source-tag">${source}: ${count}</span>`);
+                sourcesDiv.innerHTML = sources.join('');
+                
+                renderTable();
+            } catch (error) {
+                console.error('Error loading KPI data:', error);
+                document.getElementById('kpiTable').innerHTML = '<tr><td colspan="7" style="text-align: center; color: #e53e3e;">Failed to load KPI data from Hugging Face space</td></tr>';
+            }
+        }
+
+        function renderTable() {
+            if (!allData) return;
+            
+            const kpiData = allData.kpis || {};
+            const characters = currentTab === 'letters' ? 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' : '0123456789';
+            
+            // Extract KPI data for each character
+            const data = {};
+            for (const char of characters) {
+                const prefix = char;
+                data[char] = {
+                    frequency: kpiData[`${prefix}_frequency`] || 0,
+                    price: kpiData[`${prefix}_price`] || 0,
+                    volume: kpiData[`${prefix}_volume`] || 0,
+                    source_diversity: kpiData[`${prefix}_source_diversity`] || 0,
+                    topic_diversity: kpiData[`${prefix}_topic_diversity`] || 0,
+                    compression_alpha: kpiData[`compression_alpha_index_53415220_${prefix}`] || 0,
+                    entropy_resistance: kpiData[`entropy_resistance_score_53415220_${prefix}`] || 0,
+                    oracle_flux: kpiData[`oracle_flux_density_53415220_${prefix}`] || 0,
+                    liquidity_shadow: kpiData[`oracle_liquidity_shadow_53415220_${prefix}`] || 0,
+                    semantic_pressure: kpiData[`semantic_pressure_ratio_53415220_${prefix}`] || 0
+                };
+            }
+            
+            const tbody = document.getElementById('kpiTable');
+            
+            // Sort by price (descending)
+            const sorted = Object.entries(data).sort((a, b) => b[1].price - a[1].price);
+            
+            if (sorted.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #718096;">No KPI data available</td></tr>';
+                return;
+            }
+            
+            const maxPrice = Math.max(...Object.values(data).map(k => k.price || 0));
+            
+            tbody.innerHTML = sorted.map(([char, kpi], index) => {
+                const price = kpi.price || 0;
+                const barWidth = maxPrice > 0 ? (price / maxPrice * 100).toFixed(0) : 0;
+                const rank = index + 1;
+                
+                // Calculate composite KPI score
+                const kpiScore = (kpi.frequency * 0.3) + (kpi.price * 0.4) + (kpi.liquidity_shadow * 0.3);
+                
+                return `
+                    <tr>
+                        <td style="font-weight: 700; font-size: 1.2rem;">${char}</td>
+                        <td>#${rank}</td>
+                        <td>${kpi.volume.toLocaleString()}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div class="kpi-bar" style="width: 60px;">
+                                    <div class="kpi-bar-fill" style="width: ${barWidth}%;"></div>
+                                </div>
+                                <span>${price.toFixed(6)}</span>
+                            </div>
+                        </td>
+                        <td>${kpi.source_diversity}</td>
+                        <td>${kpi.topic_diversity}</td>
+                        <td style="font-weight: 600;">${kpiScore.toFixed(4)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update tab styles
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update title
+            document.getElementById('tableTitle').textContent = tab === 'letters' ? 'Letter KPIs' : 'Number KPIs';
+            
+            renderTable();
+        }
+
+        async function refreshData() {
+            document.getElementById('kpiTable').innerHTML = '<tr><td colspan="7" class="loading"><div class="loading-spinner"></div>Refreshing data...</td></tr>';
+            
+            try {
+                // The existing backend doesn't have an update endpoint, just reload
+                await loadKPIData();
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+            }
+        }
+
+        // Load data on page load
+        loadKPIData();
+
+        // Refresh every 5 minutes
+        setInterval(loadKPIData, 300000);
+    </script>
+</body>
+</html>

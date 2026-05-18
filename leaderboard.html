@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentence Leaderboard - Language.fi</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="letter.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="index.html" class="logo">LANGUAGE.FI</a>
+            <div class="nav-links">
+                <a href="index.html">Explorer</a>
+                <a href="stake.html">Stake Sentence</a>
+                <a href="leaderboard.html" class="active">Leaderboard</a>
+                <a href="letter.html">Letters</a>
+            </div>
+        </nav>
+
+        <main class="leaderboard-page">
+            <div class="leaderboard-header">
+                <h1>Sentence Leaderboard</h1>
+                <p class="subtitle">Top performing staked sentences ranked by weekly score</p>
+            </div>
+
+            <div class="leaderboard-stats">
+                <div class="stat-card">
+                    <span class="stat-value" id="totalStaked">0</span>
+                    <span class="stat-label">Total Staked</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="avgScore">0%</span>
+                    <span class="stat-label">Avg Weekly Score</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="topScore">0%</span>
+                    <span class="stat-label">Top Score</span>
+                </div>
+            </div>
+
+            <div class="leaderboard-table" id="leaderboardTable">
+                <div class="table-header">
+                    <div class="col rank">Rank</div>
+                    <div class="col sentence">Sentence</div>
+                    <div class="col score">Score</div>
+                    <div class="col stillness">Stillness</div>
+                    <div class="col space">Space %</div>
+                    <div class="col top">Top Char</div>
+                    <div class="col reward">Reward</div>
+                </div>
+                <div id="leaderboardRows">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch('/api/sentence-leaderboard');
+                const data = await response.json();
+                
+                displayLeaderboard(data);
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+            }
+        }
+
+        function displayLeaderboard(data) {
+            const rows = document.getElementById('leaderboardRows');
+            rows.innerHTML = '';
+            
+            let totalScore = 0;
+            let maxScore = 0;
+            
+            data.forEach((entry, index) => {
+                totalScore += entry.weekly_score;
+                if (entry.weekly_score > maxScore) maxScore = entry.weekly_score;
+                
+                const row = document.createElement('div');
+                row.className = `table-row ${index < 3 ? 'top-rank' : ''}`;
+                row.innerHTML = `
+                    <div class="col rank">#${entry.rank}</div>
+                    <div class="col sentence">
+                        <span class="sentence-text">${entry.sentence}</span>
+                        <span class="hash">${entry.sentence_hash}</span>
+                    </div>
+                    <div class="col score ${entry.weekly_score >= 0 ? 'positive' : 'negative'}">
+                        ${entry.weekly_score > 0 ? '+' : ''}${entry.weekly_score.toFixed(3)}%
+                    </div>
+                    <div class="col stillness">
+                        <span class="days">${entry.stillness_age}d</span>
+                        <span class="multiplier">${entry.stillness_multiplier}x</span>
+                    </div>
+                    <div class="col space">${entry.space_exposure}%</div>
+                    <div class="col top">${entry.top_character}</div>
+                    <div class="col reward">
+                        <span class="badge ${entry.reward_eligible ? 'eligible' : 'ineligible'}">
+                            ${entry.reward_eligible ? '✓' : '✗'}
+                        </span>
+                    </div>
+                `;
+                rows.appendChild(row);
+            });
+            
+            // Update stats
+            document.getElementById('totalStaked').textContent = data.length;
+            document.getElementById('avgScore').textContent = `${(totalScore / data.length).toFixed(2)}%`;
+            document.getElementById('topScore').textContent = `${maxScore.toFixed(3)}%`;
+        }
+
+        loadLeaderboard();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadLeaderboard, 30000);
+    </script>
+</body>
+</html>

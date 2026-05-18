@@ -1,0 +1,593 @@
+/* Letter Page Specific Styles */
+
+/* Letter Hero Section */
+.letter-hero {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: linear-gradient(135deg, var(--bg) 0%, var(--deep-violet) 100%);
+    overflow: hidden;
+    padding: 8rem 2rem 4rem;
+}
+
+.letter-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(56, 189, 248, 0.03) 2px,
+            rgba(56, 189, 248, 0.03) 4px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 2px,
+            rgba(56, 189, 248, 0.03) 2px,
+            rgba(56, 189, 248, 0.03) 4px
+        );
+    background-size: 60px 60px;
+    animation: gridPulse 30s ease-in-out infinite;
+}
+
+.letter-hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4rem;
+    z-index: 1;
+    position: relative;
+}
+
+.giant-letter {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(8rem, 20vw, 16rem);
+    font-weight: 700;
+    color: var(--electric-blue);
+    text-shadow: 0 0 60px var(--glow-blue),
+                 0 0 120px rgba(76, 29, 149, 0.5);
+    animation: letterPulse 4s ease-in-out infinite;
+    position: relative;
+}
+
+.giant-letter::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    right: -20px;
+    bottom: -20px;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 70%);
+    z-index: -1;
+    animation: glowPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes letterPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+@keyframes glowPulse {
+    from { opacity: 0.5; }
+    to { opacity: 1; }
+}
+
+.letter-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    max-width: 900px;
+}
+
+.letter-stat {
+    background: linear-gradient(135deg, var(--surface), var(--elevated-surface));
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.letter-stat:hover {
+    border-color: var(--electric-blue);
+    box-shadow: 0 8px 32px rgba(56, 189, 248, 0.15);
+    transform: translateY(-4px);
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--muted-text);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--soft-white);
+}
+
+/* Protocol Breakdown */
+.protocol-breakdown {
+    background: transparent;
+    padding: 6rem 2rem;
+}
+
+.protocol-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 3rem;
+}
+
+.protocol-card {
+    background: linear-gradient(135deg, var(--surface), var(--elevated-surface));
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.protocol-card:hover {
+    border-color: var(--electric-blue);
+    box-shadow: 0 8px 32px rgba(56, 189, 248, 0.12);
+    transform: translateY(-2px);
+}
+
+.protocol-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--soft-white);
+    margin-bottom: 0.5rem;
+}
+
+.protocol-usage {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--electric-blue);
+    margin-bottom: 0.5rem;
+}
+
+.protocol-change {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.protocol-bar {
+    height: 8px;
+    background: var(--bg);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.protocol-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--electric-blue), var(--neon-green));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+/* Gate.io Popularity */
+.gateio-popularity {
+    background: transparent;
+    padding: 6rem 2rem;
+}
+
+.gateio-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin: 3rem 0;
+}
+
+.gateio-stat {
+    background: linear-gradient(135deg, var(--surface), var(--elevated-surface));
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.gateio-stat-label {
+    font-size: 0.875rem;
+    color: var(--muted-text);
+    margin-bottom: 0.5rem;
+}
+
+.gateio-stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--electric-blue);
+}
+
+.symbol {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    color: var(--neon-green);
+}
+
+/* Weekly Market */
+.weekly-market {
+    background: transparent;
+    padding: 6rem 2rem;
+}
+
+.market-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin: 3rem 0;
+}
+
+.market-stat {
+    background: linear-gradient(135deg, var(--surface), var(--elevated-surface));
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.market-stat-label {
+    font-size: 0.875rem;
+    color: var(--muted-text);
+    margin-bottom: 0.5rem;
+}
+
+.market-stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--soft-white);
+}
+
+.market-action-panel {
+    background: linear-gradient(135deg, var(--surface), var(--elevated-surface));
+    border: 1px solid var(--border);
+    padding: 2.5rem;
+    border-radius: 12px;
+    margin-top: 2rem;
+}
+
+.market-action-panel h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--soft-white);
+    margin-bottom: 2rem;
+}
+
+.market-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-size: 0.875rem;
+    color: var(--muted-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.form-select,
+.form-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--soft-white);
+    padding: 0.75rem 1rem;
+    font-family: inherit;
+    font-size: 1rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.form-select:focus,
+.form-input:focus {
+    outline: none;
+    border-color: var(--electric-blue);
+    box-shadow: 0 0 10px var(--glow-blue);
+}
+
+.entry-snapshot {
+    background: var(--bg);
+    border: 1px solid var(--electric-blue);
+    padding: 1rem;
+    border-radius: 6px;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.snapshot-label {
+    font-size: 0.875rem;
+    color: var(--muted-text);
+    margin-bottom: 0.5rem;
+}
+
+.snapshot-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--electric-blue);
+}
+
+.settlement-rule {
+    background: rgba(251, 191, 36, 0.05);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: var(--amber-accent);
+    line-height: 1.5;
+}
+
+/* Price Explanation */
+.price-explanation {
+    background: transparent;
+    padding: 6rem 2rem;
+}
+
+.price-breakdown {
+    background: linear-gradient(135deg, var(--surface), var(--elevated-surface));
+    border: 1px solid var(--border);
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 600px;
+    margin: 3rem auto 0;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.price-row:last-child {
+    border-bottom: none;
+}
+
+.price-row.total {
+    border-top: 2px solid var(--electric-blue);
+    border-bottom: none;
+    padding-top: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.price-component {
+    font-size: 0.9375rem;
+    color: var(--muted-text);
+}
+
+.price-row.total .price-component {
+    font-weight: 600;
+    color: var(--soft-white);
+}
+
+.price-amount {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--soft-white);
+}
+
+.price-row.total .price-amount {
+    font-size: 1.5rem;
+    color: var(--electric-blue);
+}
+
+/* Charts Section */
+.charts-section {
+    background: transparent;
+    padding: 6rem 2rem;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.chart-card {
+    background: linear-gradient(135deg, var(--surface), var(--elevated-surface));
+    border: 1px solid var(--border);
+    padding: 2rem;
+    border-radius: 12px;
+}
+
+.chart-card h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--soft-white);
+    margin-bottom: 1.5rem;
+}
+
+.chart-placeholder {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    border-radius: 8px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.chart-line {
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--electric-blue), var(--neon-green));
+    border-radius: 2px;
+    position: relative;
+}
+
+.chart-line::after {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: 20%;
+    width: 8px;
+    height: 8px;
+    background: var(--neon-green);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--neon-green);
+}
+
+.chart-bar-chart {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+    height: 100px;
+}
+
+.chart-bar-chart::before,
+.chart-bar-chart::after {
+    content: '';
+    flex: 1;
+    background: var(--electric-blue);
+    border-radius: 4px 4px 0 0;
+    opacity: 0.6;
+}
+
+.chart-bar-chart::before {
+    height: 40%;
+}
+
+.chart-bar-chart::after {
+    height: 70%;
+}
+
+.chart-pie {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(
+        var(--electric-blue) 0deg 120deg,
+        var(--neon-green) 120deg 240deg,
+        var(--amber-accent) 240deg 360deg
+    );
+}
+
+.chart-legend {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--muted-text);
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.chart-split {
+    display: flex;
+    width: 100%;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.split-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.split-section.long {
+    background: var(--neon-green);
+    color: var(--bg);
+}
+
+.split-section.short {
+    background: #EF4444;
+    color: var(--soft-white);
+}
+
+.chart-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: var(--muted-text);
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Settlement Proofs */
+.settlement-proofs {
+    background: transparent;
+    padding: 6rem 2rem;
+}
+
+.settlement-note {
+    background: rgba(56, 189, 248, 0.05);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-top: 2rem;
+    font-size: 0.875rem;
+    color: var(--muted-text);
+    line-height: 1.5;
+}
+
+/* Back to Explorer */
+.back-to-explorer {
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .letter-hero {
+        padding: 6rem 1.5rem 3rem;
+    }
+
+    .letter-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .market-form {
+        grid-template-columns: 1fr;
+    }
+}

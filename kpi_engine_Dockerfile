@@ -1,0 +1,17 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY kpi_engine_requirements.txt .
+RUN pip install --no-cache-dir -r kpi_engine_requirements.txt
+
+# Copy KPI engine
+COPY kpi_engine.py .
+
+# Set environment variables
+ENV API_BASE=https://language-fi.vercel.app
+ENV DB_PATH=/app/kpi_history.db
+
+# Run KPI engine in 24/7 mode
+CMD python3 kpi_engine.py

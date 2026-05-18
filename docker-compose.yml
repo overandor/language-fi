@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: kpi-postgres
+    environment:
+      POSTGRES_DB: kpi_db
+      POSTGRES_USER: kpi_user
+      POSTGRES_PASSWORD: kpi_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./kpi_schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - "5432:5432"
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kpi_user -d kpi_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kpi-analyzer:
+    build:
+      context: .
+      dockerfile: kpi_Dockerfile
+    container_name: kpi-analyzer
+    environment:
+      API_BASE_URL: https://language-fi.vercel.app
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: kpi_db
+      DB_USER: kpi_user
+      DB_PASSWORD: kpi_password
+      FETCH_INTERVAL: 60
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+    healthcheck:
+      test: ["CMD", "python", "-c", "import psycopg2; psycopg2.connect(host='postgres', user='kpi_user', password='kpi_password', dbname='kpi_db')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  kpi-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kpi-api
+    environment:
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_data:

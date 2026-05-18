@@ -1,0 +1,39 @@
+[Unit]
+Description=24/7 LLM KPI Analyzer for Letter Quantification
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=kpi_user
+Group=kpi_user
+WorkingDirectory=/opt/kpi-analyzer
+Environment="PATH=/opt/kpi-analyzer/venv/bin"
+Environment="API_BASE_URL=https://language-fi.vercel.app"
+Environment="OPENAI_API_KEY=your_openai_api_key"
+Environment="DB_HOST=localhost"
+Environment="DB_PORT=5432"
+Environment="DB_NAME=kpi_db"
+Environment="DB_USER=kpi_user"
+Environment="DB_PASSWORD=your_password"
+Environment="FETCH_INTERVAL=60"
+ExecStart=/opt/kpi-analyzer/venv/bin/python kpi_analyzer.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=kpi-analyzer
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/kpi-analyzer
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
