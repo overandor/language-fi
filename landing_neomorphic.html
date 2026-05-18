@@ -13,9 +13,9 @@
 
         body {
             font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #e0e5ec 0%, #f5f7fa 50%, #e8eef5 100%);
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
             min-height: 100vh;
-            color: #2d3748;
+            color: #e0e0e0;
             padding: 2rem;
         }
 
@@ -32,61 +32,64 @@
         .header h1 {
             font-size: 3rem;
             font-weight: 700;
-            color: #1a202c;
+            color: #ff6b35;
             margin-bottom: 0.5rem;
-            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+            text-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
         }
 
         .header p {
-            color: #718096;
+            color: #a0aec0;
             font-size: 1.2rem;
         }
 
         /* Neomorphic Card */
         .neomorphic-card {
-            background: #e0e5ec;
+            background: #1a1a2e;
             border-radius: 20px;
             padding: 2rem;
             margin-bottom: 2rem;
             box-shadow: 
-                8px 8px 16px #b8bec7,
-                -8px -8px 16px #ffffff;
+                8px 8px 16px #0f0f1a,
+                -8px -8px 16px #252540,
+                0 0 30px rgba(255, 107, 53, 0.1);
             transition: all 0.3s ease;
         }
 
         .neomorphic-card:hover {
             box-shadow: 
-                12px 12px 24px #b8bec7,
-                -12px -12px 24px #ffffff;
+                12px 12px 24px #0f0f1a,
+                -12px -12px 24px #252540,
+                0 0 40px rgba(255, 107, 53, 0.2);
         }
 
         /* Glassmorphism Card */
         .glass-card {
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(26, 26, 46, 0.6);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 2rem;
             margin-bottom: 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 107, 53, 0.3);
             box-shadow: 
-                0 8px 32px rgba(31, 38, 135, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 107, 53, 0.2);
         }
 
         /* Neomorphic Button */
         .neomorphic-button {
-            background: #e0e5ec;
+            background: #1a1a2e;
             border: none;
             border-radius: 12px;
             padding: 1rem 2rem;
             font-size: 1rem;
             font-weight: 600;
-            color: #2d3748;
+            color: #ff6b35;
             cursor: pointer;
             box-shadow: 
-                4px 4px 8px #b8bec7,
-                -4px -4px 8px #ffffff;
+                4px 4px 8px #0f0f1a,
+                -4px -4px 8px #252540,
+                0 0 15px rgba(255, 107, 53, 0.2);
             transition: all 0.2s ease;
             text-decoration: none;
             display: inline-block;
@@ -94,14 +97,15 @@
 
         .neomorphic-button:hover {
             box-shadow: 
-                6px 6px 12px #b8bec7,
-                -6px -6px 12px #ffffff;
+                6px 6px 12px #0f0f1a,
+                -6px -6px 12px #252540,
+                0 0 25px rgba(255, 107, 53, 0.4);
         }
 
         .neomorphic-button:active {
             box-shadow: 
-                inset 2px 2px 4px #b8bec7,
-                inset -2px -2px 4px #ffffff;
+                inset 2px 2px 4px #0f0f1a,
+                inset -2px -2px 4px #252540;
         }
 
         /* Stats Grid */
@@ -113,24 +117,26 @@
         }
 
         .stat-card {
-            background: #e0e5ec;
+            background: #1a1a2e;
             border-radius: 16px;
             padding: 1.5rem;
             box-shadow: 
-                6px 6px 12px #b8bec7,
-                -6px -6px 12px #ffffff;
+                6px 6px 12px #0f0f1a,
+                -6px -6px 12px #252540,
+                0 0 20px rgba(255, 107, 53, 0.15);
             text-align: center;
         }
 
         .stat-value {
             font-size: 2rem;
             font-weight: 700;
-            color: #1a202c;
+            color: #ff6b35;
             margin-bottom: 0.25rem;
+            text-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
         }
 
         .stat-label {
-            color: #718096;
+            color: #a0aec0;
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -145,12 +151,13 @@
         }
 
         .letter-card {
-            background: #e0e5ec;
+            background: #1a1a2e;
             border-radius: 16px;
             padding: 1.5rem;
             box-shadow: 
-                4px 4px 8px #b8bec7,
-                -4px -4px 8px #ffffff;
+                4px 4px 8px #0f0f1a,
+                -4px -4px 8px #252540,
+                0 0 15px rgba(255, 107, 53, 0.1);
             text-align: center;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -160,20 +167,22 @@
 
         .letter-card:hover {
             box-shadow: 
-                6px 6px 12px #b8bec7,
-                -6px -6px 12px #ffffff;
+                6px 6px 12px #0f0f1a,
+                -6px -6px 12px #252540,
+                0 0 25px rgba(255, 107, 53, 0.3);
             transform: translateY(-2px);
         }
 
         .letter-card .letter {
             font-size: 2rem;
             font-weight: 700;
-            color: #1a202c;
+            color: #ff6b35;
+            text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
         }
 
         .letter-card .price {
             font-size: 0.9rem;
-            color: #718096;
+            color: #a0aec0;
             margin-top: 0.5rem;
         }
 
@@ -190,19 +199,21 @@
             padding: 0.75rem 1.5rem;
             border-radius: 12px;
             text-decoration: none;
-            color: #2d3748;
+            color: #ff6b35;
             font-weight: 500;
-            background: #e0e5ec;
+            background: #1a1a2e;
             box-shadow: 
-                3px 3px 6px #b8bec7,
-                -3px -3px 6px #ffffff;
+                3px 3px 6px #0f0f1a,
+                -3px -3px 6px #252540,
+                0 0 10px rgba(255, 107, 53, 0.15);
             transition: all 0.2s ease;
         }
 
         .nav a:hover {
             box-shadow: 
-                5px 5px 10px #b8bec7,
-                -5px -5px 10px #ffffff;
+                5px 5px 10px #0f0f1a,
+                -5px -5px 10px #252540,
+                0 0 20px rgba(255, 107, 53, 0.3);
         }
 
         /* Live indicator */
@@ -211,21 +222,23 @@
             align-items: center;
             gap: 0.5rem;
             padding: 0.5rem 1rem;
-            background: #e0e5ec;
+            background: #1a1a2e;
             border-radius: 20px;
             box-shadow: 
-                2px 2px 4px #b8bec7,
-                -2px -2px 4px #ffffff;
+                2px 2px 4px #0f0f1a,
+                -2px -2px 4px #252540,
+                0 0 10px rgba(255, 107, 53, 0.2);
             font-size: 0.85rem;
-            color: #2d3748;
+            color: #ff6b35;
         }
 
         .live-dot {
             width: 8px;
             height: 8px;
-            background: #48bb78;
+            background: #ff6b35;
             border-radius: 50%;
             animation: pulse 2s infinite;
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.8);
         }
 
         @keyframes pulse {
@@ -237,17 +250,18 @@
         .loading {
             text-align: center;
             padding: 2rem;
-            color: #718096;
+            color: #a0aec0;
         }
 
         .loading-spinner {
             width: 40px;
             height: 40px;
-            border: 3px solid #e0e5ec;
-            border-top-color: #4a5568;
+            border: 3px solid #1a1a2e;
+            border-top-color: #ff6b35;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 0 auto 1rem;
+            box-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
         }
 
         @keyframes spin {
