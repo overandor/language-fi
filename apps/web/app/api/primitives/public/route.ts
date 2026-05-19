@@ -21,7 +21,15 @@ export async function GET() {
 
     return NextResponse.json({
       status: "success",
-      data: data.map((p) => ({
+      data: data.map((p: {
+        id: string;
+        primitive: { symbol: string; displaySymbol: string; type: string };
+        priceLgu: number;
+        change24h: number | null;
+        currentWeekUsage: number | null;
+        rank: number | null;
+        calculatedAt: Date;
+      }) => ({
         id: p.id,
         symbol: p.primitive.symbol,
         displaySymbol: p.primitive.displaySymbol,

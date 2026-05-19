@@ -16,7 +16,16 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       status: "success",
-      data: snapshots.map(s => ({
+      data: snapshots.map((s: {
+        id: string;
+        url: string;
+        domain: string;
+        title: string | null;
+        contentHash: string;
+        extractedAt: Date;
+        status: string;
+        primitiveCounts: Array<unknown>;
+      }) => ({
         id: s.id,
         url: s.url,
         domain: s.domain,

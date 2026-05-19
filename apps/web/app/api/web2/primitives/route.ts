@@ -10,7 +10,15 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       status: "success",
-      data: signals.map(s => ({
+      data: signals.map((s: {
+        primitive: string;
+        usage: number;
+        change: number | null;
+        confidence: number | null;
+        windowStart: Date;
+        windowEnd: Date;
+        createdAt: Date;
+      }) => ({
         primitive: s.primitive,
         usage: s.usage,
         change: s.change,

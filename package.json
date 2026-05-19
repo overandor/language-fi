@@ -1,6 +1,7 @@
 {
   "name": "language-fi",
   "version": "1.0.0",
+  "description": "Language.fi - Linguistic Primitive Oracle Dashboard",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -8,8 +9,8 @@
   ],
   "scripts": {
     "dev": "turbo run dev",
-    "build": "turbo run build",
-    "start": "turbo run start",
+    "build": "echo 'No build required for static site'",
+    "start": "echo 'Static site - no start command'",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
     "db:generate": "cd packages/db && npx prisma generate",

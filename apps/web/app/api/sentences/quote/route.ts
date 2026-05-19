@@ -21,7 +21,13 @@ export async function POST(req: NextRequest) {
 
     const counts = countCharacters(text);
     let total = 0;
-    const breakdown: any[] = [];
+    const breakdown: Array<{
+      char: string;
+      count: number;
+      status?: string;
+      unitPrice?: number;
+      total?: number;
+    }> = [];
 
     for (const [char, count] of Object.entries(counts.counts)) {
       const primitive = await prisma.primitive.findUnique({

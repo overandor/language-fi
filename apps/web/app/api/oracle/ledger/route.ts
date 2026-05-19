@@ -38,7 +38,22 @@ export async function GET(req: NextRequest) {
 
     // Get primitive prices for each run
     const ledger = await Promise.all(
-      runs.map(async (run) => {
+      runs.map(async (run: {
+        id: string;
+        startedAt: Date;
+        completedAt: Date | null;
+        status: string;
+        formulaVersion: string | null;
+        sourceCount: number | null;
+        observationCount: number | null;
+        primitiveCount: number | null;
+        errorCount: number | null;
+        notes: string | null;
+        previousRunHash: string | null;
+        runHash: string | null;
+        inputSnapshot: string | null;
+        signature: string | null;
+      }) => {
         const prices = await prisma.primitivePrice.findMany({
           where: {
             calculatedAt: {
@@ -55,7 +70,7 @@ export async function GET(req: NextRequest) {
         return {
           runId: run.id,
           timestamp: run.startedAt.toISOString(),
-          completedAt: run.completedAt?.toISOString(),
+          completedAt: run.completedAt?.toISOString() ?? null,
           status: run.status,
           formulaVersion: run.formulaVersion,
           sourceCount: run.sourceCount,
@@ -67,7 +82,12 @@ export async function GET(req: NextRequest) {
           runHash: run.runHash,
           inputSnapshot: run.inputSnapshot ? JSON.parse(run.inputSnapshot) : null,
           signature: run.signature,
-          primitivePrices: prices.map((p) => ({
+          primitivePrices: prices.map((p: {
+            primitive: { symbol: string; displaySymbol: string; type: string };
+            priceLgu: number;
+            rank: number | null;
+            currentWeekUsage: number | null;
+          }) => ({
             symbol: p.primitive.symbol,
             displaySymbol: p.primitive.displaySymbol,
             type: p.primitive.type,

@@ -10,7 +10,21 @@ export async function GET() {
 
     return NextResponse.json({
       status: "success",
-      data: runs.map(run => ({
+      data: runs.map((run: {
+        id: string;
+        status: string;
+        startedAt: Date;
+        completedAt: Date | null;
+        formulaVersion: string | null;
+        runHash: string | null;
+        previousRunHash: string | null;
+        signature: string | null;
+        sourceCount: number | null;
+        observationCount: number | null;
+        primitiveCount: number | null;
+        errorCount: number | null;
+        notes: string | null;
+      }) => ({
         id: run.id,
         status: run.status,
         startedAt: run.startedAt,

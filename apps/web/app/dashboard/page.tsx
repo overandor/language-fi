@@ -5,7 +5,24 @@
 
 import { prisma } from "@languagefi/db";
 
-async function getPrimitives() {
+export const dynamic = "force-dynamic";
+
+type PrimitiveData = {
+  id: string;
+  symbol: string;
+  displaySymbol: string;
+  type: string;
+  priceLgu: number;
+  change24h: number | null;
+  currentWeekUsage: number | null;
+  rank: number | null;
+  calculatedAt: Date;
+};
+
+async function getPrimitives(): Promise<
+  | { status: "empty"; message: string }
+  | { status: "success"; data: PrimitiveData[] }
+> {
   const data = await prisma.primitivePrice.findMany({
     orderBy: { priceLgu: "desc" },
     include: {
@@ -20,7 +37,15 @@ async function getPrimitives() {
 
   return {
     status: "success",
-    data: data.map((p) => ({
+    data: data.map((p: {
+      id: string;
+      primitive: { symbol: string; displaySymbol: string; type: string };
+      priceLgu: number;
+      change24h: number | null;
+      currentWeekUsage: number | null;
+      rank: number | null;
+      calculatedAt: Date;
+    }) => ({
       id: p.id,
       symbol: p.primitive.symbol,
       displaySymbol: p.primitive.displaySymbol,
@@ -68,7 +93,7 @@ export default async function Dashboard() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Language.fi Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {result.data.map((p: any) => (
+        {result.data.map((p: PrimitiveData) => (
           <div
             key={p.id}
             className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm"

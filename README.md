@@ -17,6 +17,12 @@ Language.fi is a public oracle that prices 43 linguistic primitives (letters, nu
 3. **Public Ledger**: Historical oracle runs stored for transparency and verification
 4. **Word Composition**: Registry for composing word assets from priced primitives
 5. **Sentence Assets**: Registry for sentence assets composed from word assets
+6. **Sentence Staking**: Stake sentences with deterministic pricing and Merkle root attestations
+7. **LLM Oracle**: AI-powered narrative appraisal with semantic liquidity KPIs
+8. **Historical Letter Prices**: Time-series tracking per primitive with series hashing
+9. **Merkle Attestations**: Cryptographic price attestations anchored to Solana devnet
+10. **Investor Billing**: Stripe-powered tiers (Starter, Pro, Fund) for API and terminal access
+11. **Bloomberg Terminal UI**: Protocol-grade dashboard with market depth, sparklines, and live KPIs
 
 ### What it is
 - A pricing oracle for linguistic primitives
@@ -118,7 +124,14 @@ cd apps/workers && npm run dev
 
 **GET /api/primitives** - Current primitive prices
 **POST /api/sentences/quote** - Calculate sentence value
+**POST /api/sentences/stake** - Stake a sentence with Merkle attestation
+**POST /api/llm/analyze** - LLM narrative + KPI analysis
+**GET /api/letters/history** - Historical pricing for a letter
+**GET /api/attestations** - Merkle root attestations anchored to Solana devnet
+**GET /api/oracle/ledger** - Public oracle ledger with verification hashes
+**POST /api/billing/checkout** - Stripe checkout for investor tiers
 **GET /dashboard** - Live pricing dashboard
+**GET /markets** - Market depth and order book
 
 ## Proof-of-Value Artifact Minting
 

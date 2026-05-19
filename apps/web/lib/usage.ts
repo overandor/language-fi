@@ -1,11 +1,3 @@
-import { prisma } from "@languagefi/db"
-
-export async function trackUsage(apiKeyId: string, endpoint: string, cost: number) {
-  await prisma.apiUsage.create({
-    data: {
-      apiKeyId,
-      endpoint,
-      cost
-    }
-  })
+export async function trackUsage(_apiKeyId: string, _endpoint: string, _cost: number) {
+  // Stub: apiUsage model not yet in schema
 }

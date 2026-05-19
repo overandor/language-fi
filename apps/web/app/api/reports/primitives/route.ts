@@ -11,7 +11,13 @@ export async function GET() {
     })
 
     const data = {
-      primitives: primitives.map(p => ({
+      primitives: primitives.map((p: {
+        primitive: { symbol: string };
+        priceLgu: number;
+        change24h: number | null;
+        currentWeekUsage: number | null;
+        rank: number | null;
+      }) => ({
         symbol: p.primitive.symbol,
         price: p.priceLgu,
         change: p.change24h || 0,
@@ -24,7 +30,7 @@ export async function GET() {
 
     const pdf = generatePrimitiveReport(data)
 
-    return new NextResponse(pdf, {
+    return new NextResponse(new Uint8Array(pdf), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=language-fi-primitives-report.pdf"
