@@ -1,9 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "echo 'Static site - no build required'",
-  "installCommand": "echo 'No install required'",
-  "devCommand": "echo 'No dev command required'",
-  "outputDirectory": ".",
-  "cleanUrls": true,
-  "framework": null
+  "buildCommand": "cd apps/web && pnpm build",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "rootDirectory": "apps/web"
 }
