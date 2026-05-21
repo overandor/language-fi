@@ -1,5 +1,6 @@
 import { Router } from "express";
 import OpenAI from "openai";
+import { getPriceSnapshot } from "./analytics.js";
 
 const router = Router();
 
@@ -107,8 +108,8 @@ const NARRATIVES = [
   "MACD crossover detected: bullish signal across vowel basket.",
 ];
 
-// ── PRICE HISTORY ACCESS (shared via module-level export) ────────────────────
-export let priceDataGetter: (() => { history: Record<string, Array<{price_usd:number}>>, current: Record<string,number>, corpusChars: number, activeSources: number, topLetter: string, vowelRatio: number, shannonEntropy: number }) | null = null;
+// priceDataGetter alias — just calls getPriceSnapshot from analytics
+const priceDataGetter = () => getPriceSnapshot();
 
 // ── COMPUTE RSI FROM PRICE SERIES ─────────────────────────────────────────────
 function computeRSI(prices: number[], period = 14): number {

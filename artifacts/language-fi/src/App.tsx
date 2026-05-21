@@ -12,6 +12,7 @@ import DocsPage from "@/pages/DocsPage";
 import SourcesPage from "@/pages/SourcesPage";
 import AlchemistPage from "@/pages/AlchemistPage";
 import AppraisalPage from "@/pages/AppraisalPage";
+import HistoryPage from "@/pages/HistoryPage";
 import LiveTicker from "@/components/LiveTicker";
 import SolanaWallet from "@/components/SolanaWallet";
 
@@ -43,6 +44,7 @@ function Nav() {
           <li><span onClick={() => nav("/leaderboard")} className={isActive("/leaderboard") ? "active" : ""}>Markets</span></li>
           <li><span onClick={() => nav("/alchemist")} className={isActive("/alchemist") ? "active" : ""}>Alchemist</span></li>
           <li><span onClick={() => nav("/sources")} className={isActive("/sources") ? "active" : ""}>Sources</span></li>
+          <li><span onClick={() => nav("/history")} className={isActive("/history") ? "active" : ""}>History</span></li>
           <li><span onClick={() => nav("/docs")} className={isActive("/docs") ? "active" : ""}>Docs</span></li>
           <li><span onClick={() => nav("/stake")} className={isActive("/stake") ? "active" : ""}>Stake</span></li>
           <li>
@@ -107,6 +109,8 @@ function Router() {
       <Route path="/letter/:letter" component={LetterPage} />
       <Route path="/alchemist" component={AlchemistPage} />
       <Route path="/appraisal/:letter" component={AppraisalPage} />
+      <Route path="/history" component={HistoryPage} />
+      <Route path="/history/:symbol" component={HistoryPage} />
       <Route path="/docs" component={DocsPage} />
       <Route path="/sources" component={SourcesPage} />
       <Route>

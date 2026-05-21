@@ -457,7 +457,7 @@ async function refreshCorpus() {
       }
     }
 
-    console.log(`[MEMBRA] Corpus refreshed: ${totalChars.toLocaleString()} chars from ${sources.filter(s=>s.status==="ok").length}/${sources.length} sources`);
+    console.log(`[MEMBRA] Corpus refreshed: ${totalChars.toLocaleString()} chars from ${sources.filter(s=>s.status==="ok").length}/${sources.length} sources (GitHub, HN, CoinGecko, Wikipedia, DEXScreener, Lobsters, Reddit, CryptoCompare, CoinCap)`);
   } catch (e) {
     console.error("[MEMBRA] Corpus refresh error:", e);
   } finally {
@@ -482,6 +482,29 @@ for (const sym of ALL_SYMBOLS) {
 // Kick off first real fetch, then repeat
 refreshCorpus();
 setInterval(refreshCorpus, REFRESH_MS);
+
+// ── EXPORT LIVE PRICE SNAPSHOT FOR KPI MODULE ────────────────────────────────
+// Called by kpi.ts via the shared priceStore module
+export function getPriceSnapshot() {
+  const VOWELS = new Set(["A","E","I","O","U"]);
+  const letterList = Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  const vowelCount = letterList.reduce((s, l) => s + (corpus.letter_counts[l] ?? 0) * (VOWELS.has(l) ? 1 : 0), 0);
+  const totalLetters = letterList.reduce((s, l) => s + (corpus.letter_counts[l] ?? 0), 1);
+  const vowelRatio = Math.round(vowelCount / totalLetters * 10000) / 100;
+  const counts = letterList.map((l) => corpus.letter_counts[l] ?? 1);
+  const total = counts.reduce((a, b) => a + b, 0);
+  const entropy = -counts.reduce((sum, c) => { const p = c / total; return sum + (p > 0 ? p * Math.log2(p) : 0); }, 0);
+  const topLetter = letterList.reduce((best, l) => (corpus.letter_counts[l] ?? 0) > (corpus.letter_counts[best] ?? 0) ? l : best, "S");
+  return {
+    history: priceHistory as Record<string, Array<{ price_usd: number }>>,
+    current: currentPrices,
+    corpusChars: corpus.total_chars,
+    activeSources: corpus.sources.filter((s) => s.status === "ok").length,
+    topLetter,
+    vowelRatio,
+    shannonEntropy: Math.round(entropy * 10000) / 10000,
+  };
+}
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function rand(min: number, max: number) { return Math.random() * (max - min) + min; }
@@ -830,7 +853,7 @@ router.get("/sources", (_req, res) => {
     { id:31, name:"CoinCap Assets", category:"Crypto Market", url:"https://api.coincap.io/v2/assets?limit=200", access:"public", weight:0.07, live: corpus.sources.find(s=>s.id==="coincap") },
     { id:32, name:"DEXScreener Trending", category:"DEX / On-chain", url:"https://api.dexscreener.com/token-boosts/latest/v1", access:"public", weight:0.05, live: corpus.sources.find(s=>s.id==="dexscreener") },
     { id:33, name:"Lobsters Tech News", category:"Tech Community", url:"https://lobste.rs/hottest.json", access:"public", weight:0.04, live: corpus.sources.find(s=>s.id==="lobsters") },
-    { id:20, name:"GitHub Trending", category:"Developer", url:"https://github.com/trending", access:"public", weight:0.03 },
+    { id:20, name:"GitHub Trending", category:"Developer", url:"https://api.github.com/search/repositories?q=solana+OR+defi", access:"public", weight:0.04, live: corpus.sources.find(s=>s.id==="github") },
     { id:21, name:"CoinMarketCap", category:"Aggregator", url:"https://coinmarketcap.com", access:"public", weight:0.05 },
     { id:22, name:"CryptoCompare", category:"Aggregator", url:"https://www.cryptocompare.com", access:"public", weight:0.04 },
     { id:23, name:"MEXC", category:"Exchange", url:"https://api.mexc.com/api/v3/ticker/24hr", access:"public", weight:0.04 },
