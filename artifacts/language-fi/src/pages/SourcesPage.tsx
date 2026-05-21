@@ -103,13 +103,13 @@ export default function SourcesPage() {
                       color: CATEGORY_COLORS[src.category] ?? "#F59E0B",
                       border: `1px solid ${CATEGORY_COLORS[src.category] ?? "#F59E0B"}30`,
                     }}>
-                      {src.category.toUpperCase()}
+                      {(src.category ?? "").toUpperCase()}
                     </span>
                   </div>
                   <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "var(--muted-text)", lineHeight: 1.5 }}>{src.description}</p>
                 </div>
                 <span className={`status-badge ${src.status === "live" ? "active" : "pending"}`} style={{ flexShrink: 0, marginLeft: 8 }}>
-                  {src.status.toUpperCase()}
+                  {(src.status ?? "offline").toUpperCase()}
                 </span>
               </div>
 

@@ -9,6 +9,7 @@ interface TickerItem {
   change_pct: number;
   type: string;
   corpus_count: number;
+  sparkline: number[];
 }
 
 interface CorpusSource {
@@ -93,6 +94,26 @@ function LiveNum({ value, decimals = 5, prefix = "$" }: { value: number; decimal
   );
 }
 
+function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
+  if (!data || data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 0.00001;
+  const w = 56, h = 18;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - 2 - ((v - min) / range) * (h - 4);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block", margin: "3px auto 0" }}>
+      <polyline points={pts} fill="none"
+        stroke={positive ? "var(--green)" : "var(--red)"}
+        strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function LetterGrid({ items }: { items: TickerItem[] }) {
   const [, navigate] = useLocation();
   const letters = items.filter((i) => i.type === "letter");
@@ -108,11 +129,12 @@ function LetterGrid({ items }: { items: TickerItem[] }) {
           <div className="letter-neo-price">
             <LiveNum value={item.price_usd} decimals={5} />
           </div>
+          <Sparkline data={item.sparkline ?? []} positive={item.change_pct >= 0} />
           <div className={`letter-neo-chg ${item.change_pct >= 0 ? "pos" : "neg"}`}>
             {item.change_pct >= 0 ? "▲" : "▼"} {Math.abs(item.change_pct).toFixed(2)}%
           </div>
           {item.corpus_count > 0 && (
-            <div className="letter-neo-count">{item.corpus_count.toLocaleString()}</div>
+            <div className="letter-neo-count">{item.corpus_count.toLocaleString()} in corpus</div>
           )}
         </div>
       ))}

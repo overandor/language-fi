@@ -171,6 +171,87 @@ async function fetchReddit(): Promise<CorpusSource> {
   return src;
 }
 
+// Fetch CoinCap top 200 asset names (free, no auth)
+async function fetchCoinCap(): Promise<CorpusSource> {
+  const src: CorpusSource = {
+    id: "coincap", name: "CoinCap Assets", category: "Crypto Market",
+    url: "https://api.coincap.io/v2/assets?limit=200",
+    chars_extracted: 0, last_fetched: new Date().toISOString(),
+    status: "error", snippet: "",
+  };
+  try {
+    const data = await fetch("https://api.coincap.io/v2/assets?limit=200", {
+      headers: { "Accept": "application/json" },
+      signal: AbortSignal.timeout(8000),
+    }).then((r) => r.json()) as { data: Array<{ id: string; name: string; symbol: string }> };
+    const assets = data?.data ?? [];
+    const text = assets.map((a) => `${a.name} ${a.symbol} ${a.id}`).join(" ");
+    src.chars_extracted = text.length;
+    src.status = text.length > 100 ? "ok" : "error";
+    src.snippet = text.slice(0, 120);
+    (src as CorpusSource & { _text: string })._text = text;
+  } catch {
+    src.status = "error";
+  }
+  return src;
+}
+
+// Fetch DEXScreener trending token profiles (free, no auth)
+async function fetchDexScreener(): Promise<CorpusSource> {
+  const src: CorpusSource = {
+    id: "dexscreener", name: "DEXScreener Trending", category: "DEX / On-chain",
+    url: "https://api.dexscreener.com/token-boosts/latest/v1",
+    chars_extracted: 0, last_fetched: new Date().toISOString(),
+    status: "error", snippet: "",
+  };
+  try {
+    const data = await fetch("https://api.dexscreener.com/token-boosts/latest/v1", {
+      headers: { "Accept": "application/json" },
+      signal: AbortSignal.timeout(8000),
+    }).then((r) => r.json()) as Array<{ tokenAddress: string; description?: string; links?: Array<{ label?: string }> }>;
+    const items = Array.isArray(data) ? data : [];
+    const text = items
+      .slice(0, 60)
+      .map((t) => `${t.description ?? ""} ${(t.links ?? []).map((l) => l.label ?? "").join(" ")}`)
+      .join(" ");
+    src.chars_extracted = text.length;
+    src.status = text.length > 50 ? "ok" : "error";
+    src.snippet = text.replace(/\s+/g, " ").trim().slice(0, 120);
+    (src as CorpusSource & { _text: string })._text = text;
+  } catch {
+    src.status = "error";
+  }
+  return src;
+}
+
+// Fetch Lobsters hottest tech stories (free, no auth)
+async function fetchLobsters(): Promise<CorpusSource> {
+  const src: CorpusSource = {
+    id: "lobsters", name: "Lobsters Tech News", category: "Tech Community",
+    url: "https://lobste.rs/hottest.json",
+    chars_extracted: 0, last_fetched: new Date().toISOString(),
+    status: "error", snippet: "",
+  };
+  try {
+    const data = await fetch("https://lobste.rs/hottest.json", {
+      headers: { "User-Agent": "MEMBRA-Oracle/1.0" },
+      signal: AbortSignal.timeout(8000),
+    }).then((r) => r.json()) as Array<{ title: string; description?: string; tags?: string[] }>;
+    const stories = Array.isArray(data) ? data : [];
+    const text = stories
+      .slice(0, 50)
+      .map((s) => `${s.title} ${(s.tags ?? []).join(" ")} ${s.description ?? ""}`)
+      .join(" ");
+    src.chars_extracted = text.length;
+    src.status = text.length > 50 ? "ok" : "error";
+    src.snippet = text.slice(0, 120);
+    (src as CorpusSource & { _text: string })._text = text;
+  } catch {
+    src.status = "error";
+  }
+  return src;
+}
+
 // Fetch CryptoCompare latest news headlines
 async function fetchCryptoNews(): Promise<CorpusSource> {
   const src: CorpusSource = {
@@ -298,11 +379,12 @@ async function refreshCorpus() {
   refreshing = true;
   console.log("[MEMBRA] Refreshing corpus from live sources...");
   try {
-    const [hn, cg, wiki, reddit, news] = await Promise.allSettled([
+    const [hn, cg, wiki, reddit, news, coincap, dex, lobsters] = await Promise.allSettled([
       fetchHackerNews(), fetchCoinGecko(), fetchWikipedia(), fetchReddit(), fetchCryptoNews(),
+      fetchCoinCap(), fetchDexScreener(), fetchLobsters(),
     ]);
 
-    const sources: CorpusSource[] = [hn, cg, wiki, reddit, news]
+    const sources: CorpusSource[] = [hn, cg, wiki, reddit, news, coincap, dex, lobsters]
       .map((r) => r.status === "fulfilled" ? r.value : null)
       .filter(Boolean) as CorpusSource[];
 
@@ -401,6 +483,8 @@ router.get("/ticker", (_req, res) => {
     const price = livePrice(s);
     const prevPrice = prev?.price_usd ?? price;
     const change = prevPrice > 0 ? (price - prevPrice) / prevPrice : 0;
+    // Sparkline: last 12 price points for mini chart
+    const sparkline = h ? h.slice(-12).map((snap) => snap.price_usd) : [];
     return {
       symbol: s,
       price_usd: Math.round(price * 100000) / 100000,
@@ -408,6 +492,7 @@ router.get("/ticker", (_req, res) => {
       change_pct: Math.round(change * 100000) / 1000,
       type: /^[A-Z]$/.test(s) ? "letter" : /^[0-9]$/.test(s) ? "number" : "separator",
       corpus_count: corpus.letter_counts[s] ?? 0,
+      sparkline,
     };
   });
   res.json({ items, updated_at: new Date().toISOString(), corpus_chars: corpus.total_chars });
@@ -718,6 +803,9 @@ router.get("/sources", (_req, res) => {
     { id:17, name:"Reddit r/CryptoCurrency", category:"Social Media", url:"https://www.reddit.com/r/CryptoCurrency/hot.json", access:"public", weight:0.05, live: corpus.sources.find(s=>s.id==="reddit") },
     { id:18, name:"Wikipedia", category:"Reference Corpus", url:"https://en.wikipedia.org/w/api.php", access:"public", weight:0.07, live: corpus.sources.find(s=>s.id==="wikipedia") },
     { id:19, name:"CryptoCompare News", category:"Crypto News", url:"https://min-api.cryptocompare.com/data/v2/news/", access:"public", weight:0.06, live: corpus.sources.find(s=>s.id==="cryptocompare") },
+    { id:31, name:"CoinCap Assets", category:"Crypto Market", url:"https://api.coincap.io/v2/assets?limit=200", access:"public", weight:0.07, live: corpus.sources.find(s=>s.id==="coincap") },
+    { id:32, name:"DEXScreener Trending", category:"DEX / On-chain", url:"https://api.dexscreener.com/token-boosts/latest/v1", access:"public", weight:0.05, live: corpus.sources.find(s=>s.id==="dexscreener") },
+    { id:33, name:"Lobsters Tech News", category:"Tech Community", url:"https://lobste.rs/hottest.json", access:"public", weight:0.04, live: corpus.sources.find(s=>s.id==="lobsters") },
     { id:20, name:"GitHub Trending", category:"Developer", url:"https://github.com/trending", access:"public", weight:0.03 },
     { id:21, name:"CoinMarketCap", category:"Aggregator", url:"https://coinmarketcap.com", access:"public", weight:0.05 },
     { id:22, name:"CryptoCompare", category:"Aggregator", url:"https://www.cryptocompare.com", access:"public", weight:0.04 },
@@ -730,12 +818,32 @@ router.get("/sources", (_req, res) => {
     { id:29, name:"The Graph", category:"Indexer", url:"https://api.thegraph.com/subgraphs", access:"public", weight:0.03 },
     { id:30, name:"Product Hunt", category:"Tech Discovery", url:"https://api.producthunt.com/v2/api/graphql", access:"public", weight:0.02 },
   ];
+  // Derive status from live corpus data where available
+  const sourcesWithStatus = ALL_SOURCES.map((s) => {
+    const live = (s as { live?: CorpusSource }).live;
+    let status: "live" | "limited" | "offline" = "offline";
+    if (live) {
+      status = live.status === "ok" ? "live" : live.status === "stale" ? "limited" : "offline";
+    }
+    const { live: _drop, ...rest } = s as { live?: CorpusSource; [k: string]: unknown };
+    void _drop;
+    return {
+      ...rest,
+      status,
+      chars_extracted: live?.chars_extracted ?? 0,
+      snippet: live?.snippet ?? "",
+      last_fetched: live?.last_fetched ?? null,
+      description: `${(rest as { category: string }).category} data source`,
+      latency_ms: randInt(80, 800),
+      freshness_s: 1200,
+    };
+  });
   res.json({
-    total_sources: ALL_SOURCES.length,
-    active_sources: ALL_SOURCES.length - randInt(0, 3),
+    total_sources: sourcesWithStatus.length,
+    active_sources: sourcesWithStatus.filter(s => s.status === "live").length,
     corpus_live_sources: corpus.sources.filter(s=>s.status==="ok").length,
     last_corpus_refresh: corpus.last_full_refresh,
-    sources: ALL_SOURCES,
+    sources: sourcesWithStatus,
     updated_at: new Date().toISOString(),
   });
 });
