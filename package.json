@@ -1,26 +1,34 @@
 {
   "name": "language-fi",
   "version": "1.0.0",
+  "description": "Language.fi - Linguistic Primitive Oracle Dashboard",
   "private": true,
+  "packageManager": "pnpm@8.15.9",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "start": "turbo run start",
-    "lint": "turbo run lint",
+    "dev": "turbo run dev --parallel",
+    "build": "pnpm run build:web",
+    "build:web": "pnpm --filter language-fi-web build",
+    "build:workers": "pnpm --filter language-fi-workers build",
+    "start": "pnpm --filter language-fi-web start",
+    "lint": "pnpm --filter language-fi-web lint",
+    "typecheck": "pnpm --filter language-fi-web exec tsc --noEmit",
+    "validate": "pnpm run db:generate && pnpm run typecheck && pnpm run build",
     "clean": "turbo run clean",
-    "db:generate": "cd packages/db && npx prisma generate",
-    "db:push": "cd packages/db && npx prisma db push",
-    "db:migrate": "cd packages/db && npx prisma migrate dev",
-    "db:studio": "cd packages/db && npx prisma studio"
+    "db:generate": "pnpm --filter @languagefi/db generate",
+    "db:push": "pnpm --filter @languagefi/db push",
+    "db:migrate": "pnpm --filter @languagefi/db migrate",
+    "db:migrate:deploy": "pnpm --filter @languagefi/db exec prisma migrate deploy",
+    "db:studio": "pnpm --filter @languagefi/db studio"
   },
   "devDependencies": {
     "turbo": "^1.11.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
   }
 }
