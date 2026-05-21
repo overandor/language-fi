@@ -2,6 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  poweredByHeader: false,
+  compress: true,
   transpilePackages: [
     "@languagefi/db",
     "@languagefi/core",
@@ -22,8 +24,8 @@ const nextConfig = {
     NEXT_PUBLIC_STAKING_CONTRACT: process.env.NEXT_PUBLIC_STAKING_CONTRACT,
   },
   webpack: (config) => {
-    config.externals.push('pino-pretty', 'lokijs', 'encoding', 'pdfkit', 'fontkit', 'iconv-lite', 'restructure');
-    return config;
+    config.externals.push("pino-pretty", "lokijs", "encoding", "pdfkit", "fontkit", "iconv-lite", "restructure")
+    return config
   },
 }
 
