@@ -252,6 +252,30 @@ async function fetchLobsters(): Promise<CorpusSource> {
   return src;
 }
 
+// Fetch GitHub trending repos (9th real source)
+async function fetchGitHub(): Promise<CorpusSource> {
+  const src: CorpusSource = {
+    id: "github", name: "GitHub Trending", category: "Developer",
+    url: "https://api.github.com/search/repositories?q=solana+OR+defi+OR+blockchain&sort=stars&per_page=50",
+    chars_extracted: 0, last_fetched: new Date().toISOString(),
+    status: "error", snippet: "",
+  };
+  try {
+    const data = await fetch(
+      "https://api.github.com/search/repositories?q=solana+OR+defi+OR+blockchain&sort=stars&order=desc&per_page=50",
+      { headers: { "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" }, signal: AbortSignal.timeout(8000) }
+    ).then((r) => r.json()) as { items?: Array<{ name: string; description: string | null; full_name: string; topics?: string[] }> };
+    const text = (data.items ?? []).map((r) => [r.name, r.full_name, r.description ?? "", ...(r.topics ?? [])].join(" ")).join(" ");
+    src.chars_extracted = text.length;
+    src.status = text.length > 200 ? "ok" : "error";
+    src.snippet = text.slice(0, 120);
+    (src as CorpusSource & { _text: string })._text = text;
+  } catch {
+    src.status = "error";
+  }
+  return src;
+}
+
 // Fetch CryptoCompare latest news headlines
 async function fetchCryptoNews(): Promise<CorpusSource> {
   const src: CorpusSource = {
@@ -379,12 +403,12 @@ async function refreshCorpus() {
   refreshing = true;
   console.log("[MEMBRA] Refreshing corpus from live sources...");
   try {
-    const [hn, cg, wiki, reddit, news, coincap, dex, lobsters] = await Promise.allSettled([
+    const [hn, cg, wiki, reddit, news, coincap, dex, lobsters, gh] = await Promise.allSettled([
       fetchHackerNews(), fetchCoinGecko(), fetchWikipedia(), fetchReddit(), fetchCryptoNews(),
-      fetchCoinCap(), fetchDexScreener(), fetchLobsters(),
+      fetchCoinCap(), fetchDexScreener(), fetchLobsters(), fetchGitHub(),
     ]);
 
-    const sources: CorpusSource[] = [hn, cg, wiki, reddit, news, coincap, dex, lobsters]
+    const sources: CorpusSource[] = [hn, cg, wiki, reddit, news, coincap, dex, lobsters, gh]
       .map((r) => r.status === "fulfilled" ? r.value : null)
       .filter(Boolean) as CorpusSource[];
 
