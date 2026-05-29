@@ -3,6 +3,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { startScheduler } from "./lib/scheduler";
 
 const app: Express = express();
 
@@ -30,5 +31,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+// Start the data scraping scheduler (every 60 seconds)
+// Disabled in Vercel serverless environment
+if (process.env.ENABLE_SCHEDULER !== "false" && process.env.VERCEL !== "1") {
+  startScheduler(60000);
+  logger.info("Data scraping scheduler started (60s interval)");
+}
 
 export default app;

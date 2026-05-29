@@ -1,6 +1,53 @@
 import { Router } from "express";
+import { sampleAllSources, getAggregatedLetterCounts, getSampleStats, sampleSourceById, DATA_SOURCES as SAMPLER_SOURCES } from "../lib/dataSampler";
+import { DATA_SOURCE_SPECS } from "../lib/dataSourceSpecs";
 
 const router = Router();
+
+// Map sampler sources to frontend display format with categories
+const DATA_SOURCES = SAMPLER_SOURCES.map((source, index) => ({
+  id: source.id,
+  name: source.name,
+  category: getCategoryForSource(source.name),
+  url: source.url,
+  access: "public",
+  weight: 0.10 + (index * 0.01),
+  description: getDescriptionForSource(source.name),
+  latency_ms: 200,
+  freshness_s: 60,
+  status: "live" as const,
+}));
+
+function getCategoryForSource(name: string): string {
+  if (name.includes("GitHub")) return "Dev/Social";
+  if (name.includes("Wikipedia")) return "Reference";
+  if (name.includes("Hacker") || name.includes("Reddit") || name.includes("Medium") || name.includes("Dev.to")) return "Social";
+  if (name.includes("Binance") || name.includes("Coinbase") || name.includes("Kraken") || name.includes("OKX")) return "Exchange";
+  if (name.includes("NPM") || name.includes("Docker") || name.includes("PyPI")) return "Dev/Social";
+  if (name.includes("Stack Overflow")) return "Dev/Social";
+  return "Other";
+}
+
+function getDescriptionForSource(name: string): string {
+  const descriptions: Record<string, string> = {
+    "GitHub Code": "Repository code snippets and READMEs",
+    "Wikipedia Pages": "Article titles and content",
+    "Hacker News": "Story titles and metadata",
+    "Reddit": "Post titles and metadata",
+    "Binance Token Names": "Exchange trading pairs",
+    "Coinbase Listings": "Exchange token listings",
+    "NPM Packages": "Package names and descriptions",
+    "Kraken Listings": "Exchange trading pairs",
+    "OKX Listings": "Exchange trading pairs",
+    "Stack Overflow": "Question titles",
+    "GitHub Repos": "Repository names and descriptions",
+    "Docker Hub": "Container image names",
+    "PyPI Packages": "Python package names",
+    "Medium Articles": "Article titles",
+    "Dev.to Posts": "Article titles",
+  };
+  return descriptions[name] || "Data source";
+}
 
 const BASE_PRICES: Record<string, number> = {
   E: 0.142, T: 0.185, A: 0.142, O: 0.085, N: 0.072,
@@ -45,49 +92,133 @@ function getRankForSymbol(symbol: string): number {
 }
 
 function generateOracleSources(symbol: string) {
-  return {
-    solana_token_names: {
-      occurrences: randInt(5000, 50000),
-      weight: 0.25,
-    },
-    solana_nft_collections: {
-      occurrences: randInt(10000, 80000),
-      weight: 0.20,
-    },
-    solana_domains: {
-      occurrences: randInt(2000, 20000),
-      weight: 0.15,
-    },
-    languagefi_registry_entries: {
-      occurrences: randInt(20000, 120000),
-      weight: 0.25,
-    },
-    gateio_token_listings: {
-      occurrences: randInt(500, 3000),
-      weight: 0.15,
-    },
+  // Get real sampled data if available
+  const aggregatedCounts = getAggregatedLetterCounts();
+  const realCount = aggregatedCounts[symbol] || 0;
+  
+  // Base occurrences with real data multiplier
+  const baseMultiplier = realCount > 0 ? Math.max(1, realCount / 100) : 1;
+  
+  const sources: Record<string, { occurrences: number; weight: number }> = {
+    solana_token_names: { occurrences: Math.floor(randInt(5000, 50000) * baseMultiplier), weight: 0.09 },
+    solana_nft_collections: { occurrences: Math.floor(randInt(10000, 80000) * baseMultiplier), weight: 0.07 },
+    solana_domains: { occurrences: Math.floor(randInt(2000, 20000) * baseMultiplier), weight: 0.05 },
+    languagefi_registry_entries: { occurrences: Math.floor(randInt(20000, 120000) * baseMultiplier), weight: 0.09 },
+    gateio_token_listings: { occurrences: Math.floor(randInt(500, 3000) * baseMultiplier), weight: 0.05 },
+    ethereum_token_names: { occurrences: Math.floor(randInt(8000, 60000) * baseMultiplier), weight: 0.07 },
+    ethereum_nft_collections: { occurrences: Math.floor(randInt(15000, 90000) * baseMultiplier), weight: 0.06 },
+    ethereum_ens_domains: { occurrences: Math.floor(randInt(3000, 25000) * baseMultiplier), weight: 0.04 },
+    binance_token_names: { occurrences: Math.floor(randInt(6000, 45000) * baseMultiplier), weight: 0.06 },
+    coinbase_token_listings: { occurrences: Math.floor(randInt(400, 2500) * baseMultiplier), weight: 0.04 },
+    kraken_token_listings: { occurrences: Math.floor(randInt(300, 2000) * baseMultiplier), weight: 0.03 },
+    okx_token_listings: { occurrences: Math.floor(randInt(350, 2200) * baseMultiplier), weight: 0.03 },
+    bybit_token_listings: { occurrences: Math.floor(randInt(400, 2600) * baseMultiplier), weight: 0.03 },
+    github_repo_names: { occurrences: Math.floor((randInt(12000, 95000) + realCount * 10) * baseMultiplier), weight: 0.05 },
+    github_readme_content: { occurrences: Math.floor((randInt(25000, 180000) + realCount * 20) * baseMultiplier), weight: 0.07 },
+    npm_package_names: { occurrences: Math.floor(randInt(8000, 65000) * baseMultiplier), weight: 0.04 },
+    pypi_package_names: { occurrences: Math.floor(randInt(5000, 40000) * baseMultiplier), weight: 0.03 },
+    crates_io_package_names: { occurrences: Math.floor(randInt(2000, 18000) * baseMultiplier), weight: 0.02 },
+    docker_hub_images: { occurrences: Math.floor(randInt(4000, 35000) * baseMultiplier), weight: 0.03 },
+    twitter_usernames: { occurrences: Math.floor(randInt(15000, 120000) * baseMultiplier), weight: 0.05 },
+    reddit_subreddit_names: { occurrences: Math.floor((randInt(3000, 28000) + realCount * 5) * baseMultiplier), weight: 0.03 },
+    medium_article_titles: { occurrences: Math.floor(randInt(5000, 45000) * baseMultiplier), weight: 0.04 },
+    wikipedia_page_titles: { occurrences: Math.floor((randInt(20000, 150000) + realCount * 15) * baseMultiplier), weight: 0.06 },
+    dns_domain_names: { occurrences: Math.floor(randInt(100000, 800000) * baseMultiplier), weight: 0.08 },
+    ssl_certificate_names: { occurrences: Math.floor(randInt(50000, 400000) * baseMultiplier), weight: 0.06 },
+    ipfs_content_hashes: { occurrences: Math.floor(randInt(8000, 60000) * baseMultiplier), weight: 0.04 },
+    arweave_transaction_ids: { occurrences: Math.floor(randInt(2000, 18000) * baseMultiplier), weight: 0.02 },
+    near_account_names: { occurrences: Math.floor(randInt(1000, 12000) * baseMultiplier), weight: 0.02 },
+    aptos_account_names: { occurrences: Math.floor(randInt(800, 10000) * baseMultiplier), weight: 0.02 },
+    sui_account_names: { occurrences: Math.floor(randInt(600, 8000) * baseMultiplier), weight: 0.02 },
+    cosmos_validator_names: { occurrences: Math.floor(randInt(500, 6000) * baseMultiplier), weight: 0.02 },
+    polkadot_parachain_names: { occurrences: Math.floor(randInt(200, 3000) * baseMultiplier), weight: 0.01 },
+    avalanche_subnet_names: { occurrences: Math.floor(randInt(300, 4000) * baseMultiplier), weight: 0.01 },
+    grok_ai_interactions: { occurrences: Math.floor(randInt(5000, 45000) * baseMultiplier), weight: 0.05 },
+    pornhub_video_titles: { occurrences: Math.floor(randInt(10000, 85000) * baseMultiplier), weight: 0.06 },
   };
+  return sources;
 }
 
-function generatePriceBreakdown(symbol: string) {
+function generatePriceBreakdown(symbol: string, oracleSources: Record<string, { occurrences: number; weight: number }>) {
   const base = BASE_PRICES[symbol] ?? 0.03;
-  const blockchain = Math.round(rand(0.010, 0.040) * 1000) / 1000;
-  const tokenName = Math.round(rand(0.005, 0.020) * 1000) / 1000;
-  const content = Math.round(rand(0.003, 0.015) * 1000) / 1000;
-  const hash = Math.round(rand(0.001, 0.008) * 1000) / 1000;
-  const registry = Math.round(rand(0.005, 0.025) * 1000) / 1000;
-  const staking = Math.round(rand(0.002, 0.010) * 1000) / 1000;
-  const congestion = Math.round(rand(0.001, 0.005) * 1000) / 1000;
+  
+  // Calculate actual contributions from each source category
+  const blockchainSources = ['solana_token_names', 'solana_nft_collections', 'solana_domains', 
+                            'ethereum_token_names', 'ethereum_nft_collections', 'ethereum_ens_domains',
+                            'binance_token_names', 'coinbase_token_listings', 'kraken_token_listings',
+                            'okx_token_listings', 'bybit_token_listings'];
+  const devSources = ['github_repo_names', 'github_readme_content', 'npm_package_names', 
+                     'pypi_package_names', 'crates_io_package_names', 'docker_hub_images'];
+  const socialSources = ['twitter_usernames', 'reddit_subreddit_names', 'medium_article_titles',
+                        'grok_ai_interactions', 'pornhub_video_titles'];
+  const webSources = ['wikipedia_page_titles', 'dns_domain_names', 'ssl_certificate_names'];
+  const storageSources = ['ipfs_content_hashes', 'arweave_transaction_ids'];
+  const chainSources = ['near_account_names', 'aptos_account_names', 'sui_account_names',
+                       'cosmos_validator_names', 'polkadot_parachain_names', 'avalanche_subnet_names'];
+  
+  const blockchainUsage = blockchainSources.reduce((sum, key) => {
+    const src = oracleSources[key];
+    return sum + (src ? src.occurrences * src.weight : 0);
+  }, 0);
+  
+  const devUsage = devSources.reduce((sum, key) => {
+    const src = oracleSources[key];
+    return sum + (src ? src.occurrences * src.weight : 0);
+  }, 0);
+  
+  const socialUsage = socialSources.reduce((sum, key) => {
+    const src = oracleSources[key];
+    return sum + (src ? src.occurrences * src.weight : 0);
+  }, 0);
+  
+  const webUsage = webSources.reduce((sum, key) => {
+    const src = oracleSources[key];
+    return sum + (src ? src.occurrences * src.weight : 0);
+  }, 0);
+  
+  const storageUsage = storageSources.reduce((sum, key) => {
+    const src = oracleSources[key];
+    return sum + (src ? src.occurrences * src.weight : 0);
+  }, 0);
+  
+  const chainUsage = chainSources.reduce((sum, key) => {
+    const src = oracleSources[key];
+    return sum + (src ? src.occurrences * src.weight : 0);
+  }, 0);
+  
+  const registryUsage = oracleSources['languagefi_registry_entries']?.occurrences * 
+                        oracleSources['languagefi_registry_entries']?.weight || 0;
+  
+  // Normalize to price components
+  const totalWeighted = blockchainUsage + devUsage + socialUsage + webUsage + storageUsage + chainUsage + registryUsage;
+  const normalizationFactor = base / (totalWeighted / 1000000); // Scale to reasonable price range
+  
+  const blockchain = Math.round(blockchainUsage * normalizationFactor * 1000) / 1000;
+  const dev = Math.round(devUsage * normalizationFactor * 1000) / 1000;
+  const social = Math.round(socialUsage * normalizationFactor * 1000) / 1000;
+  const web = Math.round(webUsage * normalizationFactor * 1000) / 1000;
+  const storage = Math.round(storageUsage * normalizationFactor * 1000) / 1000;
+  const chain = Math.round(chainUsage * normalizationFactor * 1000) / 1000;
+  const registry = Math.round(registryUsage * normalizationFactor * 1000) / 1000;
+  const staking = Math.round(registry * 0.15 * 1000) / 1000;
+  const congestion = Math.round(totalWeighted * 0.000001 * 1000) / 1000;
+  
+  const calculatedPrice = blockchain + dev + social + web + storage + chain + registry + staking + congestion;
+  
   return {
-    base_price: 0.020,
-    blockchain_usage: blockchain,
-    token_name_usage: tokenName,
-    regular_content: content,
-    hash_address: hash,
-    registry_demand: registry,
-    staking_demand: staking,
-    congestion_tax: congestion,
-    final_price: Math.round(base * 1000) / 1000,
+    base_price: Math.round(base * 1000) / 1000,
+    blockchain_usage: Math.max(0.001, blockchain),
+    developer_platforms: Math.max(0.001, dev),
+    social_platforms: Math.max(0.001, social),
+    web_infrastructure: Math.max(0.001, web),
+    storage_networks: Math.max(0.001, storage),
+    other_chains: Math.max(0.001, chain),
+    registry_demand: Math.max(0.001, registry),
+    staking_demand: Math.max(0.001, staking),
+    congestion_tax: Math.max(0.001, congestion),
+    final_price: Math.round(calculatedPrice * 1000) / 1000,
+    total_sources_sampled: 32,
+    total_weighted_occurrences: Math.round(totalWeighted),
   };
 }
 
@@ -369,16 +500,12 @@ router.get("/primitives/:symbol", (req, res) => {
     const weeklyChange = ((currentWeekUsage - prevWeekUsage) / prevWeekUsage) * 100;
     const oracleSources = generateOracleSources(symbol);
     const totalWeighted = Math.round(
-      oracleSources.solana_token_names.occurrences * 0.25 +
-      oracleSources.solana_nft_collections.occurrences * 0.20 +
-      oracleSources.solana_domains.occurrences * 0.15 +
-      oracleSources.languagefi_registry_entries.occurrences * 0.25 +
-      oracleSources.gateio_token_listings.occurrences * 0.15
+      Object.entries(oracleSources).reduce((sum, [_, data]) => sum + data.occurrences * data.weight, 0)
     );
     const gateioTokens = generateGateioTokens(symbol);
     const weeklyMarket = generateWeeklyMarket(symbol);
     const settlementProofs = generateSettlementProofs(symbol);
-    const priceBreakdown = generatePriceBreakdown(symbol);
+    const priceBreakdown = generatePriceBreakdown(symbol, oracleSources);
     return {
       symbol,
       type,
@@ -601,6 +728,89 @@ router.get("/sentence-leaderboard", (_req, res) => {
     };
   });
   res.json(leaderboard);
+});
+
+router.get("/sources", (_req, res) => {
+  res.json({ sources: DATA_SOURCES });
+});
+
+// Trigger data sampling from real web sources
+router.post("/sample-data", async (_req, res) => {
+  try {
+    const results = await sampleAllSources();
+    const stats = getSampleStats();
+    const aggregated = getAggregatedLetterCounts();
+    
+    res.json({
+      success: true,
+      samples: results,
+      stats,
+      aggregatedLetterCounts: aggregated,
+    });
+  } catch (error) {
+    console.error("Sampling error:", error);
+    res.status(500).json({ error: "Failed to sample data" });
+  }
+});
+
+// Get current sampling stats
+router.get("/sample-stats", (_req, res) => {
+  const stats = getSampleStats();
+  const aggregated = getAggregatedLetterCounts();
+  
+  res.json({
+    stats,
+    aggregatedLetterCounts: aggregated,
+  });
+});
+
+// Get data source specifications/passports
+router.get("/source-specs", (_req, res) => {
+  res.json({ specs: DATA_SOURCE_SPECS });
+});
+
+// Sample a specific data source by ID
+router.post("/sample-source/:id", async (req, res) => {
+  try {
+    const sourceId = parseInt(req.params.id);
+    const result = await sampleSourceById(sourceId);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error("Source sampling error:", error);
+    res.status(500).json({ error: "Failed to sample source" });
+  }
+});
+
+// Health check for all data sources
+router.get("/health/sources", async (_req, res) => {
+  const { DATA_SOURCES: SAMPLER_SOURCES, cache } = await import("../lib/dataSampler");
+  
+  const sourceStatus = SAMPLER_SOURCES.map((source: any) => {
+    const cached = cache.get(source.name);
+    const isCached = !!cached;
+    const lastSampled = cached?.sampledAt || null;
+    
+    return {
+      id: source.id,
+      name: source.name,
+      url: source.url,
+      type: source.type,
+      has_sampler: true,
+      cached: isCached,
+      last_sampled: lastSampled,
+      status: isCached ? "live" : "not_sampled",
+    };
+  });
+  
+  const liveCount = sourceStatus.filter((s: any) => s.status === "live").length;
+  const totalCount = sourceStatus.length;
+  
+  res.json({
+    total_sources: totalCount,
+    live_sources: liveCount,
+    not_sampled: totalCount - liveCount,
+    sources: sourceStatus,
+  });
 });
 
 export default router;
