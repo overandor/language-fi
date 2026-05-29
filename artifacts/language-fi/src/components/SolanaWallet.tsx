@@ -82,7 +82,7 @@ export default function SolanaWallet() {
         {connecting ? "Connecting…" : "Phantom"}
       </button>
       <button className="sol-wallet-btn metamask" onClick={connectMetaMask} disabled={connecting}>
-        {connecting ? "Connecting…" : "MetaMask"}
+        {connecting ? "Connecting…" : "MetaMask 🦊"}
       </button>
     </div>
   );
