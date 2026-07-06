@@ -1,0 +1,151 @@
+{
+  "$schema": "https://language-fi.local/schemas/contributor-artifact-account.config.schema.json",
+  "name": "contributor-artifact-account",
+  "version": "0.1.0",
+  "purpose": "Create an opt-in account layer that lets each contributor run separate trackability and valuation for their own authorized artifacts, letters, symbols, commits, documents, and public surfaces.",
+  "extends": [
+    "docs/valuation/letter-price-ledger.config.json",
+    "docs/valuation/registry-oracle.config.json"
+  ],
+  "core_thesis": "The same letter or symbol can carry different artifact value depending on account ownership, authorship confidence, originality, proof, deployment state, public positioning, and reuse. The account prices the work product, not the human being.",
+  "account_policy": {
+    "mode": "opt_in",
+    "private_by_default": true,
+    "pseudonymous_ids": true,
+    "authorized_surfaces_only": true,
+    "artifact_value_not_person_value": true,
+    "no_tracking_without_account_launch": true,
+    "no_public_identity_guessing": true,
+    "no_public_output_without_permission": true,
+    "delete_or_disable_supported": true
+  },
+  "account_identity": {
+    "account_id_format": "acct:{workspace}:{sha256_16}",
+    "contributor_id_format": "contrib:{sha256_16}",
+    "workspace_id_format": "workspace:{sha256_16}",
+    "identity_evidence": [
+      "verified_platform_user",
+      "verified_email_hash",
+      "signed_artifact_key",
+      "manual_owner_review"
+    ],
+    "confidence": {
+      "unclaimed": 0.0,
+      "self_claimed": 0.25,
+      "owner_reviewed": 0.6,
+      "platform_verified": 0.8,
+      "signed": 1.0
+    }
+  },
+  "registers": {
+    "C0_ACCOUNT": {
+      "description": "Root contributor account record.",
+      "fields": ["account_id", "workspace_id", "display_label", "status", "created_at", "visibility"]
+    },
+    "C1_AUTHORIZED_SURFACES": {
+      "description": "The surfaces this account is allowed to measure.",
+      "fields": ["account_id", "surface_type", "path_or_url", "permission_state", "added_at"]
+    },
+    "C2_AUTHORSHIP_MAP": {
+      "description": "Maps artifacts and character spans to a contributor account with confidence.",
+      "fields": ["artifact_id", "char_id", "span_id", "account_id", "authorship_confidence", "evidence_ref"]
+    },
+    "C3_CONTEXT_PROFILE": {
+      "description": "Non-sensitive account context that affects artifact valuation.",
+      "fields": ["account_id", "project_role", "skill_tags", "workstream_tags", "context_hash"]
+    },
+    "C4_REPUTATION_CURVE": {
+      "description": "Evidence-based reliability of this account's artifacts.",
+      "fields": ["account_id", "merged_changes", "reverted_changes", "passing_checks", "deployed_artifacts", "accepted_reports", "dispute_count"]
+    },
+    "C5_TRACKABILITY_STATE": {
+      "description": "Coverage and freshness of the account-level tracking graph.",
+      "fields": ["account_id", "tracking_enabled", "coverage_ratio", "last_scan_at", "proof_depth", "surface_count"]
+    },
+    "C6_ACCOUNT_PRICE_CURVE": {
+      "description": "Per-account artifact pricing curve layered over local letter value and registry-oracle value.",
+      "fields": ["account_id", "base_letter_value_usd", "position_multiplier", "originality_multiplier", "reputation_multiplier", "proof_multiplier", "rights_multiplier", "risk_discount", "final_artifact_value_usd"]
+    },
+    "C7_RIGHTS": {
+      "description": "Usage and commercial rights attached to the account's artifacts.",
+      "fields": ["account_id", "artifact_id", "rights_state", "commercial_use", "transfer_allowed", "attribution_required"]
+    },
+    "C8_REVIEW": {
+      "description": "Review channel for attribution errors, copied material, broken proof, or valuation disputes.",
+      "fields": ["review_id", "artifact_id", "account_id", "issue_type", "status", "resolution", "value_adjustment"]
+    }
+  },
+  "pricing_formula": {
+    "formula": "account_artifact_value_usd = local_letter_value_usd * registry_position_multiplier * originality_multiplier * reputation_multiplier * proof_multiplier * rights_multiplier * risk_discount",
+    "multipliers": {
+      "originality": {
+        "template": 0.25,
+        "modified_existing": 0.75,
+        "original_project_specific": 2.0,
+        "novel_primitive": 6.0
+      },
+      "reputation": {
+        "new_account": 0.75,
+        "normal": 1.0,
+        "reliable_builder": 2.0,
+        "repeated_deployment_evidence": 4.0
+      },
+      "proof": {
+        "claimed_only": 0.1,
+        "file_evidence": 0.75,
+        "commit_evidence": 1.5,
+        "merged_pr": 2.0,
+        "passing_build": 4.0,
+        "deployed": 8.0,
+        "external_reference": 12.0
+      },
+      "rights": {
+        "unclear": 0.25,
+        "internal_use": 0.6,
+        "commercial_allowed": 1.0,
+        "exclusive_transferable": 2.0
+      },
+      "risk_discount": {
+        "none": 1.0,
+        "uncertain_authorship": 0.5,
+        "build_failing": 0.4,
+        "deployment_failing": 0.35,
+        "possible_copy": 0.2,
+        "unauthorized_surface": 0.0
+      }
+    }
+  },
+  "launch_flow": [
+    "create_contributor_account",
+    "set_private_default_visibility",
+    "attach_authorized_surfaces",
+    "verify_or_review_authorship",
+    "run_letter_price_ledger",
+    "run_registry_oracle",
+    "compute_account_price_curve",
+    "emit_private_account_report",
+    "emit_public_summary_only_if_allowed"
+  ],
+  "ledger_outputs": {
+    "accounts": "artifacts/valuation/contributor-artifact-account.accounts.jsonl",
+    "authorship": "artifacts/valuation/contributor-artifact-account.authorship.jsonl",
+    "price_curves": "artifacts/valuation/contributor-artifact-account.price-curves.jsonl",
+    "private_reports": "artifacts/valuation/contributor-artifact-account.private-reports/",
+    "public_summaries": "artifacts/valuation/contributor-artifact-account.public-summaries/"
+  },
+  "seed_template": {
+    "account_id": "acct:language-fi:example",
+    "display_label": "example-contributor-account",
+    "tracking_enabled": false,
+    "authorized_surfaces": [],
+    "pricing_enabled": false,
+    "visibility": "private",
+    "reason": "Template only. Real account tracking starts only after launch and authorization."
+  },
+  "practical_next_build": {
+    "module_name": "contributor_artifact_account.py",
+    "inputs": ["account config", "authorized surfaces", "letter-price ledger", "registry-oracle ledger"],
+    "outputs": ["account authorship map", "account price curve", "private account report", "optional public summary"],
+    "first_command_shape": "python tools/valuation/contributor_artifact_account.py --account acct:language-fi:example --repo . --emit-private-report artifacts/valuation/contributor-artifact-account.private-reports/example.md"
+  }
+}
