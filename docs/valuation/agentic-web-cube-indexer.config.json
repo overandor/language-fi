@@ -1,0 +1,265 @@
+{
+  "$schema": "https://language-fi.local/schemas/agentic-web-cube-indexer.config.schema.json",
+  "name": "agentic-web-cube-indexer",
+  "version": "0.1.0",
+  "purpose": "Define a new kind of indexer-crawler that disassembles web pages, repositories, docs, APIs, forms, and deployments into small function-cubes that agents can search, route, verify, compose, price, and execute under policy.",
+  "extends": [
+    "docs/valuation/letter-price-ledger.config.json",
+    "docs/valuation/registry-oracle.config.json",
+    "docs/valuation/contributor-artifact-account.config.json"
+  ],
+  "core_thesis": "The useful web is not a list of pages. It is a graph of functions hidden inside pages, buttons, forms, scripts, APIs, text claims, endpoints, documents, and workflows. The crawler must disassemble surfaces into executable capability cubes for agents.",
+  "crawl_policy": {
+    "respect_robots_txt": true,
+    "respect_terms_and_access_controls": true,
+    "no_login_bypass": true,
+    "no_captcha_bypass": true,
+    "no_secret_collection": true,
+    "no_personal_data_extraction_by_default": true,
+    "rate_limit_required": true,
+    "store_minimal_evidence": true,
+    "default_mode": "metadata_and_capability_indexing",
+    "human_approval_required_for_actions": true
+  },
+  "cube_definition": {
+    "cube_id_format": "cube:{surface_hash}:{capability_hash}:{version}",
+    "atomic_unit": "function_cube",
+    "function_cube": {
+      "description": "A bounded web capability with inputs, outputs, constraints, proof, risk, and agent routing metadata.",
+      "required_fields": [
+        "cube_id",
+        "surface_id",
+        "capability_type",
+        "human_label",
+        "inputs",
+        "outputs",
+        "preconditions",
+        "postconditions",
+        "evidence",
+        "policy",
+        "risk",
+        "agent_affordance"
+      ]
+    },
+    "cube_granularity": [
+      "read_text_block",
+      "extract_table",
+      "summarize_document",
+      "follow_safe_link",
+      "inspect_repo_file",
+      "query_public_endpoint",
+      "fill_allowed_form_draft",
+      "download_allowed_file",
+      "compare_versions",
+      "monitor_status",
+      "route_to_human_review"
+    ]
+  },
+  "surface_types": {
+    "web_page": {
+      "signals": ["title", "headings", "links", "forms", "buttons", "structured_data", "scripts", "tables", "visible_text", "canonical_url"]
+    },
+    "repository": {
+      "signals": ["files", "commits", "pull_requests", "issues", "actions", "package_manifests", "docs", "configs"]
+    },
+    "api_or_endpoint": {
+      "signals": ["method", "path", "params", "response_shape", "auth_requirement", "rate_limit", "docs"]
+    },
+    "document": {
+      "signals": ["sections", "tables", "figures", "claims", "citations", "metadata", "version"]
+    },
+    "deployment": {
+      "signals": ["build_status", "preview_url", "production_url", "logs", "status_checks", "release_version"]
+    },
+    "market_or_directory": {
+      "signals": ["listing", "price", "availability", "contact_surface", "policy", "rank", "category"]
+    }
+  },
+  "cube_registers": {
+    "W0_SURFACE": {
+      "description": "The source surface being disassembled.",
+      "fields": ["surface_id", "surface_type", "url_or_path", "owner_scope", "visibility", "last_seen_at", "content_hash"]
+    },
+    "W1_PARSE": {
+      "description": "Raw parsed structure before function extraction.",
+      "fields": ["dom_nodes", "text_blocks", "links", "forms", "buttons", "tables", "scripts", "metadata"]
+    },
+    "W2_CAPABILITY": {
+      "description": "Detected useful function hidden in the surface.",
+      "fields": ["capability_type", "verb", "object", "input_schema", "output_schema", "side_effect_level"]
+    },
+    "W3_CONSTRAINTS": {
+      "description": "Rules that limit safe use of the capability.",
+      "fields": ["auth_required", "robots_allowed", "tos_note", "rate_limit", "user_approval_required", "forbidden_actions"]
+    },
+    "W4_PROOF": {
+      "description": "Evidence that the cube exists and what state it was in when indexed.",
+      "fields": ["retrieved_at", "source_hash", "screenshot_hash", "header_hash", "snippet_hash", "status_code"]
+    },
+    "W5_AGENT_AFFORDANCE": {
+      "description": "How an agent can use the cube without guessing.",
+      "fields": ["agent_intent", "tool_hint", "required_inputs", "expected_outputs", "confidence", "fallback"]
+    },
+    "W6_COMPOSITION": {
+      "description": "How this cube can connect to other cubes.",
+      "fields": ["upstream_cubes", "downstream_cubes", "compatible_outputs", "workflow_role", "dependency_edges"]
+    },
+    "W7_VALUE": {
+      "description": "Estimated operational value of the cube.",
+      "fields": ["time_saved_seconds", "risk_reduced", "revenue_relevance", "rarity", "proof_strength", "cube_value_usd"]
+    },
+    "W8_REFRESH": {
+      "description": "How often this cube should be rechecked.",
+      "fields": ["volatility", "refresh_interval", "staleness_limit", "change_detector", "last_diff_hash"]
+    }
+  },
+  "capability_types": {
+    "information_cube": {
+      "description": "A read-only capability that extracts or summarizes information.",
+      "side_effect_level": 0,
+      "examples": ["read docs section", "extract pricing table", "summarize PR status"]
+    },
+    "navigation_cube": {
+      "description": "A capability that routes to another surface without changing state.",
+      "side_effect_level": 1,
+      "examples": ["open deployment URL", "follow documentation link", "route to issue thread"]
+    },
+    "draft_cube": {
+      "description": "A capability that can prepare a non-submitted draft for review.",
+      "side_effect_level": 2,
+      "examples": ["draft form payload", "prepare issue comment", "prepare email body"]
+    },
+    "transaction_cube": {
+      "description": "A capability that can change external state and requires explicit approval and policy checks.",
+      "side_effect_level": 3,
+      "examples": ["submit form", "create PR", "send message", "purchase", "book appointment"]
+    },
+    "monitor_cube": {
+      "description": "A capability that rechecks a state over time.",
+      "side_effect_level": 1,
+      "examples": ["watch deployment status", "monitor price page", "detect doc change"]
+    }
+  },
+  "disassembly_pipeline": [
+    "accept_seed_surface",
+    "check_policy_and_access",
+    "fetch_metadata_or_content",
+    "normalize_surface",
+    "parse_structure",
+    "extract_candidate_capabilities",
+    "classify_side_effect_level",
+    "infer_input_output_schema",
+    "attach_constraints",
+    "hash_evidence",
+    "score_agent_affordance",
+    "score_cube_value",
+    "connect_cube_graph_edges",
+    "emit_cube_index"
+  ],
+  "agent_routing_model": {
+    "route_score_formula": "intent_match * input_fit * output_fit * proof_strength * freshness * policy_clearance * value_density",
+    "routing_fields": [
+      "agent_intent",
+      "task_type",
+      "required_inputs",
+      "desired_output",
+      "max_side_effect_level",
+      "approval_state",
+      "freshness_requirement",
+      "risk_budget"
+    ],
+    "route_outcomes": [
+      "use_cube",
+      "compose_cubes",
+      "ask_human",
+      "refresh_cube",
+      "reject_cube"
+    ]
+  },
+  "value_model": {
+    "cube_value_usd_formula": "base_utility * proof_multiplier * rarity_multiplier * automation_multiplier * risk_discount",
+    "base_utility": {
+      "read_only_reference": 0.01,
+      "developer_debug_signal": 0.25,
+      "workflow_step": 1.0,
+      "deployment_unblocker": 10.0,
+      "revenue_path_step": 25.0,
+      "verified_transaction_path": 100.0
+    },
+    "proof_multiplier": {
+      "unverified_guess": 0.1,
+      "static_parse": 0.5,
+      "retrieved_successfully": 1.0,
+      "tested_schema": 2.0,
+      "used_successfully": 5.0
+    },
+    "rarity_multiplier": {
+      "common": 0.5,
+      "specific": 1.0,
+      "hard_to_find": 3.0,
+      "unique_workflow_primitive": 8.0
+    },
+    "automation_multiplier": {
+      "human_read_only": 0.5,
+      "agent_readable": 1.0,
+      "agent_composable": 3.0,
+      "agent_executable_with_approval": 6.0
+    },
+    "risk_discount": {
+      "safe_read_only": 1.0,
+      "stale_or_low_confidence": 0.5,
+      "requires_auth": 0.4,
+      "state_changing": 0.2,
+      "policy_blocked": 0.0
+    }
+  },
+  "ledger_outputs": {
+    "surface_index": "artifacts/valuation/agentic-web-cube-indexer.surfaces.jsonl",
+    "cube_index": "artifacts/valuation/agentic-web-cube-indexer.cubes.jsonl",
+    "cube_edges": "artifacts/valuation/agentic-web-cube-indexer.edges.jsonl",
+    "route_table": "artifacts/valuation/agentic-web-cube-indexer.routes.jsonl",
+    "human_report": "artifacts/valuation/agentic-web-cube-indexer.report.md"
+  },
+  "seed_cubes": [
+    {
+      "label": "GitHub PR status cube",
+      "surface_type": "pull_request",
+      "capability_type": "information_cube",
+      "agent_intent": "inspect change status and merge/build/deploy evidence"
+    },
+    {
+      "label": "Vercel deployment status cube",
+      "surface_type": "deployment",
+      "capability_type": "monitor_cube",
+      "agent_intent": "detect whether a project is production-green or failing"
+    },
+    {
+      "label": "Repository config cube",
+      "surface_type": "repository",
+      "capability_type": "information_cube",
+      "agent_intent": "find config keys that control build, dev launch, routing, and artifact valuation"
+    },
+    {
+      "label": "Allowed form draft cube",
+      "surface_type": "web_page",
+      "capability_type": "draft_cube",
+      "agent_intent": "prepare a reviewable form payload without submitting it"
+    }
+  ],
+  "guardrails": {
+    "index_functions_not_private_people": true,
+    "do_not_execute_state_changing_cube_without_approval": true,
+    "do_not_bypass_access_controls": true,
+    "do_not_store_secrets": true,
+    "do_not_scrape_personal_data_by_default": true,
+    "separate_detection_from_execution": true,
+    "every_cube_requires_policy_state": true,
+    "every_cube_requires_evidence_hash": true
+  },
+  "practical_next_build": {
+    "module_name": "agentic_web_cube_indexer.py",
+    "inputs": ["seed URLs", "repo paths", "PR metadata", "deployment metadata", "allowed local documents"],
+    "outputs": ["surface index", "function cube index", "cube graph", "agent route table", "human report"],
+    "first_command_shape": "python tools/valuation/agentic_web_cube_indexer.py --seed https://github.com/overandor/language-fi --emit artifacts/valuation/agentic-web-cube-indexer.report.md"
+  }
+}
