@@ -1,0 +1,211 @@
+{
+  "$schema": "https://language-fi.local/schemas/registry-oracle.config.schema.json",
+  "name": "registry-oracle",
+  "version": "0.1.0",
+  "purpose": "Measure how every symbol, letter, identifier, claim, URL, artifact, and proof unit travels across the repository, pull requests, deployments, public web surfaces, search surfaces, and downstream references.",
+  "extends": "docs/valuation/letter-price-ledger.config.json",
+  "core_thesis": "A letter is not only priced by local code utility. It gains or loses value by position, propagation, citation, indexability, proof, ranking, reuse, and web discoverability.",
+  "entities": {
+    "letter": {
+      "unit": "unicode_character",
+      "identity": "char_id from letter-price-ledger",
+      "tracked_dimensions": ["position", "context", "mutation", "reuse", "propagation", "proof", "risk", "value"]
+    },
+    "symbol": {
+      "unit": "identifier_or_named_concept",
+      "examples": ["language-fi", "registry-oracle", "letter-price-ledger", "vite.config", "dev launch"],
+      "tracked_dimensions": ["definition_site", "references", "surface_area", "semantic_neighbors", "searchability", "business_meaning"]
+    },
+    "artifact": {
+      "unit": "file_commit_pr_deployment_url_or_report",
+      "tracked_dimensions": ["origin", "hash", "owner", "state", "evidence", "public_reach", "valuation"]
+    },
+    "surface": {
+      "unit": "place_where_symbol_can_appear",
+      "types": ["repo_file", "pull_request", "issue", "release", "deployment", "website_page", "search_result", "social_link", "external_reference", "local_file", "chat_export"]
+    }
+  },
+  "registers": {
+    "O0_ORIGIN": {
+      "description": "Where the letter/symbol first appears with evidence.",
+      "fields": ["origin_surface", "origin_path", "origin_line", "origin_commit", "origin_timestamp", "origin_hash"]
+    },
+    "O1_POSITION": {
+      "description": "Where the unit sits inside a file, page, diff, heading, component, function, config, URL, or search result.",
+      "fields": ["surface_type", "path_or_url", "line", "column", "section", "dom_selector", "rank", "viewport_zone"]
+    },
+    "O2_TRAVEL": {
+      "description": "How the unit moves from one surface to another.",
+      "fields": ["from_surface", "to_surface", "transport", "timestamp", "mutation_type", "copy_ratio", "semantic_preservation"]
+    },
+    "O3_VISIBILITY": {
+      "description": "Whether the unit is visible to humans, crawlers, deploy systems, package managers, or search engines.",
+      "fields": ["human_visible", "crawler_visible", "indexable", "robots_allowed", "requires_auth", "render_mode", "canonical_url"]
+    },
+    "O4_RANKING": {
+      "description": "Position of the unit or containing artifact on searchable/indexed surfaces.",
+      "fields": ["query", "engine_or_platform", "rank", "snippet", "title_match", "url_match", "timestamp", "geo", "device"]
+    },
+    "O5_PROOF": {
+      "description": "Receipts proving existence, movement, deployment, citation, ranking, or reuse.",
+      "fields": ["proof_type", "proof_url", "proof_hash", "screenshot_hash", "command_output_hash", "timestamp"]
+    },
+    "O6_MUTATION": {
+      "description": "How the letter/symbol changes during travel.",
+      "fields": ["before", "after", "diff_span", "edit_distance", "case_change", "rename", "compression", "expansion"]
+    },
+    "O7_AUTHORITY": {
+      "description": "How trustworthy or powerful the surface is.",
+      "fields": ["surface_authority", "domain_authority_proxy", "repo_stars", "deployment_status", "citation_quality", "owner_verified"]
+    },
+    "O8_VALUE": {
+      "description": "External positioning value assigned after combining local utility with web travel and evidence.",
+      "fields": ["local_value_usd", "visibility_multiplier", "ranking_multiplier", "authority_multiplier", "proof_multiplier", "risk_discount", "external_value_usd"]
+    }
+  },
+  "positioning_model": {
+    "score_name": "symbol_position_score",
+    "formula": "origin_quality * visibility * authority * rank_weight * propagation_depth * semantic_preservation * proof_confidence * risk_discount",
+    "components": {
+      "origin_quality": {
+        "generated_unreviewed": 0.2,
+        "repo_committed": 1.0,
+        "merged_pr": 2.0,
+        "passing_ci": 4.0,
+        "production_deployed": 8.0,
+        "externally_cited": 16.0
+      },
+      "visibility": {
+        "private_or_local_only": 0.1,
+        "public_repo": 1.0,
+        "public_site_unindexed": 2.0,
+        "indexed_search_result": 5.0,
+        "high_intent_query_visible": 12.0
+      },
+      "authority": {
+        "unknown_surface": 0.5,
+        "owned_repo": 1.0,
+        "owned_domain": 2.0,
+        "recognized_platform": 4.0,
+        "third_party_reference": 8.0
+      },
+      "rank_weight": {
+        "not_ranked": 0.25,
+        "rank_51_plus": 0.5,
+        "rank_11_to_50": 1.0,
+        "rank_4_to_10": 3.0,
+        "rank_1_to_3": 8.0
+      },
+      "propagation_depth": {
+        "single_surface": 1.0,
+        "two_to_three_surfaces": 2.0,
+        "four_to_ten_surfaces": 4.0,
+        "eleven_plus_surfaces": 8.0
+      },
+      "semantic_preservation": {
+        "lost_or_noise": 0.0,
+        "weak_match": 0.25,
+        "partial_match": 0.6,
+        "strong_match": 1.0,
+        "improved_or_clarified": 1.5
+      },
+      "proof_confidence": {
+        "claimed_only": 0.1,
+        "static_file_evidence": 0.75,
+        "command_or_ci_receipt": 2.0,
+        "deployment_receipt": 4.0,
+        "external_index_receipt": 8.0
+      },
+      "risk_discount": {
+        "none": 1.0,
+        "stale": 0.7,
+        "ambiguous_identity": 0.5,
+        "deployment_failed": 0.35,
+        "unverifiable_claim": 0.1,
+        "secret_or_sensitive_data": 0.0
+      }
+    }
+  },
+  "web_measurement_contract": {
+    "allowed_sources": [
+      "owned_repository_metadata",
+      "pull_request_metadata",
+      "commit_history",
+      "deployment_status",
+      "owned_domains_and_pages",
+      "public_search_results_when_explicitly_run",
+      "third_party_mentions_when_explicitly_found"
+    ],
+    "disallowed_assumptions": [
+      "Do not claim ranking without a dated search receipt.",
+      "Do not claim traffic without analytics or server logs.",
+      "Do not claim revenue without payment or customer evidence.",
+      "Do not treat repeated generated text as organic web authority.",
+      "Do not use private or personal data as public authority."
+    ],
+    "measurement_frequency": {
+      "repo_diff": "per_commit",
+      "deployment_status": "per_deploy",
+      "owned_page_crawl": "daily_when_site_exists",
+      "search_position": "manual_or_scheduled_receipt",
+      "external_mentions": "manual_or_scheduled_receipt"
+    }
+  },
+  "oracle_pipeline": [
+    "load_letter_price_ledger",
+    "extract_symbols_and_named_claims",
+    "map_each_symbol_to_origin_surface",
+    "scan_repo_for_references",
+    "scan_prs_issues_and_comments_for_references",
+    "scan_deployment_status_for_state",
+    "crawl_owned_pages_when_available",
+    "run_public_search_queries_when_requested",
+    "record_rank_and_snippet_receipts",
+    "compute_travel_edges",
+    "compute_symbol_position_score",
+    "compute_external_value_usd",
+    "emit_registry_oracle_ledger"
+  ],
+  "ledger_outputs": {
+    "symbol_registry": "artifacts/valuation/registry-oracle.symbols.jsonl",
+    "travel_edges": "artifacts/valuation/registry-oracle.travel.jsonl",
+    "surface_index": "artifacts/valuation/registry-oracle.surfaces.json",
+    "ranking_receipts": "artifacts/valuation/registry-oracle.rankings.jsonl",
+    "oracle_report": "artifacts/valuation/registry-oracle.report.md"
+  },
+  "seed_symbols": [
+    {
+      "symbol": "language-fi",
+      "kind": "project_name",
+      "expected_surfaces": ["repo", "pull_request", "vercel_project", "deployment_status"]
+    },
+    {
+      "symbol": "letter-price-ledger",
+      "kind": "valuation_primitive",
+      "expected_surfaces": ["repo_config", "future_reports", "valuation_outputs"]
+    },
+    {
+      "symbol": "registry-oracle",
+      "kind": "positioning_primitive",
+      "expected_surfaces": ["repo_config", "future_crawler", "future_oracle_reports"]
+    },
+    {
+      "symbol": "Fix language-fi dev launch",
+      "kind": "pull_request_claim",
+      "expected_surfaces": ["pull_request", "commit", "deployment_status"]
+    }
+  ],
+  "value_policy": {
+    "local_letter_value_source": "letter-price-ledger",
+    "external_value_formula": "local_value_usd * visibility_multiplier * ranking_multiplier * authority_multiplier * proof_multiplier * risk_discount",
+    "minimum_evidence_for_public_positioning_value": "dated URL, search receipt, deployment receipt, or third-party reference",
+    "default_no_evidence_external_value_usd": 0,
+    "bloat_penalty": "If propagation is generated duplication without new authority, apply risk_discount <= 0.25."
+  },
+  "practical_next_build": {
+    "module_name": "registry_oracle.py",
+    "inputs": ["git diff", "git grep", "GitHub PR metadata", "deployment status", "optional web search receipts"],
+    "outputs": ["symbol graph", "travel graph", "ranking ledger", "external value report"],
+    "first_command_shape": "python tools/valuation/registry_oracle.py --repo . --symbol language-fi --emit artifacts/valuation/registry-oracle.report.md"
+  }
+}
