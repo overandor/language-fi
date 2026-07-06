@@ -1,0 +1,170 @@
+{
+  "$schema": "https://language-fi.local/schemas/letter-price-ledger.config.schema.json",
+  "name": "letter-price-ledger",
+  "version": "0.1.0",
+  "purpose": "Track repository, pull request, and artifact changes at character granularity; index each character into registers; price the marginal value of each edit without claiming unverifiable revenue.",
+  "scope": {
+    "repository": "overandor/language-fi",
+    "default_branch": "main",
+    "tracked_surfaces": [
+      "source_files",
+      "config_files",
+      "package_manifests",
+      "build_scripts",
+      "documentation",
+      "pull_request_diffs",
+      "deployment_status_comments"
+    ],
+    "default_exclusions": [
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      ".git/**",
+      "*.lock",
+      "*.png",
+      "*.jpg",
+      "*.jpeg",
+      "*.gif",
+      "*.webp",
+      "*.mp4",
+      "*.zip"
+    ]
+  },
+  "unit_model": {
+    "atomic_unit": "character",
+    "secondary_units": ["byte", "line", "token", "symbol", "file", "commit", "pull_request"],
+    "character_identity": {
+      "id_format": "char:{repo}:{ref}:{path}:{line}:{column}:{utf8_offset}:{sha256_12}",
+      "hash_fields": ["repo", "ref", "path", "line", "column", "utf8_offset", "character", "context_window"]
+    },
+    "context_window": {
+      "left_chars": 48,
+      "right_chars": 48,
+      "reason": "A letter has near-zero standalone value; context assigns semantic, operational, and risk value."
+    }
+  },
+  "registers": {
+    "R0_RAW_GLYPH": {
+      "description": "Every literal character exactly as stored.",
+      "fields": ["character", "unicode_codepoint", "utf8_bytes", "line", "column", "offset"]
+    },
+    "R1_SYNTAX": {
+      "description": "Parser role of the character inside code, config, markdown, or diff.",
+      "fields": ["language", "syntax_node", "token_kind", "delimiter_role", "identifier_membership"]
+    },
+    "R2_SEMANTIC": {
+      "description": "Meaning contribution inferred from symbol, identifier, config key, command, dependency, or prose sentence.",
+      "fields": ["symbol", "identifier", "semantic_cluster", "nearest_heading", "business_claim"]
+    },
+    "R3_OPERATIONAL": {
+      "description": "Does this character affect launch, build, deployment, runtime, packaging, or developer workflow?",
+      "fields": ["affects_dev", "affects_build", "affects_deploy", "affects_runtime", "affects_security"]
+    },
+    "R4_RISK": {
+      "description": "Penalty register for breakage, hallucinated claims, missing dependencies, unsafe secrets, or compliance risk.",
+      "fields": ["risk_type", "risk_severity", "confidence", "evidence_ref"]
+    },
+    "R5_PROOF": {
+      "description": "Evidence that a character-level change produced a measurable state transition.",
+      "fields": ["test_command", "before_state", "after_state", "ci_status", "deployment_status", "receipt_hash"]
+    },
+    "R6_VALUE": {
+      "description": "Marginal estimated value of this character or contiguous edit span.",
+      "fields": ["base_price_usd", "utility_multiplier", "risk_discount", "proof_multiplier", "final_price_usd"]
+    },
+    "R7_INDEX": {
+      "description": "Search and retrieval index for every character mapped upward into spans, files, commits, and PRs.",
+      "fields": ["char_id", "span_id", "file_id", "commit_sha", "pr_number", "register_bitmap"]
+    }
+  },
+  "pricing_formula": {
+    "final_price_usd": "base_price_usd * utility_multiplier * proof_multiplier * scarcity_multiplier * risk_discount",
+    "base_price_usd_by_unit": {
+      "ordinary_character": 0.000001,
+      "identifier_character": 0.00001,
+      "config_key_character": 0.00005,
+      "dependency_character": 0.0001,
+      "build_command_character": 0.0002,
+      "security_sensitive_character": 0.0
+    },
+    "utility_multiplier": {
+      "cosmetic": 0.25,
+      "documentation_clarity": 0.75,
+      "typecheck_repair": 5.0,
+      "dev_server_repair": 8.0,
+      "production_build_repair": 20.0,
+      "deployment_repair": 35.0,
+      "revenue_path_repair": 100.0
+    },
+    "proof_multiplier": {
+      "unverified": 0.25,
+      "static_evidence": 0.75,
+      "local_command_passed": 2.0,
+      "ci_passed": 5.0,
+      "production_deployed": 12.0,
+      "paid_user_evidence": 50.0
+    },
+    "scarcity_multiplier": {
+      "boilerplate": 0.5,
+      "repo_specific": 2.0,
+      "hard_to_discover_fix": 4.0,
+      "novel_architecture_or_primitive": 10.0
+    },
+    "risk_discount": {
+      "none": 1.0,
+      "minor_uncertainty": 0.75,
+      "type_errors_remaining": 0.35,
+      "deployment_failing": 0.2,
+      "security_or_secret_exposure": 0.0,
+      "unverifiable_revenue_claim": 0.1
+    },
+    "aggregation": {
+      "span_price_usd": "sum(final_price_usd for characters in span)",
+      "file_price_usd": "sum(span_price_usd for spans in file)",
+      "commit_price_usd": "sum(file_price_usd for changed files in commit)",
+      "pr_price_usd": "sum(commit_price_usd for commits in pull_request)"
+    }
+  },
+  "indexing_pipeline": [
+    "read_diff_or_file",
+    "normalize_utf8",
+    "split_into_characters",
+    "assign_char_ids",
+    "attach_line_column_offsets",
+    "parse_syntax_where_available",
+    "map_to_registers",
+    "score_utility_and_risk",
+    "attach_evidence",
+    "price_each_character",
+    "aggregate_to_span_file_commit_pr",
+    "emit_jsonl_ledger"
+  ],
+  "ledger_outputs": {
+    "character_ledger": "artifacts/valuation/letter-price-ledger.chars.jsonl",
+    "span_ledger": "artifacts/valuation/letter-price-ledger.spans.jsonl",
+    "file_summary": "artifacts/valuation/letter-price-ledger.files.json",
+    "pr_summary": "artifacts/valuation/letter-price-ledger.prs.json",
+    "human_report": "artifacts/valuation/letter-price-ledger.report.md"
+  },
+  "pr_2_seed_assessment": {
+    "pull_request": 2,
+    "title": "Fix language-fi dev launch",
+    "changed_file": "artifacts/language-fi/vite.config.ts",
+    "observed_change": "Removed Replit-only Vite plugins from app config.",
+    "register_hits": ["R1_SYNTAX", "R3_OPERATIONAL", "R4_RISK", "R5_PROOF", "R6_VALUE", "R7_INDEX"],
+    "pricing_interpretation": "High operational utility for local dev launch, discounted because typecheck/build/deploy were still failing after the PR.",
+    "suggested_pr_price_band_usd": {
+      "low": 15,
+      "fair": 75,
+      "high": 250
+    },
+    "next_value_unlock": "Fix typecheck, run production build, then clear Vercel deployment failures."
+  },
+  "guardrails": {
+    "do_not_price_as_cash_without_evidence": true,
+    "do_not_count_generated_bulk_as_high_value_by_length_alone": true,
+    "penalize_bloat": true,
+    "prefer_short_changes_that_unlock_runtime_state": true,
+    "require_evidence_for_values_above_usd": 250
+  }
+}
