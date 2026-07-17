@@ -251,23 +251,23 @@ export default function HomePage() {
         <div className="hero-v2-content">
           <div className="hero-v2-eyebrow">
             <span className="eyebrow-dot" />
-            MEMBRA PROTOCOL — SOLANA DEVNET
+            LANGUAGE.FI — LIVE APPRAISAL PROTOCOL
             <span className="eyebrow-sep" />
             {corpusChars > 0
               ? <span className="eyebrow-live">{corpusChars.toLocaleString()} CHARS APPRAISED</span>
               : <span className="eyebrow-live">CORPUS LOADING…</span>}
           </div>
           <h1 className="hero-v2-title">
-            Language is<br />
-            <span className="title-amber">liquidity.</span>
+            The market for<br />
+            <span className="title-amber">meaning.</span>
           </h1>
           <p className="hero-v2-sub">
-            Every letter priced in real dollars, derived from live crypto news,<br />
-            Wikipedia, HackerNews & Reddit corpora. 44 primitives. Solana devnet SPL tokens.
+            A live laboratory that measures how language moves through public text.<br />
+            Explore letter demand, price sentences, and inspect every source behind the model.
           </p>
           <div className="hero-v2-ctas">
-            <button className="neo-btn-primary" onClick={() => navigate("/terminal")}>Open Terminal</button>
-            <button className="neo-btn-ghost" onClick={() => navigate("/alchemist")}>Price a Sentence</button>
+            <button className="neo-btn-primary" onClick={() => navigate("/terminal")}>Explore the Market</button>
+            <button className="neo-btn-ghost" onClick={() => navigate("/alchemist")}>Appraise a Sentence</button>
             <button className="neo-btn-ghost" onClick={() => navigate("/sources")}>View Sources</button>
           </div>
           {/* Live stats strip */}
@@ -301,14 +301,14 @@ export default function HomePage() {
       {/* ── LIVE LETTER GRID ── */}
       <section className="section-v2">
         <div className="section-v2-header">
-          <h2 className="section-v2-title">Live Letter Prices</h2>
+          <h2 className="section-v2-title">The alphabet, repriced</h2>
           <div className="section-v2-meta">
             <span className="live-pill">● LIVE</span>
             {updatedAt && <span style={{ color: "var(--dim-text)", fontSize: 11 }}> updated {new Date(updatedAt).toLocaleTimeString()}</span>}
           </div>
         </div>
         <p className="section-v2-sub">
-          Dollar prices derived from live text appraisal. Each price updates every 20 minutes when the corpus refreshes from public sources.
+          Experimental reference prices derived from observed character frequency across the connected public corpus. Values refresh as source data changes; they are not offers to buy or sell.
         </p>
         {items.length > 0
           ? <LetterGrid items={items} />
@@ -318,12 +318,11 @@ export default function HomePage() {
       {/* ── APPRAISAL ENGINE ── */}
       <section className="section-v2">
         <div className="section-v2-header">
-          <h2 className="section-v2-title">Appraisal Engine</h2>
+          <h2 className="section-v2-title">How appraisal works</h2>
           <span className="section-v2-badge">CORPUS-DERIVED</span>
         </div>
         <p className="section-v2-sub">
-          Letter prices are not random. They are calculated from the observed frequency of each letter across four live public text corpora,
-          compared against standard English baseline frequency. Over-indexed letters command a demand premium.
+          Each reference price is calculated from observed letter frequency, compared with a standard English baseline, then adjusted by the published floor and rarity model. The formula and its inputs remain visible so the experiment can be inspected.
         </p>
         <FormulaDisplay />
         {corpus && (
@@ -345,11 +344,11 @@ export default function HomePage() {
       {corpus && corpus.sources.length > 0 && (
         <section className="section-v2">
           <div className="section-v2-header">
-            <h2 className="section-v2-title">Live Text Sources</h2>
+            <h2 className="section-v2-title">Source ledger</h2>
             <span className="section-v2-badge">{corpus.active_sources}/{corpus.total_sources_queried} ACTIVE</span>
           </div>
           <p className="section-v2-sub">
-            These four public APIs are fetched every 20 minutes. Raw text is extracted, letter counts are tallied, and prices are re-derived from the updated corpus.
+            Connected public sources are periodically sampled, normalized, and counted. This ledger shows which inputs responded, how much text they contributed, and when the model last refreshed.
           </p>
           <SourceStatus sources={corpus.sources} />
           <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
@@ -363,7 +362,7 @@ export default function HomePage() {
       {/* ── PROTOCOL STATS ── */}
       <section className="section-v2">
         <div className="section-v2-header">
-          <h2 className="section-v2-title">Protocol Stats</h2>
+          <h2 className="section-v2-title">Experiment telemetry</h2>
         </div>
         <div className="stats-neo-grid">
           {[
@@ -385,12 +384,11 @@ export default function HomePage() {
       {/* ── SOLANA DEVNET ANCHORING ── */}
       <section className="section-v2 solana-section">
         <div className="section-v2-header">
-          <h2 className="section-v2-title">Solana Devnet Anchoring</h2>
+          <h2 className="section-v2-title">Experimental devnet primitives</h2>
           <span className="section-v2-badge" style={{ background: "rgba(153,69,255,0.15)", color: "#9945FF", border: "1px solid rgba(153,69,255,0.3)" }}>◎ DEVNET</span>
         </div>
         <p className="section-v2-sub">
-          Each letter primitive is anchored to a deterministic SPL token mint address on Solana devnet.
-          Prices from the corpus appraisal flow directly into on-chain token valuations.
+          Letter primitives are mapped to deterministic SPL token addresses on Solana devnet for testing. Devnet assets have no monetary value; displayed dollar figures are experimental appraisals, not market quotations.
         </p>
         <div className="solana-cards-grid">
           {["E", "T", "A", "S", "O", "I"].map((letter) => {
@@ -424,14 +422,14 @@ export default function HomePage() {
         <div className="manifesto-v2-inner">
           <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: "var(--primary)", letterSpacing: "0.14em", marginBottom: "1rem" }}>◈ MEMBRA PROTOCOL</div>
           <h2 className="manifesto-v2-quote">
-            Bitcoin made numbers scarce.<br />
-            NFTs made images scarce.<br />
-            <span style={{ color: "var(--primary)" }}>MEMBRA makes language programmable.</span>
+            Language becomes measurable.<br />
+            Meaning becomes inspectable.<br />
+            <span style={{ color: "var(--primary)" }}>Every appraisal keeps its evidence close.</span>
           </h2>
-          <p className="manifesto-v2-sub">Every letter has a dollar price. Every sentence has a cost. Every phrase can become a registered Solana asset.</p>
+          <p className="manifesto-v2-sub">Language.fi is an experimental appraisal surface: a transparent model, a living corpus, and a devnet laboratory for programmable language.</p>
           <div className="manifesto-v2-ctas">
-            <button className="neo-btn-primary" onClick={() => navigate("/terminal")}>Open Terminal</button>
-            <button className="neo-btn-ghost" onClick={() => navigate("/docs")}>Read the Docs</button>
+            <button className="neo-btn-primary" onClick={() => navigate("/terminal")}>Explore the Market</button>
+            <button className="neo-btn-ghost" onClick={() => navigate("/docs")}>Read the Method</button>
           </div>
         </div>
       </div>
